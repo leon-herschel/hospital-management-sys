@@ -3,7 +3,7 @@ import bgImage from '../assets/logo.jpg';
 const SignIn = () => {
   return (
     <div className="bg-red-900 flex justify-center items-center h-screen">
-      {/* Left: Image */}
+      {/* Left: Picture */}
       <div className="w-1/2 h-screen hidden lg:block">
         <img 
           src={bgImage} 
