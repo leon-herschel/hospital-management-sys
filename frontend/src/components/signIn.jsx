@@ -1,13 +1,14 @@
-import bgImage from '../assets/logo.jpg';
+import bgImage from "../assets/logo.jpg";
+import { Link } from "react-router-dom";
 
 const SignIn = () => {
   return (
     <div className="bg-red-900 flex justify-center items-center h-screen">
       {/* Left: Image */}
       <div className="w-1/2 h-screen hidden lg:block">
-        <img 
-          src={bgImage} 
-          alt="Southwestern University Hospital" 
+        <img
+          src={bgImage}
+          alt="Southwestern University Hospital"
           className="object-cover w-full h-full"
         />
       </div>
@@ -17,37 +18,41 @@ const SignIn = () => {
         <form action="#" method="POST">
           {/* Username Input */}
           <div className="mb-4">
-            <label htmlFor="username" className="block text-white">Username</label>
-            <input 
-              type="text" 
-              id="username" 
-              name="username" 
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" 
+            <label htmlFor="username" className="block text-white">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
             />
           </div>
           {/* Password Input */}
           <div className="mb-4">
-            <label htmlFor="password" className="block text-white">Password</label>
-            <input 
-              type="password" 
-              id="password" 
-              name="password" 
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" 
+            <label htmlFor="password" className="block text-white">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="off"
             />
           </div>
           {/* Forgot Password Link */}
-          <div className="mb-6 text-blue-200">
-            <a href="#" className="hover:underline">Forgot Password?</a>
-          </div>
+          <div className="mb-6 text-blue-200"></div>
           {/* Login Button */}
-          <button 
-            type="submit" 
-            className="bg-red-600 hover:bg-red-950 text-white font-semibold rounded-md py-2 px-4 w-full"
-          >
-            Login
-          </button>
+          <Link to={"/dashboard"}>
+            <button
+              type="submit"
+              className="bg-red-600 hover:bg-red-950 text-white font-semibold rounded-md py-2 px-4 w-full"
+            >
+              Login
+            </button>
+          </Link>
         </form>
       </div>
     </div>
