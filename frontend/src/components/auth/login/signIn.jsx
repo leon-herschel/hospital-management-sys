@@ -12,6 +12,15 @@ const SignIn = () => {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'email') setEmail(value);
+    if (name === 'password') setPassword(value);
+    
+    // cclear error message on user input
+    setErrorMessage('');
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!isSigningIn) {
@@ -19,7 +28,11 @@ const SignIn = () => {
       try {
         await doSignInWithEmailAndPassword(email, password);
       } catch (error) {
-        setErrorMessage(error.message);
+        let message = 'An error occurred. Please try again.';
+        if (error.code === 'auth/invalid-credential') {
+          message = 'Invalid password or email.';
+        }
+        setErrorMessage(message);
         setIsSigningIn(false);
       }
     }
@@ -50,7 +63,7 @@ const SignIn = () => {
               id="email"
               name="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleChange}
               className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
               autoComplete="email"
               required
@@ -65,7 +78,7 @@ const SignIn = () => {
               id="password"
               name="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleChange}
               className="w-full border border-gray-300 rounded-md py-2 px-3 mb-2 focus:outline-none focus:border-blue-500"
               autoComplete="current-password"
               required
@@ -74,7 +87,7 @@ const SignIn = () => {
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="text-red-600 font-bold mb-4">{errorMessage}</div>
+            <div className="text-red-300 font-bold mb-4">{errorMessage}</div>
           )}
 
           {/* Submit Button */}

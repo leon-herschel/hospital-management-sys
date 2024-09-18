@@ -3,19 +3,13 @@ import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
 
-  apiKey: "AIzaSyAmUGhT2dr_mtVmanMGgXJN0laJEoXuXEo",
-
-  authDomain: "hospitalsys-2e54c.firebaseapp.com",
-
-  projectId: "hospitalsys-2e54c",
-
-  storageBucket: "hospitalsys-2e54c.appspot.com",
-
-  messagingSenderId: "900558939756",
-
-  appId: "1:900558939756:web:dedcbc6c05bc8ad1261a49",
-
-  measurementId: "G-P3H4BL6T1G"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 
 };
 
