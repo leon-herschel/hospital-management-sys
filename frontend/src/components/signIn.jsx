@@ -1,35 +1,54 @@
+import bgImage from '../assets/logo.jpg';
+
 const SignIn = () => {
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="xl:w-[700px] px-10 h-[400px] rounded-3xl xl:shadow-xl bg-red-900 bg-opacity-80">
-        <h1 className="text-center text-white text-3xl font-bold mt-5 mb-4 ">LOGIN</h1>
-        <div className="flex justify-center mt-10">
-          <form>
-            <input
-              type="text"
-              className="py-3 p-5 rounded-2xl bg-white md:w-[500px] w-[300px] outline-indigo-400"
-              placeholder="Enter your email"
+    <div className="bg-red-900 flex justify-center items-center h-screen">
+      {/* Left: Image */}
+      <div className="w-1/2 h-screen hidden lg:block">
+        <img 
+          src={bgImage} 
+          alt="Southwestern University Hospital" 
+          className="object-cover w-full h-full"
+        />
+      </div>
+      {/* Right: Login Form */}
+      <div className="lg:p-36 md:p-52 sm:20 p-8 w-full lg:w-1/2">
+        <h1 className="text-white text-3xl font-semibold mb-4">Login</h1>
+        <form action="#" method="POST">
+          {/* Username Input */}
+          <div className="mb-4">
+            <label htmlFor="username" className="block text-white">Username</label>
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" 
+              autoComplete="off"
             />
-            <br />
-            <br />
-            <input
-              type="password"
-              className="py-3 p-5 rounded-2xl bg-white md:w-[500px] w-[300px] outline-indigo-400"
-              placeholder="Enter your password"
+          </div>
+          {/* Password Input */}
+          <div className="mb-4">
+            <label htmlFor="password" className="block text-white">Password</label>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" 
+              autoComplete="off"
             />
-            <div className="flex justify-end mt-3 mb-4">
-              <a href="#" className="text-zinc-300">
-                Forgot Password?
-              </a>
-            </div>
-            <button
-              type="submit"
-              className="py-3 bg-white text-black w-full rounded-2xl font-bold text-lg"
-            >
-              Submit
-            </button>
-          </form>
-        </div>
+          </div>
+          {/* Forgot Password Link */}
+          <div className="mb-6 text-blue-200">
+            <a href="#" className="hover:underline">Forgot Password?</a>
+          </div>
+          {/* Login Button */}
+          <button 
+            type="submit" 
+            className="bg-red-600 hover:bg-red-950 text-white font-semibold rounded-md py-2 px-4 w-full"
+          >
+            Login
+          </button>
+        </form>
       </div>
     </div>
   );
