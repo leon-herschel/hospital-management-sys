@@ -39,7 +39,7 @@ const SignIn = () => {
           </div>
           {/* Forgot test Password Link */}
           <div className="mb-6 text-blue-200">
-            <a href="#" className="hover:underline">Forgot Password?</a>
+            <a href="#" className="hover:underline">Forgot your Password?</a>
           </div>
           {/* Login test Button */}
           <button 
