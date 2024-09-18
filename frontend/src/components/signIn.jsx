@@ -37,11 +37,11 @@ const SignIn = () => {
               autoComplete="off"
             />
           </div>
-          {/* Forgot Password Link */}
+          {/* Forgot test Password Link */}
           <div className="mb-6 text-blue-200">
             <a href="#" className="hover:underline">Forgot your Password?</a>
           </div>
-          {/* Login Button */}
+          {/* Login test Button */}
           <button 
             type="submit" 
             className="bg-red-600 hover:bg-red-950 text-white font-semibold rounded-md py-2 px-4 w-full"
