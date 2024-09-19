@@ -37,19 +37,19 @@ function inventory() {
       <table className="min-w-full border-collapse border border-gray-300">
         <thead className="bg-gray-100">
           <tr>
-            <th className="border border-gray-300 px-4 py-2 text-left">
+            <th className="border border-gray-300 px-4 py-2 text-center">
               Item Name
             </th>
-            <th className="border border-gray-300 px-4 py-2 text-left">
+            <th className="border border-gray-300 px-4 py-2 text-center">
               Quantity
             </th>
-            <th className="border border-gray-300 px-4 py-2 text-left">
+            <th className="border border-gray-300 px-4 py-2 text-center">
               Department
             </th>
-            <th className="border border-gray-300 px-4 py-2 text-left">
+            <th className="border border-gray-300 px-4 py-2 text-center">
               Status
             </th>
-            <th className="border border-gray-300 px-4 py-2 text-left">
+            <th className="border border-gray-300 px-4 py-2 text-center">
               Action
             </th>
           </tr>
@@ -58,17 +58,20 @@ function inventory() {
           {inventoryList.length > 0 ? (
             inventoryList.map((inventory) => (
               <tr key={inventory.id} className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-4 py-2">
+                <td className="border border-gray-300 px-4 py-2 text-center">
                   {inventory.itemName}
                 </td>
-                <td className="border border-gray-300 px-4 py-2">
+                <td className="border border-gray-300 px-4 py-2 text-center">
                   {inventory.quantity}
                 </td>
-                <td className="border border-gray-300 px-4 py-2">
+                <td className="border border-gray-300 px-4 py-2 text-center">
                   {inventory.department}
                 </td>
-                <td className="border border-gray-300 px-4 py-2">
+                <td className="border border-gray-300 px-4 py-2 text-center">
                   {inventory.status}
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  <button>EDIT</button> |<button>DELETE</button>
                 </td>
               </tr>
             ))
