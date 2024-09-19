@@ -1,13 +1,36 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ref, push, set } from "firebase/database";
 import { database } from "../dbconfig/db";
+import jsPDF from "jspdf";
+import QRCode from "qrcode";
 
-function addPatient({ isOpen, toggleModal }) {
+function AddPatient({ isOpen, toggleModal }) {
   const [name, setName] = useState("");
   const [birth, setBirth] = useState("");
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState("");
   const [roomType, setRoomType] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
+  const [medUse, setMedUse] = useState("");
+  const [suppliesUsed, setSuppliesUsed] = useState("");
+
+  const generatePDF = async (patientInfo) => {
+    const doc = new jsPDF();
+
+    doc.text(`Name: ${patientInfo.name}`, 90, 20);
+    doc.text(`Date of Birth: ${patientInfo.birth}`, 90, 30);
+    doc.text(`Contact: ${patientInfo.contact}`, 90, 40);
+    doc.text(`Status: ${patientInfo.status}`, 90, 50);
+    doc.text(`Room Type: ${patientInfo.roomType}`, 90, 60);
+
+    const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
+      width: 100,
+    });
+
+    doc.addImage(qrCodeDataUrl, "PNG", 10, 0, 80, 80);
+
+    doc.output("dataurlnewwindow");
+  };
 
   const handlesubmit = () => {
     if (!name || !birth || !contact || !status || !roomType) {
@@ -15,30 +38,43 @@ function addPatient({ isOpen, toggleModal }) {
       return;
     }
 
+    if (contact.length !== 11) {
+      alert("Contact Number is invalid");
+      return;
+    }
+
     const patientRef = ref(database, "patient");
     const newPatientRef = push(patientRef);
+    const uniqueKey = newPatientRef.key;
 
-    if (newPatientRef) {
-      set(newPatientRef, {
-        name: name,
-        birth: birth,
-        contact: contact,
-        status: status,
-        roomType: roomType,
+    const patientInfo = {
+      name: name,
+      birth: birth,
+      contact: contact,
+      status: status,
+      roomType: roomType,
+      diagnosis: diagnosis,
+      medUse: medUse,
+      suppliesUsed: suppliesUsed,
+      qrData: uniqueKey,
+    };
+
+    set(newPatientRef, patientInfo)
+      .then(() => {
+        alert("Patient has been added successfully!");
+
+        generatePDF(patientInfo);
+
+        toggleModal();
+        setName("");
+        setBirth("");
+        setContact("");
+        setStatus("");
+        setRoomType("");
       })
-        .then(() => {
-          alert("Patient has been added successfully!");
-          toggleModal();
-          setName("");
-          setBirth("");
-          setContact("");
-          setStatus("");
-          setRoomType("");
-        })
-        .catch((error) => {
-          alert("Error adding patient: ", error);
-        });
-    }
+      .catch((error) => {
+        alert("Error adding patient: ", error);
+      });
   };
 
   if (!isOpen) return null;
@@ -74,7 +110,7 @@ function addPatient({ isOpen, toggleModal }) {
             Date of Birth
           </label>
           <input
-            type="text"
+            type="date"
             id="dateofbirth"
             name="dateofbirth"
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
@@ -146,4 +182,4 @@ function addPatient({ isOpen, toggleModal }) {
   );
 }
 
-export default addPatient;
+export default AddPatient;

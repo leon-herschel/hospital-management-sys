@@ -4,7 +4,7 @@ import Dashboard from "./pages/dashboard";
 import Overview from "./components/overview";
 import Inventory from "./pages/inventory";
 import NewInventory from "./components/addInventory";
-import Patient from "./pages/patient";
+import Patient from "./pages/Patient";
 import AddPatient from "./components/addPatient";
 
 const App = () => {

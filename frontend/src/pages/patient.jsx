@@ -2,8 +2,9 @@ import { database } from "../dbconfig/db";
 import { ref, onValue, remove } from "firebase/database";
 import { useState, useEffect } from "react";
 import AddPatient from "../components/addPatient";
+import QRCode from "react-qr-code";
 
-function patient() {
+function Patient() {
   const [patientList, setPatientList] = useState([]);
   const [modal, setModal] = useState(false);
   const patientCollection = ref(database, "patient");
@@ -56,6 +57,7 @@ function patient() {
               <th>Status</th>
               <th>Contact</th>
               <th>Type of Room</th>
+              <th>QR Code</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -79,6 +81,14 @@ function patient() {
                     {patient.roomType}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-center">
+                    <QRCode
+                      size={50}
+                      bgColor="white"
+                      fgColor="black"
+                      value={`Name: ${patient.name}\nDate of Birth: ${patient.birth}\nContact: ${patient.contact}\nStatus: ${patient.status}\nRoom Type: ${patient.roomType}`}
+                    />
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
                     <button>EDIT</button> |{" "}
                     <button onClick={() => handleDelete(patient.id)}>
                       DELETE
@@ -89,7 +99,7 @@ function patient() {
             ) : (
               <tr>
                 <td
-                  colSpan="5"
+                  colSpan="7"
                   className="border border-gray-300 px-4 py-2 text-center"
                 >
                   No Patients
@@ -104,4 +114,4 @@ function patient() {
   );
 }
 
-export default patient;
+export default Patient;
