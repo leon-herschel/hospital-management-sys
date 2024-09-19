@@ -34,30 +34,52 @@ function inventory() {
           <button>Add New Item</button>
         </Link>
       </div>
-      <table>
-        <thead>
+      <table className="min-w-full border-collapse border border-gray-300">
+        <thead className="bg-gray-100">
           <tr>
-            <th>Item Name</th>
-            <th>Quantity</th>
-            <th>Department</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th className="border border-gray-300 px-4 py-2 text-left">
+              Item Name
+            </th>
+            <th className="border border-gray-300 px-4 py-2 text-left">
+              Quantity
+            </th>
+            <th className="border border-gray-300 px-4 py-2 text-left">
+              Department
+            </th>
+            <th className="border border-gray-300 px-4 py-2 text-left">
+              Status
+            </th>
+            <th className="border border-gray-300 px-4 py-2 text-left">
+              Action
+            </th>
           </tr>
         </thead>
         <tbody>
-          {/* Check if inventoryList exists and has items */}
           {inventoryList.length > 0 ? (
             inventoryList.map((inventory) => (
-              <tr key={inventory.id}>
-                <td>{inventory.itemName}</td>
-                <td>{inventory.quantity}</td>
-                <td>{inventory.department}</td>
-                <td>{inventory.status}</td>
+              <tr key={inventory.id} className="hover:bg-gray-50">
+                <td className="border border-gray-300 px-4 py-2">
+                  {inventory.itemName}
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  {inventory.quantity}
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  {inventory.department}
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  {inventory.status}
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="5">No items in inventory</td>
+              <td
+                colSpan="5"
+                className="border border-gray-300 px-4 py-2 text-center"
+              >
+                No items in inventory
+              </td>
             </tr>
           )}
         </tbody>
