@@ -4,6 +4,8 @@ import Dashboard from "./pages/dashboard";
 import Overview from "./components/overview";
 import Inventory from "./pages/inventory";
 import NewInventory from "./components/addInventory";
+import Patient from "./pages/patient";
+import AddPatient from "./components/addPatient";
 
 const App = () => {
   return (
@@ -14,6 +16,8 @@ const App = () => {
         <Route path="/overview" element={<Overview />}></Route>
         <Route path="/inventory" element={<Inventory />}></Route>
         <Route path="/addInventory" element={<NewInventory />}></Route>
+        <Route path="/patient" element={<Patient />}></Route>
+        <Route path="/addPatient" element={<AddPatient />}></Route>
       </Routes>
     </Router>
   );

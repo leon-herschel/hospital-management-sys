@@ -14,6 +14,11 @@ const Dashboard = () => {
           <button>Inventory</button>
         </Link>
       </div>
+      <div>
+        <Link to={"/patient"}>
+          <button>Patients</button>
+        </Link>
+      </div>
     </div>
   );
 };

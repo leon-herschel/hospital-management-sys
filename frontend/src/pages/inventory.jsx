@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, remove } from "firebase/database";
 import { database } from "../dbconfig/db";
-import { Link } from "react-router-dom";
+import AddInventory from "../components/addInventory";
 
 function inventory() {
   const [inventoryList, setInventoryList] = useState([]);
-
+  const [modal, setModal] = useState(false);
   const inventoryCollection = ref(database, "inventory");
+
+  const toggleModal = () => {
+    setModal(!modal);
+  };
+
+  if (modal) {
+    document.body.classList.add("active-modal");
+  } else {
+    document.body.classList.remove("active-modal");
+  }
 
   useEffect(() => {
     const unsubscribe = onValue(inventoryCollection, (snapshot) => {
@@ -26,13 +36,15 @@ function inventory() {
     };
   }, [inventoryCollection]);
 
+  const handleDelete = async (id) => {
+    await remove(ref(database, `inventory/${id}`));
+  };
+
   return (
     <div>
       <h2>inventory System</h2>
       <div>
-        <Link to="/addInventory">
-          <button>Add New Item</button>
-        </Link>
+        <button onClick={toggleModal}>Add New Item</button>
       </div>
       <table className="min-w-full border-collapse border border-gray-300">
         <thead className="bg-gray-100">
@@ -71,7 +83,10 @@ function inventory() {
                   {inventory.status}
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
-                  <button>EDIT</button> |<button>DELETE</button>
+                  <button>EDIT</button> |
+                  <button onClick={() => handleDelete(inventory.id)}>
+                    DELETE
+                  </button>
                 </td>
               </tr>
             ))
@@ -87,6 +102,7 @@ function inventory() {
           )}
         </tbody>
       </table>
+      <AddInventory isOpen={modal} toggleModal={toggleModal} />
     </div>
   );
 }
