@@ -6,7 +6,6 @@ import bgImage from '../../../assets/logo.jpg';
 
 const SignIn = () => {
   const { userLoggedIn } = useAuth();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -40,7 +39,7 @@ const SignIn = () => {
 
   return (
     <div className="bg-red-900 flex justify-center items-center h-screen">
-      {userLoggedIn && <Navigate to={'/home'} replace={true} />}
+      {userLoggedIn && <Navigate to={'/dashboard'} replace={true} />}
 
       {/* Left: Image */}
       <div className="w-1/2 h-screen hidden lg:block">
