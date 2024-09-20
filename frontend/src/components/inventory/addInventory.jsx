@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { ref, push, set } from "firebase/database";
-import { database } from "../dbconfig/db";
 
 function AddInventory({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
