@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { ref, onValue, remove } from "firebase/database";
-import { database } from "../../dbconfig/db";
 import AddInventory from "../components/addInventory";
 
 function inventory() {
