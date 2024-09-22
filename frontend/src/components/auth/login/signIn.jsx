@@ -86,7 +86,7 @@ const SignIn = () => {
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="text-red-300 font-bold mb-4">{errorMessage}</div>
+            <div className="text-red-300 mb-4">{errorMessage}</div>
           )}
 
           {/* Submit Button */}
