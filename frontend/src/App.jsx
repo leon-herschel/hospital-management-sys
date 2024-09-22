@@ -7,6 +7,7 @@ import Analytics from './pages/Analytics/analytics';
 import { AuthProvider } from './context/authContext/authContext';
 import { useRoutes } from 'react-router-dom';
 import MainLayout from './components/mainLayout/mainLayout';
+import ProtectedRoute from './components/auth/login/protectedRoute';
 
 function App() {
   const routesArray = [
@@ -16,7 +17,11 @@ function App() {
     },
     {
       path: '/',
-      element: <MainLayout />, 
+      element: (
+        <ProtectedRoute>
+          <MainLayout />
+        </ProtectedRoute>
+      ), 
       children: [
         { path: 'dashboard', element: <Dashboard /> },
         { path: 'patients', element: <Patients /> },
