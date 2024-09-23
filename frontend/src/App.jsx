@@ -2,7 +2,8 @@ import SignIn from './components/auth/login/signIn';
 import Dashboard from './pages/Dashboard/dashboard';
 import Patients from './pages/Patients/patients';
 import Inventory from './pages/Inventory/inventory';
-import Settings from './pages/Settings/settings';
+import Settings from "./pages/Settings/settings";
+import Roles from './pages/Settings/Roles';
 import Analytics from './pages/Analytics/analytics';
 import { AuthProvider } from './context/authContext/authContext';
 import { useRoutes } from 'react-router-dom';
@@ -28,6 +29,8 @@ function App() {
         { path: 'inventory', element: <Inventory /> },
         { path: 'analytics', element: <Analytics /> },
         { path: 'settings', element: <Settings /> },
+        { path: 'roles', element: <Roles /> },
+
       ],
     },
     {
