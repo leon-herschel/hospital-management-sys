@@ -30,7 +30,7 @@ const Sidebar = () => {
   const currentTitle = titles[location.pathname] || "Overview";
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen shadow-lg">
       {/* Sidebar Toggle */}
       <div
         className={`fixed inset-0 z-20 transition-opacity bg-neutral-100 opacity-50 lg:hidden ${
