@@ -43,7 +43,6 @@ function AddInventory({ isOpen, toggleModal }) {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-        {/* Close button */}
         <button
           className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
           onClick={toggleModal}
@@ -51,7 +50,6 @@ function AddInventory({ isOpen, toggleModal }) {
           &times;
         </button>
 
-        {/* Modal content */}
         <h2 className="text-2xl font-bold mb-6 text-center">Add New Item</h2>
 
         <div className="mb-4">
