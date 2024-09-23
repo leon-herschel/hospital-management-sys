@@ -2,12 +2,26 @@ import { useState, useEffect } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
+import QRCode from "react-qr-code";
+
+// Helper function to calculate status based on percentage
+const calculateStatus = (quantity, maxQuantity) => {
+  const percentage = (quantity / maxQuantity) * 100;
+  
+  if (percentage > 70) {
+    return "Ok";
+  } else if (percentage > 50) {
+    return "Low";
+  } else {
+    return "Very Low";
+  }
+};
 
 function Inventory() {
   const [inventoryList, setInventoryList] = useState([]);
   const [modal, setModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-  const [currentItem, setCurrentItem] = useState("");
+  const [currentItem, setCurrentItem] = useState(null); // Change to null initially
   const inventoryCollection = ref(database, "inventory");
 
   const toggleModal = () => {
@@ -31,13 +45,18 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { itemName, quantity, department, status } = event.target.elements;
+    const { itemName, quantity, department } = event.target.elements;
+    
+    const updatedQuantity = Number(quantity.value);
+    const maxQuantity = currentItem.maxQuantity || updatedQuantity; // If maxQuantity doesn't exist, assume it to be updatedQuantity
+    const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
 
     const updatedInventory = {
       itemName: itemName.value,
-      quantity: quantity.value,
+      quantity: updatedQuantity,
+      maxQuantity: maxQuantity,
       department: department.value,
-      status: status.value,
+      status: updatedStatus, // Dynamically calculated status
     };
 
     await update(
@@ -93,6 +112,9 @@ function Inventory() {
               Status
             </th>
             <th className="border border-gray-300 px-4 py-2 text-center">
+              QR Code
+            </th>
+            <th className="border border-gray-300 px-4 py-2 text-center">
               Action
             </th>
           </tr>
@@ -114,6 +136,14 @@ function Inventory() {
                   {inventory.status}
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
+                  <QRCode
+                    size={50}
+                    bgColor="white"
+                    fgColor="black"
+                    value={`Item: ${inventory.itemName}\nQuantity: ${inventory.quantity}\nDepartment: ${inventory.department}\nStatus: ${inventory.status}`}
+                  />
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
                   <button onClick={() => handleEdit(inventory)}>EDIT</button> |
                   <button onClick={() => handleDelete(inventory.id)}>
                     DELETE
@@ -124,7 +154,7 @@ function Inventory() {
           ) : (
             <tr>
               <td
-                colSpan="5"
+                colSpan="6"
                 className="border border-gray-300 px-4 py-2 text-center"
               >
                 No items in inventory
@@ -187,24 +217,6 @@ function Inventory() {
                 </select>
               </div>
 
-              <div className="mb-4">
-                <label htmlFor="status" className="block text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentItem.status}
-                >
-                  <option value="" disabled>
-                    Select Status
-                  </option>
-                  <option value="Ok">Ok</option>
-                  <option value="Low">Low</option>
-                  <option value="Very Low">Very Low</option>
-                </select>
-              </div>
               <div className="flex justify-between space-x-4">
                 <div className="w-full">
                   <button

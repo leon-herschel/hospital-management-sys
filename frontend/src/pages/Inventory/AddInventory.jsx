@@ -1,40 +1,81 @@
 import React, { useState } from "react";
 import { ref, push, set } from "firebase/database";
+import QRCode from "qrcode";
 import { database } from "../../firebase/firebase";
+
+// Helper function to generate a random alphanumeric string
+const generateRandomKey = (length) => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
+
+// Function to calculate status based on quantity and maxQuantity
+const calculateStatus = (quantity, maxQuantity) => {
+  const percentage = (quantity / maxQuantity) * 100;
+  
+  if (percentage > 70) {
+    return "Ok";
+  } else if (percentage > 50) {
+    return "Low";
+  } else {
+    return "Very Low";
+  }
+};
 
 function AddInventory({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [department, setDepartment] = useState("");
-  const [status, setStatus] = useState("");
 
-  const handlesubmit = () => {
-    if (!itemName || !quantity || !department || !status) {
+  const handlesubmit = async () => {
+    if (!itemName || !quantity || !department) {
       alert("Please fill in all the required fields");
       return;
     }
 
     const inventoryRef = ref(database, "inventory");
-    const NewInventoryRef = push(inventoryRef);
+    const newInventoryRef = push(inventoryRef);
+    
+    // Generate a random QR key
+    const qrKey = generateRandomKey(20); // Generate a 20-character alphanumeric key
 
-    if (NewInventoryRef) {
-      set(NewInventoryRef, {
+    const maxQuantity = Number(quantity);  // Set maxQuantity as the initial quantity
+    
+    // Calculate the status based on the quantity and maxQuantity
+    const status = calculateStatus(maxQuantity, maxQuantity); // Initially, quantity is equal to maxQuantity
+
+    // Generate QR code with the random QR key as data
+    try {
+      const qrCodeDataUrl = await QRCode.toDataURL(qrKey, { width: 100 });
+
+      const inventoryData = {
         itemName: itemName,
-        quantity: quantity,
+        quantity: maxQuantity, // Use Number to ensure it's a numerical value
+        maxQuantity: maxQuantity, // Initial quantity becomes the maxQuantity
         department: department,
-        status: status,
-      })
+        status: status,  // Dynamically calculated status
+        qrData: qrKey,  // Store the random QR key in the database
+        qrCode: qrCodeDataUrl,  // Optionally store the QR code as a data URL
+      };
+
+      set(newInventoryRef, inventoryData)
         .then(() => {
-          alert("Inventory has been updated successfully!");
+          alert("Inventory has been added successfully!");
           setItemName("");
           setQuantity("");
-          setStatus("");
           setDepartment("");
           toggleModal();
         })
         .catch((error) => {
-          alert("Error updating inventory: ", error);
+          alert("Error adding inventory: " + error);
         });
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      alert("Error generating QR code.");
     }
   };
 
@@ -97,26 +138,6 @@ function AddInventory({ isOpen, toggleModal }) {
             <option value="IT">IT</option>
             <option value="Nursing">Nursing</option>
             <option value="MedTech">Medical Technology</option>
-          </select>
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="status" className="block text-gray-700 mb-2">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="" disabled>
-              Select Status
-            </option>
-            <option value="ok">Ok</option>
-            <option value="low">Low</option>
-            <option value="verylow">Very Low</option>
           </select>
         </div>
 
