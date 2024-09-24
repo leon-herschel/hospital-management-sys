@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
+import AddSupply from "./AddSupplies"
 import QRCode from "react-qr-code";
 
 // Helper function to calculate status based on percentage
@@ -21,6 +22,7 @@ function Inventory() {
   const [inventoryList, setInventoryList] = useState([]);
   const [filteredInventory, setFilteredInventory] = useState([]);
   const [modal, setModal] = useState(false);
+  const [supplyModal, setSupplyModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [currentItem, setCurrentItem] = useState(null); // Change to null initially
   const [selectedDepartment, setSelectedDepartment] = useState(""); // State for department filter
@@ -37,6 +39,9 @@ function Inventory() {
     document.body.classList.remove("active-modal");
   }
 
+  const toggleSupplyModal = () => {
+    setSupplyModal(!supplyModal);
+  }
   const toggleEditModal = () => {
     setEditModal(!editModal);
   };
@@ -118,6 +123,13 @@ function Inventory() {
           className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
         >
           Add New Item
+        </button>
+
+        <button
+          onClick={toggleSupplyModal}
+          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+        >
+          Add Supply Item
         </button>
 
         {/* Department Filter */}
@@ -299,6 +311,7 @@ function Inventory() {
         </div>
       )}
       <AddInventory isOpen={modal} toggleModal={toggleModal} />
+      <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
     </div>
   );
 }
