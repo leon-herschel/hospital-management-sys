@@ -5,7 +5,7 @@ import { database } from "../../firebase/firebase";
 
 // Helper function to generate a random alphanumeric string
 const generateRandomKey = (length) => {
-  const characters = ' =';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -91,7 +91,7 @@ function AddInventory({ isOpen, toggleModal }) {
           &times;
         </button>
 
-        <h2 className="text-2xl font-bold mb-6 text-center">Add New Item</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Add New Medicine</h2>
 
         <div className="mb-4">
           <label htmlFor="item" className="block text-gray-700 mb-2">

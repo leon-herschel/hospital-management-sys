@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
-import AddSupply from "./AddSupplies"
+import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
 
 // Helper function to calculate status based on percentage
@@ -20,29 +20,25 @@ const calculateStatus = (quantity, maxQuantity) => {
 
 function Inventory() {
   const [inventoryList, setInventoryList] = useState([]);
+  const [suppliesList, setSuppliesList] = useState([]);
   const [filteredInventory, setFilteredInventory] = useState([]);
   const [modal, setModal] = useState(false);
   const [supplyModal, setSupplyModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null); // Change to null initially
-  const [selectedDepartment, setSelectedDepartment] = useState(""); // State for department filter
-  const [selectedStatus, setSelectedStatus] = useState(""); // State for status filter
+  const [currentItem, setCurrentItem] = useState(null);
+  const [viewMode, setViewMode] = useState("medicine"); // State to manage view mode
+
+  // References for inventory and supplies nodes
   const inventoryCollection = ref(database, "inventory");
-  const [searchTerm, setSearchTerm] = useState("");
 
   const toggleModal = () => {
     setModal(!modal);
   };
 
-  if (modal) {
-    document.body.classList.add("active-modal");
-  } else {
-    document.body.classList.remove("active-modal");
-  }
-
   const toggleSupplyModal = () => {
     setSupplyModal(!supplyModal);
-  }
+  };
+
   const toggleEditModal = () => {
     setEditModal(!editModal);
   };
@@ -54,63 +50,105 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { itemName, quantity, department } = event.target.elements;
+    const { itemName, quantity, department, category } = event.target.elements;
 
     const updatedQuantity = Number(quantity.value);
-    const maxQuantity = currentItem.maxQuantity || updatedQuantity; // If maxQuantity doesn't exist, assume it to be updatedQuantity
+    const maxQuantity = currentItem.maxQuantity || updatedQuantity;
     const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
 
-    const updatedInventory = {
-      itemName: itemName.value,
+    // Create a common updated item object
+    const updatedItem = {
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
-      department: department.value,
-      status: updatedStatus, // Dynamically calculated status
+      category: category.value,
+      status: updatedStatus,
     };
 
-    await update(
-      ref(database, `inventory/${currentItem.id}`),
-      updatedInventory
-    );
+    // Add itemName/supplyName and department fields conditionally based on view mode
+    if (viewMode === "medicine") {
+      updatedItem.itemName = itemName.value;
+      updatedItem.department = department.value;
+    } else if (viewMode === "supply") {
+      updatedItem.supplyName = itemName.value;
+    }
+
+    const itemPath = `${viewMode}/${currentItem.id}`;
+    console.log("Updating path:", itemPath);
+    console.log("Updating data:", updatedItem);
+
+    try {
+      await update(ref(database, itemPath), updatedItem);
+      console.log("Item updated successfully in the database.");
+      
+      // Update state to reflect changes in the UI
+      setFilteredInventory((prev) =>
+        prev.map((item) =>
+          item.id === currentItem.id ? { ...item, ...updatedItem } : item
+        )
+      );
+    } catch (error) {
+      console.error("Error updating item:", error);
+    }
+
     toggleEditModal();
   };
 
   useEffect(() => {
-    const unsubscribe = onValue(inventoryCollection, (snapshot) => {
+    // Fetch inventory data
+    const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const inventoryData = Object.keys(data).map((key) => ({
           ...data[key],
           id: key,
+          category: "Medicine",
         }));
         setInventoryList(inventoryData);
       } else {
         setInventoryList([]);
       }
     });
+
+    // Fetch supplies data
+    const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const suppliesData = Object.keys(data).map((key) => ({
+          ...data[key],
+          id: key,
+          category: "Supply",
+          supplyName: data[key].supplyName || "", // Ensure supplyName is available
+        }));
+        setSuppliesList(suppliesData);
+      } else {
+        setSuppliesList([]);
+      }
+    });
+
     return () => {
-      unsubscribe();
+      unsubscribeInventory();
+      unsubscribeSupplies();
     };
-  }, [inventoryCollection]);
+  }, [inventoryCollection, suppliesCollection]);
 
   useEffect(() => {
-    // Filter inventory based on selected department and status
-    let filteredList = inventoryList;
-    if (selectedDepartment) {
-      filteredList = filteredList.filter(
-        (item) => item.department === selectedDepartment
-      );
-    }
-    if (selectedStatus) {
-      filteredList = filteredList.filter(
-        (item) => item.status === selectedStatus
-      );
+    let filteredList = [];
+    if (viewMode === "medicine") {
+      filteredList = inventoryList;
+    } else if (viewMode === "supply") {
+      filteredList = suppliesList;
     }
     setFilteredInventory(filteredList);
-  }, [inventoryList, selectedDepartment, selectedStatus]);
+  }, [inventoryList, suppliesList, viewMode]);
 
-  const handleDelete = async (id) => {
-    await remove(ref(database, `inventory/${id}`));
+  const handleDelete = async (id, category) => {
+    const node = category === "Supply" ? "supplies" : "inventory";
+    try {
+      await remove(ref(database, `${node}/${id}`));
+      console.log(`Item with ID ${id} deleted successfully from ${node}.`);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
   };
 
   const filteredInventoryList = inventoryList.filter((inventory) =>
@@ -124,42 +162,39 @@ function Inventory() {
       </div>
       <div className="flex justify-between items-center mb-4">
         <button
-          onClick={toggleModal}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+          onClick={() => setViewMode("medicine")}
+          className={`${
+            viewMode === "medicine" ? "bg-blue-500" : "bg-green-500"
+          } text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200`}
         >
-          Add New Item
+          View Medicines
         </button>
 
         <button
-          onClick={toggleSupplyModal}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+          onClick={() => setViewMode("supply")}
+          className={`${
+            viewMode === "supply" ? "bg-blue-500" : "bg-green-500"
+          } text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200`}
         >
-          Add Supply Item
+          View Supplies
         </button>
 
-        {/* Department Filter */}
-        <select
-          className="border rounded p-2"
-          value={selectedDepartment}
-          onChange={(e) => setSelectedDepartment(e.target.value)}
-        >
-          <option value="">All Departments</option>
-          <option value="IT">IT</option>
-          <option value="Nursing">Nursing</option>
-          <option value="MedTech">Medical Technology</option>
-        </select>
-
-        {/* Status Filter */}
-        <select
-          className="border rounded p-2"
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-        >
-          <option value="">All Status</option>
-          <option value="Good">Good</option>
-          <option value="Low">Low</option>
-          <option value="Very Low">Very Low</option>
-        </select>
+        {/* Modal Toggle Buttons */}
+        {viewMode === "medicine" ? (
+          <button
+            onClick={toggleModal}
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+          >
+            Add New Medicine
+          </button>
+        ) : (
+          <button
+            onClick={toggleSupplyModal}
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+          >
+            Add New Supply Item
+          </button>
+        )}
       </div>
       
       <div className="my-4">
@@ -175,13 +210,18 @@ function Inventory() {
         <thead className="bg-gray-100">
           <tr>
             <th className="border border-gray-300 px-4 py-2 text-center">
-              Item Name
+              {viewMode === "medicine" ? "Item Name" : "Supply Name"}
             </th>
             <th className="border border-gray-300 px-4 py-2 text-center">
               Quantity
             </th>
+            {viewMode === "medicine" && (
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Department
+              </th>
+            )}
             <th className="border border-gray-300 px-4 py-2 text-center">
-              Department
+              Category
             </th>
             <th className="border border-gray-300 px-4 py-2 text-center">
               Status
@@ -195,39 +235,47 @@ function Inventory() {
           </tr>
         </thead>
         <tbody>
-          {filteredInventoryList.length > 0 ? (
-            filteredInventoryList.map((inventory) => (
+          {filteredInventory.length > 0 ? (
+            filteredInventory.map((inventory) => (
               <tr key={inventory.id} className="hover:bg-gray-50">
                 <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.itemName}
+                  {viewMode === "medicine" ? item.itemName : item.supplyName}
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.quantity}
+                  {item.quantity}
+                </td>
+                {viewMode === "medicine" && (
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    {item.department}
+                  </td>
+                )}
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {item.category}
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.department}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.status}
+                  {item.status}
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   <QRCode
                     size={50}
                     bgColor="white"
                     fgColor="black"
-                    value={`Item: ${inventory.itemName}\nQuantity: ${inventory.quantity}\nDepartment: ${inventory.department}\nStatus: ${inventory.status}`}
+                    value={`${
+                      viewMode === "medicine" ? "Item: " + item.itemName : "Supply: " + item.supplyName
+                    }\nQuantity: ${item.quantity}\n${
+                      viewMode === "medicine" ? "Department: " + item.department + "\n" : ""
+                    }Category: ${item.category}\nStatus: ${item.status}`}
                   />
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   <button
-                    onClick={() => handleEdit(inventory)}
+                    onClick={() => handleEdit(item)}
                     className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
                   >
                     Edit
-                  </button>{" "}
-                  
+                  </button>
                   <button
-                    onClick={() => handleDelete(inventory.id)}
+                    onClick={() => handleDelete(item.id, item.category)}
                     className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
                   >
                     DELETE
@@ -238,15 +286,17 @@ function Inventory() {
           ) : (
             <tr>
               <td
-                colSpan="6"
+                colSpan={viewMode === "medicine" ? "7" : "6"}
                 className="border border-gray-300 px-4 py-2 text-center"
               >
-                No items in inventory
+                No items in {viewMode === "medicine" ? "medicine" : "supplies"} inventory
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Edit Modal */}
       {editModal && currentItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
@@ -255,14 +305,14 @@ function Inventory() {
 
               <div className="mb-4">
                 <label htmlFor="itemName" className="block text-gray-700 mb-2">
-                  Item Name
+                  {viewMode === "medicine" ? "Item Name" : "Supply Name"}
                 </label>
                 <input
                   type="text"
                   id="itemName"
                   name="itemName"
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentItem.itemName}
+                  defaultValue={viewMode === "medicine" ? currentItem.itemName : currentItem.supplyName}
                 />
               </div>
 
@@ -279,25 +329,42 @@ function Inventory() {
                 />
               </div>
 
+              {viewMode === "medicine" && (
+                <div className="mb-4">
+                  <label
+                    htmlFor="department"
+                    className="block text-gray-700 mb-2"
+                  >
+                    Department
+                  </label>
+                  <select
+                    id="department"
+                    name="department"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+                    defaultValue={currentItem.department}
+                  >
+                    <option value="" disabled>
+                      Select Department
+                    </option>
+                    <option value="IT">IT</option>
+                    <option value="Nursing">Nursing</option>
+                    <option value="MedTech">Medical Technology</option>
+                  </select>
+                </div>
+              )}
+
               <div className="mb-4">
-                <label
-                  htmlFor="department"
-                  className="block text-gray-700 mb-2"
-                >
-                  Department
+                <label htmlFor="category" className="block text-gray-700 mb-2">
+                  Category
                 </label>
                 <select
-                  id="department"
-                  name="department"
+                  id="category"
+                  name="category"
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentItem.department}
+                  defaultValue={currentItem.category}
                 >
-                  <option value="" disabled>
-                    Select Department
-                  </option>
-                  <option value="IT">IT</option>
-                  <option value="Nursing">Nursing</option>
-                  <option value="MedTech">Medical Technology</option>
+                  <option value="Medicine">Medicine</option>
+                  <option value="Supply">Supply</option>
                 </select>
               </div>
 
@@ -325,6 +392,8 @@ function Inventory() {
           </div>
         </div>
       )}
+
+      {/* Modals for Adding New Items */}
       <AddInventory isOpen={modal} toggleModal={toggleModal} />
       <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
     </div>
