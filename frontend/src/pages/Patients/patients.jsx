@@ -85,7 +85,7 @@ function Patient() {
 
   return (
     <div className="w-full">
-      <div className="flex justify-center text-xl">
+      <div className="flex justify-center text-xl font-bold mb-4">
         <h2>PATIENT MANAGEMENT SYSTEM</h2>
       </div>
       <div className="flex justify-between items-center my-4">
@@ -102,18 +102,18 @@ function Patient() {
       </div>
 
       <div>
-        <table className="w-full">
-          <thead>
+        <table className="min-w-full border-collapse border border-gray-300">
+          <thead className="bg-gray-100">
             <tr>
-              <th>Name</th>
-              <th>Date of Birth</th>
-              <th>Age</th>
-              <th>Gender</th>
-              <th>Status</th>
-              <th>Contact</th>
-              <th>Type of Room</th>
-              <th>QR Code</th>
-              <th>Action</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Name</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Date of Birth</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Age</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Gender</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Contact</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Type of Room</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">QR Code</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -150,11 +150,22 @@ function Patient() {
                     />
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-center">
-                    <button onClick={() => handleViewClick(patient.id)}>
+                    <button
+                      onClick={() => handleViewClick(patient.id)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition duration-200 mr-2"
+                    >
                       VIEW
                     </button>
-                    |<button onClick={() => handleEdit(patient)}>EDIT</button> |
-                    <button onClick={() => handleDelete(patient.id)}>
+                    <button
+                      onClick={() => handleEdit(patient)}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600 transition duration-200 mr-2"
+                    >
+                      EDIT
+                    </button>
+                    <button
+                      onClick={() => handleDelete(patient.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition duration-200"
+                    >
                       DELETE
                     </button>
                   </td>
@@ -163,7 +174,7 @@ function Patient() {
             ) : (
               <tr>
                 <td
-                  colSpan="7"
+                  colSpan="9"
                   className="border border-gray-300 px-4 py-2 text-center"
                 >
                   No Patients
@@ -183,10 +194,10 @@ function Patient() {
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
 
       {editModal && currentPatient && (
-        <div className="w-full h-100vh fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
             <form onSubmit={handleUpdate}>
-              <h2 className="text-2xl font-bold mb-6">Edit Patient</h2>
+              <h2 className="text-2xl font-bold mb-6 text-center">Edit Patient</h2>
 
               <div className="mb-4">
                 <label htmlFor="name" className="block text-gray-700 mb-2">

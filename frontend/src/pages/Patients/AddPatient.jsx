@@ -96,8 +96,8 @@ function AddPatient({ isOpen, toggleModal }) {
   if (!isOpen) return null;
 
   return (
-    <div className="w-full h-100vh fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 overflow-auto">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative max-h-screen overflow-auto">
         <button
           className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
           onClick={toggleModal}

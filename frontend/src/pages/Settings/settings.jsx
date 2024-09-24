@@ -7,7 +7,6 @@ import addImage from '../../assets/add.jpg';
 import roleImage from '../../assets/role.jpg';
 import { useNavigate } from 'react-router-dom';
 
-
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
