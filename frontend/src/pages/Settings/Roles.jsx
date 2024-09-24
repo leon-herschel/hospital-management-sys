@@ -15,6 +15,8 @@ const Roles = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [newRoleData, setNewRoleData] = useState({ rolename: '', description: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+
 
   // Fetch roles from Firebase Realtime Database
   useEffect(() => {
@@ -34,6 +36,10 @@ const Roles = () => {
       }
     });
   }, []);
+
+  const filteredroles = roles.filter(roles =>
+    roles.rolename.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleDeleteRole = async (role) => {
     try {
@@ -84,6 +90,8 @@ const Roles = () => {
         <input
           type="text"
           placeholder="Search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="border px-4 py-2 rounded-lg"
         />
         <div>
@@ -112,7 +120,7 @@ const Roles = () => {
           </tr>
         </thead>
         <tbody>
-          {roles.map((role) => (
+          {filteredroles.map((role) => (
             <tr key={role.id}>
               <td className="py-2 text-center border-b border-r">{role.rolename}</td>
               <td className="py-2 text-center border-b border-r">{role.description}</td>

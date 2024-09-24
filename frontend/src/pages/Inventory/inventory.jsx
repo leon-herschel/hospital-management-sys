@@ -57,19 +57,40 @@ function Inventory() {
     const maxQuantity = currentItem.maxQuantity || updatedQuantity;
     const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
 
-    const updatedInventory = {
-      itemName: itemName.value,
+    // Create a common updated item object
+    const updatedItem = {
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
-      department: department.value,
       category: category.value,
       status: updatedStatus,
     };
 
-    await update(
-      ref(database, `${viewMode}/${currentItem.id}`),
-      updatedInventory
-    );
+    // Add itemName/supplyName and department fields conditionally based on view mode
+    if (viewMode === "medicine") {
+      updatedItem.itemName = itemName.value;
+      updatedItem.department = department.value;
+    } else if (viewMode === "supply") {
+      updatedItem.supplyName = itemName.value;
+    }
+
+    const itemPath = `${viewMode}/${currentItem.id}`;
+    console.log("Updating path:", itemPath);
+    console.log("Updating data:", updatedItem);
+
+    try {
+      await update(ref(database, itemPath), updatedItem);
+      console.log("Item updated successfully in the database.");
+      
+      // Update state to reflect changes in the UI
+      setFilteredInventory((prev) =>
+        prev.map((item) =>
+          item.id === currentItem.id ? { ...item, ...updatedItem } : item
+        )
+      );
+    } catch (error) {
+      console.error("Error updating item:", error);
+    }
+
     toggleEditModal();
   };
 
@@ -123,7 +144,12 @@ function Inventory() {
 
   const handleDelete = async (id, category) => {
     const node = category === "Supply" ? "supplies" : "inventory";
-    await remove(ref(database, `${node}/${id}`));
+    try {
+      await remove(ref(database, `${node}/${id}`));
+      console.log(`Item with ID ${id} deleted successfully from ${node}.`);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
   };
 
   return (
