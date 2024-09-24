@@ -5,7 +5,7 @@ import { database } from "../../firebase/firebase";
 
 // Helper function to generate a random alphanumeric string
 const generateRandomKey = (length) => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = ' =';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
