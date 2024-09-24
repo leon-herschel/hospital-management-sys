@@ -30,7 +30,6 @@ function Inventory() {
 
   // References for inventory and supplies nodes
   const inventoryCollection = ref(database, "inventory");
-  const suppliesCollection = ref(database, "supplies");
 
   const toggleModal = () => {
     setModal(!modal);
@@ -152,6 +151,10 @@ function Inventory() {
     }
   };
 
+  const filteredInventoryList = inventoryList.filter((inventory) =>
+    inventory.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="w-full">
       <div className="flex justify-center text-lg">
@@ -193,6 +196,16 @@ function Inventory() {
           </button>
         )}
       </div>
+      
+      <div className="my-4">
+        <input
+          type="text"
+          placeholder="Search by item name..."
+          className="border px-4 py-2 w-full"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
       <table className="min-w-full border-collapse border border-gray-300">
         <thead className="bg-gray-100">
           <tr>
@@ -223,8 +236,8 @@ function Inventory() {
         </thead>
         <tbody>
           {filteredInventory.length > 0 ? (
-            filteredInventory.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
+            filteredInventory.map((inventory) => (
+              <tr key={inventory.id} className="hover:bg-gray-50">
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   {viewMode === "medicine" ? item.itemName : item.supplyName}
                 </td>
