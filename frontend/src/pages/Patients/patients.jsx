@@ -12,7 +12,7 @@ function Patient() {
   const [editModal, setEditModal] = useState(false);
   const [viewModal, setViewModal] = useState(false);
   const [currentPatient, setCurrentPatient] = useState(null);
-  const [searchQuery, setSearchQuery] = useState(""); 
+  const [searchQuery, setSearchQuery] = useState("");
 
   const patientCollection = ref(database, "patient");
 
@@ -94,9 +94,12 @@ function Patient() {
           placeholder="Search by name"
           className="border px-4 py-2 rounded-lg w-full max-w-xs"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)} 
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <button onClick={toggleModal} className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+        <button
+          onClick={toggleModal}
+          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg"
+        >
           Add Patient
         </button>
       </div>
@@ -105,15 +108,33 @@ function Patient() {
         <table className="min-w-full border-collapse border border-gray-300">
           <thead className="bg-gray-100">
             <tr>
-              <th className="border border-gray-300 px-4 py-2 text-center">Name</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Date of Birth</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Age</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Gender</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Contact</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Type of Room</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">QR Code</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Action</th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Name
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Date of Birth
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Age
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Gender
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Status
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Contact
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Type of Room
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                QR Code
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -146,7 +167,7 @@ function Patient() {
                       size={50}
                       bgColor="white"
                       fgColor="black"
-                      value={`Name: ${patient.name}\nDate of Birth: ${patient.birth}\nContact: ${patient.contact}\nStatus: ${patient.status}\nRoom Type: ${patient.roomType}`}
+                      value={patient.id}
                     />
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-center">
@@ -197,7 +218,9 @@ function Patient() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
             <form onSubmit={handleUpdate}>
-              <h2 className="text-2xl font-bold mb-6 text-center">Edit Patient</h2>
+              <h2 className="text-2xl font-bold mb-6 text-center">
+                Edit Patient
+              </h2>
 
               <div className="mb-4">
                 <label htmlFor="name" className="block text-gray-700 mb-2">
