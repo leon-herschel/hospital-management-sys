@@ -9,7 +9,7 @@ const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
   
   if (percentage > 70) {
-    return "Ok";
+    return "Good";
   } else if (percentage > 50) {
     return "Low";
   } else {
@@ -19,9 +19,12 @@ const calculateStatus = (quantity, maxQuantity) => {
 
 function Inventory() {
   const [inventoryList, setInventoryList] = useState([]);
+  const [filteredInventory, setFilteredInventory] = useState([]);
   const [modal, setModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [currentItem, setCurrentItem] = useState(null); // Change to null initially
+  const [selectedDepartment, setSelectedDepartment] = useState(""); // State for department filter
+  const [selectedStatus, setSelectedStatus] = useState(""); // State for status filter
   const inventoryCollection = ref(database, "inventory");
 
   const toggleModal = () => {
@@ -84,6 +87,18 @@ function Inventory() {
     };
   }, [inventoryCollection]);
 
+  useEffect(() => {
+    // Filter inventory based on selected department and status
+    let filteredList = inventoryList;
+    if (selectedDepartment) {
+      filteredList = filteredList.filter(item => item.department === selectedDepartment);
+    }
+    if (selectedStatus) {
+      filteredList = filteredList.filter(item => item.status === selectedStatus);
+    }
+    setFilteredInventory(filteredList);
+  }, [inventoryList, selectedDepartment, selectedStatus]);
+
   const handleDelete = async (id) => {
     await remove(ref(database, `inventory/${id}`));
   };
@@ -93,8 +108,32 @@ function Inventory() {
       <div className="flex justify-center text-lg">
         <h2>INVENTORY SYSTEM</h2>
       </div>
-      <div>
+      <div className="flex justify-between items-center mb-4">
         <button onClick={toggleModal}>Add New Item</button>
+        
+        {/* Department Filter */}
+        <select
+          className="border rounded p-2"
+          value={selectedDepartment}
+          onChange={(e) => setSelectedDepartment(e.target.value)}
+        >
+          <option value="">All Departments</option>
+          <option value="IT">IT</option>
+          <option value="Nursing">Nursing</option>
+          <option value="MedTech">Medical Technology</option>
+        </select>
+
+        {/* Status Filter */}
+        <select
+          className="border rounded p-2"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+        >
+          <option value="">All Status</option>
+          <option value="Good">Good</option>
+          <option value="Low">Low</option>
+          <option value="Very Low">Very Low</option>
+        </select>
       </div>
       <table className="min-w-full border-collapse border border-gray-300">
         <thead className="bg-gray-100">
@@ -120,8 +159,8 @@ function Inventory() {
           </tr>
         </thead>
         <tbody>
-          {inventoryList.length > 0 ? (
-            inventoryList.map((inventory) => (
+          {filteredInventory.length > 0 ? (
+            filteredInventory.map((inventory) => (
               <tr key={inventory.id} className="hover:bg-gray-50">
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   {inventory.itemName}

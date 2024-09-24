@@ -18,7 +18,7 @@ const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
   
   if (percentage > 70) {
-    return "Ok";
+    return "Good";
   } else if (percentage > 50) {
     return "Low";
   } else {
