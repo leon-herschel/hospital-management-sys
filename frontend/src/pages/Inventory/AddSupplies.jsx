@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ref, push, set } from "firebase/database";
+import QRCode from "qrcode";
 import { database } from "../../firebase/firebase";
 
 const calculateStatus = (quantity, maxQuantity) => {
@@ -12,6 +13,15 @@ const calculateStatus = (quantity, maxQuantity) => {
   } else {
     return "Very Low";
   }
+};
+
+const generateRandomKey = (length) => {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
 };
 
 function AddSupplies({ isOpen, toggleModal }) {
@@ -32,25 +42,36 @@ function AddSupplies({ isOpen, toggleModal }) {
 
     const status = calculateStatus(maxQuantity, maxQuantity);
 
+    // Generate a random key for QR code
+    const qrKey = generateRandomKey(20);
+
     try {
+      // Generate QR code with the random QR key as data
+      const qrCodeDataUrl = await QRCode.toDataURL(qrKey, { width: 100 });
+
       const supplyData = {
         itemName: itemName,
         quantity: maxQuantity,
         maxQuantity: maxQuantity,
         brand: brand,
+        status: status,
+        qrCode: qrCodeDataUrl, // Storing the QR code image as a data URL
       };
+
       set(newSupplyRef, supplyData)
         .then(() => {
           alert("Supply has been added successfully!");
           setItemName("");
           setQuantity("");
           setBrand("");
+          toggleModal();
         })
         .catch((error) => {
           alert("Error adding supply: " + error);
         });
     } catch (error) {
-      console.error("Error adding supply: ", error);
+      console.error("Error generating QR code:", error);
+      alert("Error generating QR code.");
     }
   };
 
