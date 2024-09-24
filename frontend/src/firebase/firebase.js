@@ -6,7 +6,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAweN0wKRogH43dfla4RBtMbdSmJ_MaKh0",
   authDomain: "hospital-management-syst-315f8.firebaseapp.com",
   databaseURL:
-    "https://hospital-management-syst-315f8-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    "https://hospital-management-syst-315f8-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "hospital-management-syst-315f8",
   storageBucket: "hospital-management-syst-315f8.appspot.com",
   messagingSenderId: "354772852092",
