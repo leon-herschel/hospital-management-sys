@@ -25,6 +25,7 @@ const Sidebar = () => {
     "/inventory": "Inventory",
     "/settings": "Settings",
     "/analytics": "Analytics",
+    "/billing": "Billing",
   };
 
   const currentTitle = titles[location.pathname] || "Overview";
@@ -73,6 +74,14 @@ const Sidebar = () => {
           >
             <UserGroupIcon className="w-6 h-6 mr-3" />
             Patients
+          </Link>
+
+          <Link
+            to="/billing"
+            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+          >
+            <UserGroupIcon className="w-6 h-6 mr-3" />
+            Billing
           </Link>
 
           <Link
