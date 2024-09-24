@@ -5,6 +5,8 @@ import Inventory from './pages/Inventory/inventory';
 import Settings from "./pages/Settings/settings";
 import Roles from './pages/Settings/Roles';
 import Analytics from './pages/Analytics/analytics';
+import Billing from './pages/Billing/billing';
+import ViewBill from './pages/Billing/ViewBill';
 import { AuthProvider } from './context/authContext/authContext';
 import { useRoutes } from 'react-router-dom';
 import MainLayout from './components/mainLayout/mainLayout';
@@ -30,6 +32,11 @@ function App() {
         { path: 'analytics', element: <Analytics /> },
         { path: 'settings', element: <Settings /> },
         { path: 'roles', element: <Roles /> },
+        { path: 'billing', element: <Billing /> },
+        { path: 'ViewBill', element: <ViewBill /> },
+
+
+
 
       ],
     },
