@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
-import AddSupply from "./AddSupplies"
+import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
 
 // Helper function to calculate status based on percentage
@@ -20,35 +20,31 @@ const calculateStatus = (quantity, maxQuantity) => {
 
 function Inventory() {
   const [inventoryList, setInventoryList] = useState([]);
-  const [filteredInventory, setFilteredInventory] = useState([]);
+  const [suppliesList, setSuppliesList] = useState([]);
   const [modal, setModal] = useState(false);
   const [supplyModal, setSupplyModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null); // Change to null initially
-  const [selectedDepartment, setSelectedDepartment] = useState(""); // State for department filter
-  const [selectedStatus, setSelectedStatus] = useState(""); // State for status filter
-  const inventoryCollection = ref(database, "inventory");
+  const [currentItem, setCurrentItem] = useState(null);
+  const [selectedTab, setSelectedTab] = useState("medicine"); // New state to control selected tab/view
   const [searchTerm, setSearchTerm] = useState("");
+
+  const inventoryCollection = ref(database, "medicine");
+  const suppliesCollection = ref(database, "supplies");
 
   const toggleModal = () => {
     setModal(!modal);
   };
 
-  if (modal) {
-    document.body.classList.add("active-modal");
-  } else {
-    document.body.classList.remove("active-modal");
-  }
-
   const toggleSupplyModal = () => {
     setSupplyModal(!supplyModal);
-  }
+  };
+
   const toggleEditModal = () => {
     setEditModal(!editModal);
   };
 
-  const handleEdit = (inventory) => {
-    setCurrentItem(inventory);
+  const handleEdit = (item) => {
+    setCurrentItem(item);
     toggleEditModal();
   };
 
@@ -57,7 +53,7 @@ function Inventory() {
     const { itemName, quantity, department } = event.target.elements;
 
     const updatedQuantity = Number(quantity.value);
-    const maxQuantity = currentItem.maxQuantity || updatedQuantity; // If maxQuantity doesn't exist, assume it to be updatedQuantity
+    const maxQuantity = currentItem.maxQuantity || updatedQuantity;
     const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
 
     const updatedInventory = {
@@ -65,18 +61,15 @@ function Inventory() {
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
       department: department.value,
-      status: updatedStatus, // Dynamically calculated status
+      status: updatedStatus,
     };
 
-    await update(
-      ref(database, `inventory/${currentItem.id}`),
-      updatedInventory
-    );
+    await update(ref(database, `${selectedTab}/${currentItem.id}`), updatedInventory);
     toggleEditModal();
   };
 
   useEffect(() => {
-    const unsubscribe = onValue(inventoryCollection, (snapshot) => {
+    const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const inventoryData = Object.keys(data).map((key) => ({
@@ -88,33 +81,32 @@ function Inventory() {
         setInventoryList([]);
       }
     });
-    return () => {
-      unsubscribe();
-    };
-  }, [inventoryCollection]);
 
-  useEffect(() => {
-    // Filter inventory based on selected department and status
-    let filteredList = inventoryList;
-    if (selectedDepartment) {
-      filteredList = filteredList.filter(
-        (item) => item.department === selectedDepartment
-      );
-    }
-    if (selectedStatus) {
-      filteredList = filteredList.filter(
-        (item) => item.status === selectedStatus
-      );
-    }
-    setFilteredInventory(filteredList);
-  }, [inventoryList, selectedDepartment, selectedStatus]);
+    const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const suppliesData = Object.keys(data).map((key) => ({
+          ...data[key],
+          id: key,
+        }));
+        setSuppliesList(suppliesData);
+      } else {
+        setSuppliesList([]);
+      }
+    });
+
+    return () => {
+      unsubscribeInventory();
+      unsubscribeSupplies();
+    };
+  }, []);
 
   const handleDelete = async (id) => {
-    await remove(ref(database, `inventory/${id}`));
+    await remove(ref(database, `${selectedTab}/${id}`));
   };
 
-  const filteredInventoryList = inventoryList.filter((inventory) =>
-    inventory.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredList = (selectedTab === "medicine" ? inventoryList : suppliesList).filter(
+    (item) => item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -122,131 +114,159 @@ function Inventory() {
       <div className="flex justify-center text-lg">
         <h2>INVENTORY SYSTEM</h2>
       </div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-center space-x-4 mb-4">
         <button
-          onClick={toggleModal}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+          onClick={() => setSelectedTab("medicine")}
+          className={`px-4 py-2 rounded-lg transition duration-200 ${selectedTab === "medicine" ? "bg-blue-500 text-white" : "bg-gray-200 text-black"}`}
         >
-          Add New Item
+          Medicine Inventory
         </button>
-
         <button
-          onClick={toggleSupplyModal}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+          onClick={() => setSelectedTab("supplies")}
+          className={`px-4 py-2 rounded-lg transition duration-200 ${selectedTab === "supplies" ? "bg-blue-500 text-white" : "bg-gray-200 text-black"}`}
         >
-          Add Supply Item
+          Supplies Inventory
         </button>
-
-        {/* Department Filter */}
-        <select
-          className="border rounded p-2"
-          value={selectedDepartment}
-          onChange={(e) => setSelectedDepartment(e.target.value)}
-        >
-          <option value="">All Departments</option>
-          <option value="IT">IT</option>
-          <option value="Nursing">Nursing</option>
-          <option value="MedTech">Medical Technology</option>
-        </select>
-
-        {/* Status Filter */}
-        <select
-          className="border rounded p-2"
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-        >
-          <option value="">All Status</option>
-          <option value="Good">Good</option>
-          <option value="Low">Low</option>
-          <option value="Very Low">Very Low</option>
-        </select>
       </div>
-      
-      <div className="my-4">
-        <input
-          type="text"
-          placeholder="Search by item name..."
-          className="border px-4 py-2 w-full"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-      <table className="min-w-full border-collapse border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border border-gray-300 px-4 py-2 text-center">
-              Item Name
-            </th>
-            <th className="border border-gray-300 px-4 py-2 text-center">
-              Quantity
-            </th>
-            <th className="border border-gray-300 px-4 py-2 text-center">
-              Department
-            </th>
-            <th className="border border-gray-300 px-4 py-2 text-center">
-              Status
-            </th>
-            <th className="border border-gray-300 px-4 py-2 text-center">
-              QR Code
-            </th>
-            <th className="border border-gray-300 px-4 py-2 text-center">
-              Action
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredInventoryList.length > 0 ? (
-            filteredInventoryList.map((inventory) => (
-              <tr key={inventory.id} className="hover:bg-gray-50">
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.itemName}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.quantity}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.department}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {inventory.status}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  <QRCode
-                    size={50}
-                    bgColor="white"
-                    fgColor="black"
-                    value={`Item: ${inventory.itemName}\nQuantity: ${inventory.quantity}\nDepartment: ${inventory.department}\nStatus: ${inventory.status}`}
-                  />
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  <button
-                    onClick={() => handleEdit(inventory)}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
-                  >
-                    Edit
-                  </button>{" "}
-                  
-                  <button
-                    onClick={() => handleDelete(inventory.id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
-                  >
-                    DELETE
-                  </button>
-                </td>
+
+      {selectedTab === "medicine" && (
+        <>
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={toggleModal}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+            >
+              Add New Medicine Item
+            </button>
+            <div className="my-4">
+              <input
+                type="text"
+                placeholder="Search by item name..."
+                className="border px-4 py-2 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <table className="min-w-full border-collapse border border-gray-300">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="border border-gray-300 px-4 py-2 text-center">Item Name</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Quantity</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Department</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">QR Code</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Action</th>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan="6"
-                className="border border-gray-300 px-4 py-2 text-center"
-              >
-                No items in inventory
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {filteredList.length > 0 ? (
+                filteredList.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 px-4 py-2 text-center">{item.itemName}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{item.department}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{item.status}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <QRCode size={50} value={`Item: ${item.itemName}\nQuantity: ${item.quantity}\nDepartment: ${item.department}\nStatus: ${item.status}`} />
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
+                      >
+                        DELETE
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="border border-gray-300 px-4 py-2 text-center">
+                    No items in inventory
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <AddInventory isOpen={modal} toggleModal={toggleModal} />
+        </>
+      )}
+
+      {selectedTab === "supplies" && (
+        <>
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={toggleSupplyModal}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
+            >
+              Add Supply Item
+            </button>
+            <div className="my-4">
+              <input
+                type="text"
+                placeholder="Search by supply name..."
+                className="border px-4 py-2 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <table className="min-w-full border-collapse border border-gray-300">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="border border-gray-300 px-4 py-2 text-center">Brand Name</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Quantity</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">QR Code</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredList.length > 0 ? (
+                filteredList.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 px-4 py-2 text-center">{item.itemName}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{item.status}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <QRCode size={50} value={`Brand: ${item.brand}\nQuantity: ${item.quantity}\nStatus: ${item.status}`} />
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
+                      >
+                        DELETE
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="border border-gray-300 px-4 py-2 text-center">
+                    No supplies in inventory
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
+        </>
+      )}
+
       {editModal && currentItem && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
@@ -279,27 +299,29 @@ function Inventory() {
                 />
               </div>
 
-              <div className="mb-4">
-                <label
-                  htmlFor="department"
-                  className="block text-gray-700 mb-2"
-                >
-                  Department
-                </label>
-                <select
-                  id="department"
-                  name="department"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentItem.department}
-                >
-                  <option value="" disabled>
-                    Select Department
-                  </option>
-                  <option value="IT">IT</option>
-                  <option value="Nursing">Nursing</option>
-                  <option value="MedTech">Medical Technology</option>
-                </select>
-              </div>
+              {selectedTab === "medicine" && (
+                <div className="mb-4">
+                  <label
+                    htmlFor="department"
+                    className="block text-gray-700 mb-2"
+                  >
+                    Department
+                  </label>
+                  <select
+                    id="department"
+                    name="department"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+                    defaultValue={currentItem.department}
+                  >
+                    <option value="" disabled>
+                      Select Department
+                    </option>
+                    <option value="IT">IT</option>
+                    <option value="Nursing">Nursing</option>
+                    <option value="MedTech">Medical Technology</option>
+                  </select>
+                </div>
+              )}
 
               <div className="flex justify-between space-x-4">
                 <div className="w-full">
@@ -325,8 +347,6 @@ function Inventory() {
           </div>
         </div>
       )}
-      <AddInventory isOpen={modal} toggleModal={toggleModal} />
-      <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
     </div>
   );
 }

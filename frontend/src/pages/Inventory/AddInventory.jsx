@@ -5,8 +5,8 @@ import { database } from "../../firebase/firebase";
 
 // Helper function to generate a random alphanumeric string
 const generateRandomKey = (length) => {
-  const characters = ' =';
-  let result = '';
+  const characters = " =";
+  let result = "";
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
@@ -16,7 +16,7 @@ const generateRandomKey = (length) => {
 // Function to calculate status based on quantity and maxQuantity
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
-  
+
   if (percentage > 70) {
     return "Good";
   } else if (percentage > 50) {
@@ -37,14 +37,14 @@ function AddInventory({ isOpen, toggleModal }) {
       return;
     }
 
-    const inventoryRef = ref(database, "inventory");
+    const inventoryRef = ref(database, "medicine");
     const newInventoryRef = push(inventoryRef);
-    
+
     // Generate a random QR key
     const qrKey = generateRandomKey(20); // Generate a 20-character alphanumeric key
 
-    const maxQuantity = Number(quantity);  // Set maxQuantity as the initial quantity
-    
+    const maxQuantity = Number(quantity); // Set maxQuantity as the initial quantity
+
     // Calculate the status based on the quantity and maxQuantity
     const status = calculateStatus(maxQuantity, maxQuantity); // Initially, quantity is equal to maxQuantity
 
@@ -57,9 +57,8 @@ function AddInventory({ isOpen, toggleModal }) {
         quantity: maxQuantity, // Use Number to ensure it's a numerical value
         maxQuantity: maxQuantity, // Initial quantity becomes the maxQuantity
         department: department,
-        status: status,  // Dynamically calculated status
-        qrData: qrKey,  // Store the random QR key in the database
-        qrCode: qrCodeDataUrl,  // Optionally store the QR code as a data URL
+        status: status, // Dynamically calculated status
+        qrCode: qrCodeDataUrl, // Optionally store the QR code as a data URL
       };
 
       set(newInventoryRef, inventoryData)
