@@ -1,4 +1,4 @@
-import { ShoppingCartIcon, CreditCardIcon, UserIcon, UsersIcon } from '@heroicons/react/16/solid';
+import { ShoppingCartIcon, CreditCardIcon, UserIcon, UsersIcon, ArrowRightIcon } from '@heroicons/react/16/solid';
 
 const Dashboard = () => {
     return (
@@ -20,7 +20,10 @@ const Dashboard = () => {
                         <h2 className="self-center text-3xl font-bold">40</h2>
                     </div>
                     <div className="px-6 pb-6">
-                        <a className="text-md hover:text-indigo-500" href="#">View more...</a>
+                        <a className="text-md flex items-center space-x-2 text-indigo-600 hover:text-indigo-800 transition duration-200" href="#">
+                            <span>View more</span>
+                            <ArrowRightIcon className="h-5 w-5" />
+                        </a>
                     </div>
                 </div>
 
@@ -36,7 +39,10 @@ const Dashboard = () => {
                         <h2 className="self-center text-3xl font-bold">57</h2>
                     </div>
                     <div className="px-6 pb-6">
-                        <a className="text-md hover:text-indigo-500" href="#">View more...</a>
+                        <a className="text-md flex items-center space-x-2 text-indigo-600 hover:text-indigo-800 transition duration-200" href="#">
+                            <span>View more</span>
+                            <ArrowRightIcon className="h-5 w-5" />
+                        </a>
                     </div>
                 </div>
 
@@ -52,7 +58,10 @@ const Dashboard = () => {
                         <h2 className="self-center text-3xl font-bold">345</h2>
                     </div>
                     <div className="px-6 pb-6">
-                        <a className="text-md hover:text-indigo-500" href="#">View more...</a>
+                        <a className="text-md flex items-center space-x-2 text-indigo-600 hover:text-indigo-800 transition duration-200" href="#">
+                            <span>View more</span>
+                            <ArrowRightIcon className="h-5 w-5" />
+                        </a>
                     </div>
                 </div>
 
@@ -68,7 +77,10 @@ const Dashboard = () => {
                         <h2 className="self-center text-3xl font-bold">23</h2>
                     </div>
                     <div className="px-6 pb-6">
-                        <a className="text-md hover:text-indigo-500" href="#">View more...</a>
+                        <a className="text-md flex items-center space-x-2 text-indigo-600 hover:text-indigo-800 transition duration-200" href="#">
+                            <span>View more</span>
+                            <ArrowRightIcon className="h-5 w-5" />
+                        </a>
                     </div>
                 </div>
             </div>
