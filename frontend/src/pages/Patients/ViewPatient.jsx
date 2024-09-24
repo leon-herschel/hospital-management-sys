@@ -46,12 +46,51 @@ function ViewPatient({ isOpen, toggleModal, patientId }) {
     setAddPrescription((prev) => !prev);
   };
 
+  const rendersuppliesUsed = () => {
+    if (!patient.suppliesUsed) {
+      return <div>No supplies used yet.</div>;
+    }
+
+    return Object.entries(patient.suppliesUsed).map(([key, supp]) => (
+      <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
+        <div className="flex justify-between">
+          <span className="font-bold">Supply Name:</span>
+          <span>{supp.name}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-bold">Quantity:</span>
+          <span>{supp.quantity}</span>
+        </div>
+      </div>
+    ));
+  };
+
+  const renderMedUse = () => {
+    if (!patient.medUse) {
+      return <div>No medicine used yet.</div>;
+    }
+
+    return Object.entries(patient.medUse).map(([key, med]) => (
+      <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
+        <div className="flex justify-between">
+          <span className="font-bold">Medicine Name:</span>
+          <span>{med.name}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-bold">Quantity:</span>
+          <span>{med.quantity}</span>
+        </div>
+      </div>
+    ));
+  };
+
   const handleSubmit = async () => {
     // Clear previous errors
     setErrors({ prescriptionName: "", dosage: "", instruction: "" });
 
     const newErrors = {};
-    if (!prescriptionName) newErrors.prescriptionName = "Prescription Name is required.";
+    if (!prescriptionName)
+      newErrors.prescriptionName = "Prescription Name is required.";
     if (!dosage) newErrors.dosage = "Dosage is required.";
     if (!instruction) newErrors.instruction = "Instruction is required.";
 
@@ -104,10 +143,15 @@ function ViewPatient({ isOpen, toggleModal, patientId }) {
   };
 
   const confirmRemovePrescription = async () => {
-    const prescriptionRef = ref(database, `patient/${patientId}/prescriptions/${removalConfirmationId}`);
+    const prescriptionRef = ref(
+      database,
+      `patient/${patientId}/prescriptions/${removalConfirmationId}`
+    );
     try {
       await remove(prescriptionRef);
-      setPrescriptionList((prev) => prev.filter((prescription) => prescription.id !== removalConfirmationId));
+      setPrescriptionList((prev) =>
+        prev.filter((prescription) => prescription.id !== removalConfirmationId)
+      );
       setShowRemovalConfirmation(false);
       setRemovalConfirmationId(null);
       setConfirmationMessage("Prescription removed successfully.");
@@ -144,7 +188,10 @@ function ViewPatient({ isOpen, toggleModal, patientId }) {
 
   const renderPrescriptions = () => {
     return prescriptionList.map((prescription) => (
-      <div key={prescription.id} className="border border-gray-300 p-4 mb-4 rounded">
+      <div
+        key={prescription.id}
+        className="border border-gray-300 p-4 mb-4 rounded"
+      >
         <div className="flex justify-between">
           <span className="font-bold">Prescription Name:</span>
           <span>{prescription.prescriptionName}</span>
@@ -191,7 +238,12 @@ function ViewPatient({ isOpen, toggleModal, patientId }) {
           <div>
             <span className="text-2xl font-bold mb-6">Medicine/s used:</span>
             <br />
-            {patient.medUse || "No medicine used yet"}
+            {renderMedUse()}
+          </div>
+          <div>
+            <span className="text-2xl font-bold mb-6">Supplies used:</span>
+            <br />
+            {rendersuppliesUsed()}
           </div>
         </div>
 
@@ -212,33 +264,49 @@ function ViewPatient({ isOpen, toggleModal, patientId }) {
               <label className="block mb-1">Prescription Name:</label>
               <input
                 type="text"
-                className={`w-full border ${errors.prescriptionName ? 'border-red-500' : 'border-gray-300'} p-2 rounded`}
+                className={`w-full border ${
+                  errors.prescriptionName ? "border-red-500" : "border-gray-300"
+                } p-2 rounded`}
                 value={prescriptionName}
                 onChange={(e) => setPrescriptionName(e.target.value)}
               />
-              {errors.prescriptionName && <span className="text-red-500 text-sm">{errors.prescriptionName}</span>}
+              {errors.prescriptionName && (
+                <span className="text-red-500 text-sm">
+                  {errors.prescriptionName}
+                </span>
+              )}
             </div>
 
             <div className="mb-2">
               <label className="block mb-1">Dosage:</label>
               <input
                 type="text"
-                className={`w-full border ${errors.dosage ? 'border-red-500' : 'border-gray-300'} p-2 rounded`}
+                className={`w-full border ${
+                  errors.dosage ? "border-red-500" : "border-gray-300"
+                } p-2 rounded`}
                 value={dosage}
                 onChange={(e) => setDosage(e.target.value)}
               />
-              {errors.dosage && <span className="text-red-500 text-sm">{errors.dosage}</span>}
+              {errors.dosage && (
+                <span className="text-red-500 text-sm">{errors.dosage}</span>
+              )}
             </div>
 
             <div className="mb-2">
               <label className="block mb-1">Instruction:</label>
               <input
                 type="text"
-                className={`w-full border ${errors.instruction ? 'border-red-500' : 'border-gray-300'} p-2 rounded`}
+                className={`w-full border ${
+                  errors.instruction ? "border-red-500" : "border-gray-300"
+                } p-2 rounded`}
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
               />
-              {errors.instruction && <span className="text-red-500 text-sm">{errors.instruction}</span>}
+              {errors.instruction && (
+                <span className="text-red-500 text-sm">
+                  {errors.instruction}
+                </span>
+              )}
             </div>
 
             <button

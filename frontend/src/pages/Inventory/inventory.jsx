@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
-import AddSupply from "./AddSupplies"
+import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
 
 // Helper function to calculate status based on percentage
@@ -27,7 +27,7 @@ function Inventory() {
   const [currentItem, setCurrentItem] = useState(null); // Change to null initially
   const [selectedDepartment, setSelectedDepartment] = useState(""); // State for department filter
   const [selectedStatus, setSelectedStatus] = useState(""); // State for status filter
-  const inventoryCollection = ref(database, "inventory");
+  const inventoryCollection = ref(database, "medicine");
   const [searchTerm, setSearchTerm] = useState("");
 
   const toggleModal = () => {
@@ -42,13 +42,13 @@ function Inventory() {
 
   const toggleSupplyModal = () => {
     setSupplyModal(!supplyModal);
-  }
+  };
   const toggleEditModal = () => {
     setEditModal(!editModal);
   };
 
-  const handleEdit = (inventory) => {
-    setCurrentItem(inventory);
+  const handleEdit = (medicine) => {
+    setCurrentItem(medicine);
     toggleEditModal();
   };
 
@@ -68,10 +68,7 @@ function Inventory() {
       status: updatedStatus, // Dynamically calculated status
     };
 
-    await update(
-      ref(database, `inventory/${currentItem.id}`),
-      updatedInventory
-    );
+    await update(ref(database, `medicine/${currentItem.id}`), updatedInventory);
     toggleEditModal();
   };
 
@@ -110,7 +107,7 @@ function Inventory() {
   }, [inventoryList, selectedDepartment, selectedStatus]);
 
   const handleDelete = async (id) => {
-    await remove(ref(database, `inventory/${id}`));
+    await remove(ref(database, `medicine/${id}`));
   };
 
   const filteredInventoryList = inventoryList.filter((inventory) =>
@@ -161,7 +158,7 @@ function Inventory() {
           <option value="Very Low">Very Low</option>
         </select>
       </div>
-      
+
       <div className="my-4">
         <input
           type="text"
@@ -225,7 +222,6 @@ function Inventory() {
                   >
                     Edit
                   </button>{" "}
-                  
                   <button
                     onClick={() => handleDelete(inventory.id)}
                     className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"

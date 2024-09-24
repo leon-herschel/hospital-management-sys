@@ -1,65 +1,65 @@
-import {useState} from "react";
+import { useState } from "react";
 import { ref, push, set } from "firebase/database";
 import { database } from "../../firebase/firebase";
 
 const calculateStatus = (quantity, maxQuantity) => {
-    const percentage = (quantity / maxQuantity) * 100;
-    
-    if (percentage > 70) {
-      return "Good";
-    } else if (percentage > 50) {
-      return "Low";
-    } else {
-      return "Very Low";
-    }
-  };
+  const percentage = (quantity / maxQuantity) * 100;
 
-  function AddSupplies({ isOpen, toggleModal }) {
-  const [supplyName, setSupplyName] = useState("");
+  if (percentage > 70) {
+    return "Good";
+  } else if (percentage > 50) {
+    return "Low";
+  } else {
+    return "Very Low";
+  }
+};
+
+function AddSupplies({ isOpen, toggleModal }) {
+  const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [brand, setBrand] = useState("");
-  
-  const handlesubmit = async() => {
-    if (!supplyName || !quantity || !brand) {
-        alert("Please fill in all the required fields")
-        return;
+
+  const handlesubmit = async () => {
+    if (!itemName || !quantity || !brand) {
+      alert("Please fill in all the required fields");
+      return;
     }
 
-    const supplyRef = ref(database, "supplies")
-  const newSupplyRef = push(supplyRef);
+    const supplyRef = ref(database, "supplies");
+    const newSupplyRef = push(supplyRef);
 
-  const maxQuantity = Number(quantity);
+    const maxQuantity = Number(quantity);
 
-  const status = calculateStatus(maxQuantity, maxQuantity)
+    const status = calculateStatus(maxQuantity, maxQuantity);
 
-  try {
-    const supplyData = {
-        supplyName: supplyName,
+    try {
+      const supplyData = {
+        itemName: itemName,
         quantity: maxQuantity,
         maxQuantity: maxQuantity,
         brand: brand,
-    };
-    set(newSupplyRef, supplyData)
-    .then(() => {
-        alert("Supply has been added successfully!");
-        setSupplyName("");
-        setQuantity("");
-        setBrand("");
-    })
-    .catch((error) => {
-        alert("Error adding supply: " + error)
-    });
-  } catch (error) {
-    console.error("Error adding supply: ", error);
-  }
+      };
+      set(newSupplyRef, supplyData)
+        .then(() => {
+          alert("Supply has been added successfully!");
+          setItemName("");
+          setQuantity("");
+          setBrand("");
+        })
+        .catch((error) => {
+          alert("Error adding supply: " + error);
+        });
+    } catch (error) {
+      console.error("Error adding supply: ", error);
+    }
   };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-      <button
+        <button
           className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
           onClick={toggleModal}
         >
@@ -68,20 +68,20 @@ const calculateStatus = (quantity, maxQuantity) => {
         <h2> Add New Supply</h2>
 
         <div className="mb-4">
-          <label htmlFor="supply" className="block text-gray-700 mb-2">
+          <label htmlFor="itemName" className="block text-gray-700 mb-2">
             Supply Name
           </label>
           <input
             type="text"
-            id="supply"
-            name="supply"
+            id="itemName"
+            name="itemName"
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-            value={supplyName}
-            onChange={(e) => setSupplyName(e.target.value)}
+            value={itemName}
+            onChange={(e) => setItemName(e.target.value)}
           />
-            </div>
+        </div>
 
-            <div className="mb-4">
+        <div className="mb-4">
           <label htmlFor="quantity" className="block text-gray-700 mb-2">
             Quantity
           </label>
@@ -93,9 +93,9 @@ const calculateStatus = (quantity, maxQuantity) => {
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
-            </div>
+        </div>
 
-            <div className="mb-4">
+        <div className="mb-4">
           <label htmlFor="brand" className="block text-gray-700 mb-2">
             Brand
           </label>
@@ -107,19 +107,17 @@ const calculateStatus = (quantity, maxQuantity) => {
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
           />
-            </div>
-        
-            <button
+        </div>
+
+        <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handlesubmit}
         >
           Submit
         </button>
-
-        </div>
       </div>
-  )
-  }
-
+    </div>
+  );
+}
 
 export default AddSupplies;
