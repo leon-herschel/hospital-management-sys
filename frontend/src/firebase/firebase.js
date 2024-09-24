@@ -3,14 +3,15 @@ import { getDatabase } from "firebase/database";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAmUGhT2dr_mtVmanMGgXJN0laJEoXuXEo",
-  authDomain: "hospitalsys-2e54c.firebaseapp.com",
-  databaseURL: "https://hospitalsys-2e54c-default-rtdb.firebaseio.com",
-  projectId: "hospitalsys-2e54c",
-  storageBucket: "hospitalsys-2e54c.appspot.com",
-  messagingSenderId: "900558939756",
-  appId: "1:900558939756:web:dedcbc6c05bc8ad1261a49",
-  measurementId: "G-P3H4BL6T1G",
+  apiKey: "AIzaSyAweN0wKRogH43dfla4RBtMbdSmJ_MaKh0",
+  authDomain: "hospital-management-syst-315f8.firebaseapp.com",
+  databaseURL:
+    "https://hospital-management-syst-315f8-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "hospital-management-syst-315f8",
+  storageBucket: "hospital-management-syst-315f8.appspot.com",
+  messagingSenderId: "354772852092",
+  appId: "1:354772852092:web:b812beaa4ade62246658f9",
+  measurementId: "G-9D4XB73EFT",
 };
 
 const app = initializeApp(firebaseConfig);
