@@ -9,6 +9,7 @@ function Inventory() {
   const [editModal, setEditModal] = useState(false);
   const [currentItem, setCurrentItem] = useState("");
   const inventoryCollection = ref(database, "inventory");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const toggleModal = () => {
     setModal(!modal);
@@ -69,6 +70,10 @@ function Inventory() {
     await remove(ref(database, `inventory/${id}`));
   };
 
+  const filteredInventoryList = inventoryList.filter((inventory) =>
+    inventory.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="w-full">
       <div className="flex justify-center text-lg">
@@ -76,6 +81,16 @@ function Inventory() {
       </div>
       <div>
         <button onClick={toggleModal}>Add New Item</button>
+      </div>
+      
+      <div className="my-4">
+        <input
+          type="text"
+          placeholder="Search by item name..."
+          className="border px-4 py-2 w-full"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
       <table className="min-w-full border-collapse border border-gray-300">
         <thead className="bg-gray-100">
@@ -98,8 +113,8 @@ function Inventory() {
           </tr>
         </thead>
         <tbody>
-          {inventoryList.length > 0 ? (
-            inventoryList.map((inventory) => (
+          {filteredInventoryList.length > 0 ? (
+            filteredInventoryList.map((inventory) => (
               <tr key={inventory.id} className="hover:bg-gray-50">
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   {inventory.itemName}

@@ -7,6 +7,7 @@ import addImage from '../../assets/add.jpg';
 import roleImage from '../../assets/role.jpg';
 import { useNavigate } from 'react-router-dom';
 
+
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
@@ -15,6 +16,7 @@ const Users = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({ username: '', role: '', status: '' });
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch users from Firebase Realtime Database
   useEffect(() => {
@@ -32,6 +34,10 @@ const Users = () => {
 
     fetchUsers();
   }, []);
+
+  const filteredUsers = users.filter(user =>
+    user.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Delete user from Firebase Realtime Database
   const handleDeleteUser = async (user) => {
@@ -91,6 +97,8 @@ const Users = () => {
         <input
           type="text"
           placeholder="Search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="border px-4 py-2 rounded-lg"
         />
         <div>
@@ -120,7 +128,7 @@ const Users = () => {
           </tr>
         </thead>
         <tbody>
-          {users.map((user) => (
+        {filteredUsers.map((user) => (
             <tr key={user.id}>
               <td className="py-2 text-center border-b border-r">{user.username}</td>
               <td className="py-2 text-center border-b border-r">{user.role}</td>

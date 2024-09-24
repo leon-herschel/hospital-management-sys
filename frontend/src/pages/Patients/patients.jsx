@@ -12,6 +12,7 @@ function Patient() {
   const [editModal, setEditModal] = useState(false);
   const [viewModal, setViewModal] = useState(false);
   const [currentPatient, setCurrentPatient] = useState(null);
+  const [searchQuery, setSearchQuery] = useState(""); 
 
   const patientCollection = ref(database, "patient");
 
@@ -78,13 +79,26 @@ function Patient() {
     toggleViewModal();
   };
 
+  const filteredPatients = patientList.filter((patient) =>
+    patient.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="w-full">
       <div className="flex justify-center text-xl">
         <h2>PATIENT MANAGEMENT SYSTEM</h2>
       </div>
-      <div>
-        <button onClick={toggleModal}>Add Patient</button>
+      <div className="flex justify-between items-center my-4">
+        <input
+          type="text"
+          placeholder="Search by name"
+          className="border px-4 py-2 rounded-lg w-full max-w-xs"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)} 
+        />
+        <button onClick={toggleModal} className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+          Add Patient
+        </button>
       </div>
 
       <div>
@@ -103,8 +117,8 @@ function Patient() {
             </tr>
           </thead>
           <tbody>
-            {patientList.length > 0 ? (
-              patientList.map((patient) => (
+            {filteredPatients.length > 0 ? (
+              filteredPatients.map((patient) => (
                 <tr key={patient.id}>
                   <td className="border border-gray-300 px-4 py-2 text-center">
                     {patient.name}
