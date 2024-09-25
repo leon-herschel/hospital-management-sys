@@ -247,77 +247,81 @@ function ViewPatient({ isOpen, toggleModal, patientId }) {
           </div>
         </div>
 
-        <div className="mt-4">
-          <button
-            onClick={handleAddPrescriptionClick}
-            className="mb-4 bg-blue-500 text-white py-2 px-4 rounded"
-          >
-            {addPrescription ? "Hide Prescription Form" : "Add Prescription"}
-          </button>
+        {patient.status === "Outpatient" && (
+  <div className="mt-4">   
+    <button
+      onClick={handleAddPrescriptionClick}
+      className="mb-4 bg-blue-500 text-white py-2 px-4 rounded"
+    >
+      {addPrescription ? "Hide Prescription Form" : "Add Prescription"}
+    </button>
+
+    {/* Show form if addPrescription is true */}
+    {addPrescription ? (
+      <div className="mt-4">
+        <div className="mb-2">
+          <label className="block mb-1">Prescription Name:</label>
+          <input
+            type="text"
+            className={`w-full border ${
+              errors.prescriptionName ? "border-red-500" : "border-gray-300"
+            } p-2 rounded`}
+            value={prescriptionName}
+            onChange={(e) => setPrescriptionName(e.target.value)}
+          />
+          {errors.prescriptionName && (
+            <span className="text-red-500 text-sm">
+              {errors.prescriptionName}
+            </span>
+          )}
         </div>
 
-        {!addPrescription ? (
-          <div>{renderPrescriptions()}</div>
-        ) : (
-          <div className="mt-4">
-            <div className="mb-2">
-              <label className="block mb-1">Prescription Name:</label>
-              <input
-                type="text"
-                className={`w-full border ${
-                  errors.prescriptionName ? "border-red-500" : "border-gray-300"
-                } p-2 rounded`}
-                value={prescriptionName}
-                onChange={(e) => setPrescriptionName(e.target.value)}
-              />
-              {errors.prescriptionName && (
-                <span className="text-red-500 text-sm">
-                  {errors.prescriptionName}
-                </span>
-              )}
-            </div>
+        <div className="mb-2">
+          <label className="block mb-1">Dosage:</label>
+          <input
+            type="text"
+            className={`w-full border ${
+              errors.dosage ? "border-red-500" : "border-gray-300"
+            } p-2 rounded`}
+            value={dosage}
+            onChange={(e) => setDosage(e.target.value)}
+          />
+          {errors.dosage && (
+            <span className="text-red-500 text-sm">{errors.dosage}</span>
+          )}
+        </div>
 
-            <div className="mb-2">
-              <label className="block mb-1">Dosage:</label>
-              <input
-                type="text"
-                className={`w-full border ${
-                  errors.dosage ? "border-red-500" : "border-gray-300"
-                } p-2 rounded`}
-                value={dosage}
-                onChange={(e) => setDosage(e.target.value)}
-              />
-              {errors.dosage && (
-                <span className="text-red-500 text-sm">{errors.dosage}</span>
-              )}
-            </div>
+        <div className="mb-2">
+          <label className="block mb-1">Instruction:</label>
+          <input
+            type="text"
+            className={`w-full border ${
+              errors.instruction ? "border-red-500" : "border-gray-300"
+            } p-2 rounded`}
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+          />
+          {errors.instruction && (
+            <span className="text-red-500 text-sm">
+              {errors.instruction}
+            </span>
+          )}
+        </div>
 
-            <div className="mb-2">
-              <label className="block mb-1">Instruction:</label>
-              <input
-                type="text"
-                className={`w-full border ${
-                  errors.instruction ? "border-red-500" : "border-gray-300"
-                } p-2 rounded`}
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-              />
-              {errors.instruction && (
-                <span className="text-red-500 text-sm">
-                  {errors.instruction}
-                </span>
-              )}
-            </div>
-
-            <button
-              onClick={handleSubmit}
-              className="bg-green-500 text-white py-2 px-4 rounded"
-              disabled={loading}
-            >
-              {loading ? "Adding..." : "Add Prescription"}
-            </button>
-          </div>
-        )}
+        <button
+          onClick={handleSubmit}
+          className="bg-green-500 text-white py-2 px-4 rounded"
+          disabled={loading}
+        >
+          {loading ? "Adding..." : "Add Prescription"}
+        </button>
+      </div>
+    ) : (
+      // Render prescriptions list if addPrescription is false
+      <div>{renderPrescriptions()}</div>
+    )}
+  </div>
+)}
 
         {showConfirmation && (
           <div className="fixed inset-0 flex items-center justify-center z-60">

@@ -49,7 +49,7 @@ function Inventory() {
   const handleUpdate = async (event) => {
     event.preventDefault();
     const { itemName, quantity, department } = event.target.elements;
-
+  
     const updatedQuantity = Number(quantity.value);
     const maxQuantity = currentItem.maxQuantity || updatedQuantity;
     const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
@@ -61,11 +61,30 @@ function Inventory() {
       department: department.value,
       status: updatedStatus,
     };
-
+    
     await update(
       ref(database, `${selectedTab}/${currentItem.id}`),
       updatedInventory
     );
+    toggleEditModal();
+  };
+
+  const handleUpdateSupply = async (event) => {
+    event.preventDefault();
+    const { itemName, quantity } = event.target.elements;
+
+    const updatedQuantity = Number(quantity.value);
+    const maxQuantity = currentItem.maxQuantity || updatedQuantity;
+    const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
+
+    const updatedSupply = {
+      itemName: itemName.value,
+      quantity: updatedQuantity,
+      maxQuantity: maxQuantity,
+      status: updatedStatus,
+    };
+
+    await update(ref(database, `${selectedTab}/${currentItem.id}`), updatedSupply);
     toggleEditModal();
   };
 
@@ -199,8 +218,7 @@ function Inventory() {
                       {item.status}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
-                      <QRCode size={50} value={item.id} />{" "}
-                      {/* Display only the unique ID */}
+                      <QRCode size={50} value={item.id} /> {/* Display only the unique ID */}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button
@@ -220,10 +238,7 @@ function Inventory() {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="6"
-                    className="border border-gray-300 px-4 py-2 text-center"
-                  >
+                  <td colSpan="6" className="border border-gray-300 px-4 py-2 text-center">
                     No items in inventory
                   </td>
                 </tr>
@@ -257,7 +272,7 @@ function Inventory() {
             <thead className="bg-gray-100">
               <tr>
                 <th className="border border-gray-300 px-4 py-2 text-center">
-                  Brand Name
+                  Supply Name
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-center">
                   Quantity
@@ -287,8 +302,7 @@ function Inventory() {
                       {item.status}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
-                      <QRCode size={50} value={item.id} />{" "}
-                      {/* Display only the unique ID */}
+                      <QRCode size={50} value={item.id} /> {/* Display only the unique ID */}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button
@@ -308,10 +322,7 @@ function Inventory() {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="5"
-                    className="border border-gray-300 px-4 py-2 text-center"
-                  >
+                  <td colSpan="5" className="border border-gray-300 px-4 py-2 text-center">
                     No supplies in inventory
                   </td>
                 </tr>
@@ -322,76 +333,57 @@ function Inventory() {
         </>
       )}
 
-      {editModal && currentItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-            <form onSubmit={handleUpdate}>
-              <h2 className="text-2xl font-bold mb-6 text-center">Edit Item</h2>
+      {editModal && (
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <h2 className="text-lg font-bold mb-4">Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item</h2>
+            <form onSubmit={selectedTab === "medicine" ? handleUpdate : handleUpdateSupply}>
               <div className="mb-4">
-                <label htmlFor="itemName" className="block text-gray-700 mb-2">
-                  Item Name
-                </label>
+                <label className="block mb-2">Item Name</label>
                 <input
                   type="text"
-                  id="itemName"
                   name="itemName"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentItem.itemName}
+                  defaultValue={currentItem?.itemName || ""}
+                  className="border px-4 py-2 w-full"
+                  required
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="quantity" className="block text-gray-700 mb-2">
-                  Quantity
-                </label>
+                <label className="block mb-2">Quantity</label>
                 <input
                   type="number"
-                  id="quantity"
                   name="quantity"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentItem.quantity}
+                  defaultValue={currentItem?.quantity || ""}
+                  className="border px-4 py-2 w-full"
+                  required
                 />
               </div>
               {selectedTab === "medicine" && (
                 <div className="mb-4">
-                  <label
-                    htmlFor="department"
-                    className="block text-gray-700 mb-2"
-                  >
-                    Department
-                  </label>
-                  <select
-                    id="department"
+                  <label className="block mb-2">Department</label>
+                  <input
+                    type="text"
                     name="department"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                    defaultValue={currentItem.department}
-                  >
-                    <option value="" disabled>
-                      Select Department
-                    </option>
-                    <option value="IT">IT</option>
-                    <option value="Nursing">Nursing</option>
-                    <option value="MedTech">Medical Technology</option>
-                  </select>
+                    defaultValue={currentItem?.department || ""}
+                    className="border px-4 py-2 w-full"
+                    required
+                  />
                 </div>
               )}
-              <div className="flex justify-between space-x-4">
-                <div className="w-full">
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
-                  >
-                    Update
-                  </button>
-                </div>
-                <div className="w-full">
-                  <button
-                    type="button"
-                    onClick={toggleEditModal}
-                    className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={toggleEditModal}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 mr-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200"
+                >
+                  Update Item
+                </button>
               </div>
             </form>
           </div>
