@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ref, push, set } from "firebase/database";
 import QRCode from "qrcode";
 import { database } from "../../firebase/firebase";
@@ -28,9 +28,11 @@ function AddSupplies({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [brand, setBrand] = useState("");
+  const [costPrice, setCostPrice] = useState(""); // New state for cost price
+  const [retailPrice, setRetailPrice] = useState(""); // New state for retail price
 
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !brand) {
+    if (!itemName || !quantity || !brand || !costPrice || !retailPrice) { // Check if all fields are filled
       alert("Please fill in all the required fields");
       return;
     }
@@ -54,6 +56,8 @@ function AddSupplies({ isOpen, toggleModal }) {
         quantity: maxQuantity,
         maxQuantity: maxQuantity,
         brand: brand,
+        costPrice: Number(costPrice), // Convert cost price to a number
+        retailPrice: Number(retailPrice), // Convert retail price to a number
         status: status,
         qrCode: qrCodeDataUrl, // Storing the QR code image as a data URL
       };
@@ -64,6 +68,8 @@ function AddSupplies({ isOpen, toggleModal }) {
           setItemName("");
           setQuantity("");
           setBrand("");
+          setCostPrice(""); // Reset cost price field
+          setRetailPrice(""); // Reset retail price field
           toggleModal();
         })
         .catch((error) => {
@@ -127,6 +133,34 @@ function AddSupplies({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="costPrice" className="block text-gray-700 mb-2">
+            Cost Price
+          </label>
+          <input
+            type="number"
+            id="costPrice"
+            name="costPrice"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)} // Update state with cost price
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="retailPrice" className="block text-gray-700 mb-2">
+            Retail Price
+          </label>
+          <input
+            type="number"
+            id="retailPrice"
+            name="retailPrice"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            value={retailPrice}
+            onChange={(e) => setRetailPrice(e.target.value)} // Update state with retail price
           />
         </div>
 
