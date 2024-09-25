@@ -32,19 +32,30 @@ function Patient() {
     const unsubscribe = onValue(patientCollection, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const patientData = Object.keys(data).map((key) => ({
-          ...data[key],
-          id: key,
-        }));
+        const patientData = Object.keys(data).map((key) => {
+          const patient = {
+            ...data[key],
+            id: key,
+          };
+  
+          // Format the dateTime to a human-readable format if it's available
+          if (patient.dateTime) {
+            patient.dateTime = new Date(patient.dateTime).toLocaleString(); // Format date-time
+          }
+          
+          return patient; // Return the formatted patient object
+        });
         setPatientList(patientData);
       } else {
         setPatientList([]);
       }
     });
+  
     return () => {
       unsubscribe();
     };
   }, [patientCollection]);
+  
 
   const handleDelete = async (id) => {
     await remove(ref(database, `patient/${id}`));
@@ -83,6 +94,7 @@ function Patient() {
     patient.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  
   return (
     <div className="w-full">
       <div className="flex justify-center text-xl font-bold mb-4">
@@ -133,6 +145,9 @@ function Patient() {
                 QR Code
               </th>
               <th className="border border-gray-300 px-4 py-2 text-center">
+                Date and Time Created
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-center">
                 Action
               </th>
             </tr>
@@ -169,6 +184,9 @@ function Patient() {
                       fgColor="black"
                       value={patient.id}
                     />
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    {patient.dateTime}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-center">
                     <button

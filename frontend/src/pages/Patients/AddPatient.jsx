@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ref, push, set } from "firebase/database";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
@@ -15,6 +15,20 @@ function AddPatient({ isOpen, toggleModal }) {
   const [diagnosis, setDiagnosis] = useState("");
   const [medUse, setMedUse] = useState("");
   const [suppliesUsed, setSuppliesUsed] = useState("");
+  const [dateTime, setDateTime] = useState("");
+
+  const formatDateToLocal = (date) => {
+    const offset = date.getTimezoneOffset();
+    const adjustedDate = new Date(date.getTime() - offset * 60 * 1000);
+    return adjustedDate.toISOString().slice(0, 16); // This gives the format YYYY-MM-DDTHH:MM
+  };
+
+  useEffect(() => {
+    // Set the default date-time to current date and time in local format
+    const currentDateTime = new Date();
+    setDateTime(formatDateToLocal(currentDateTime));
+  }, []);
+
 
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
@@ -44,6 +58,7 @@ function AddPatient({ isOpen, toggleModal }) {
       !gender ||
       !contact ||
       !status ||
+      !dateTime ||
       !roomType
     ) {
       alert("Please fill in all required fields");
@@ -71,6 +86,7 @@ function AddPatient({ isOpen, toggleModal }) {
       medUse: medUse,
       suppliesUsed: suppliesUsed,
       qrData: uniqueKey,
+      dateTime: dateTime,
     };
 
     set(newPatientRef, patientInfo)
@@ -87,6 +103,7 @@ function AddPatient({ isOpen, toggleModal }) {
         setContact("");
         setStatus("");
         setRoomType("");
+        setDateTime("");
       })
       .catch((error) => {
         alert("Error adding patient: ", error);
@@ -220,7 +237,11 @@ function AddPatient({ isOpen, toggleModal }) {
             <option value="Public">Public</option>
           </select>
         </div>
-
+        <div>
+          <label htmlFor="datetime">Date and Time</label>
+          <input type="datetime-local" id="datetime" name="datetime" className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300" value={dateTime}
+          onChange={(e) => setDateTime(e.target.value)}/>
+        </div>
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handlesubmit}
