@@ -11,6 +11,8 @@ import {
   Bars3Icon,
   Cog8ToothIcon,
   UserGroupIcon,
+  CreditCardIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 
@@ -26,6 +28,7 @@ const Sidebar = () => {
     "/settings": "Settings",
     "/analytics": "Analytics",
     "/billing": "Billing",
+    "/admin": "Create Account",
   };
 
   const currentTitle = titles[location.pathname] || "Overview";
@@ -80,7 +83,7 @@ const Sidebar = () => {
             to="/billing"
             className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
           >
-            <UserGroupIcon className="w-6 h-6 mr-3" />
+            <CreditCardIcon className="w-6 h-6 mr-3" />
             Billing
           </Link>
 
@@ -98,6 +101,14 @@ const Sidebar = () => {
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
+          </Link>
+
+          <Link
+            to="/admin"
+            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+          >
+            <ShieldCheckIcon className="w-6 h-6 mr-3" />
+            Admin
           </Link>
 
           <a

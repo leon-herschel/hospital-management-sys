@@ -11,6 +11,7 @@ import { AuthProvider } from './context/authContext/authContext';
 import { useRoutes } from 'react-router-dom';
 import MainLayout from './components/mainLayout/mainLayout';
 import ProtectedRoute from './components/auth/login/protectedRoute';
+import CreateAccount from './pages/Admin/createAccount';
 
 function App() {
   const routesArray = [
@@ -34,9 +35,7 @@ function App() {
         { path: 'roles', element: <Roles /> },
         { path: 'billing', element: <Billing /> },
         { path: 'ViewBill', element: <ViewBill /> },
-
-
-
+        { path: 'admin', element: <CreateAccount /> },
 
       ],
     },
