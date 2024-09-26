@@ -12,6 +12,7 @@ const Billing = () => {
   const [viewBilling, setViewBilling] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+
   // Fetch billings from Firebase
   useEffect(() => {
     const fetchBillings = async () => {
@@ -65,30 +66,38 @@ const Billing = () => {
 
   const handleAddBilling = async (e) => {
     e.preventDefault();
-    if (!newBillingData.amount || !newBillingData.patientId || !newBillingData.status) {
+    
+ 
+    const amount = null; 
+    
+    if (!newBillingData.patientId || !newBillingData.status) {
       alert('Please fill out all fields');
       return;
     }
+  
     try {
       const billingRef = ref(database, 'billing');
       const newBillingRef = push(billingRef);
-      await set(newBillingRef, newBillingData);
-      setBillings([...billings, { id: newBillingRef.key, ...newBillingData }]);
+      
+      // Store the billing data with a default amount
+      await set(newBillingRef, { ...newBillingData, amount });
+      setBillings([...billings, { id: newBillingRef.key, ...newBillingData, amount }]);
       setIsAddModalOpen(false);
       setNewBillingData({ amount: '', patientId: '', status: '' });
     } catch (error) {
       alert('Error adding billing: ' + error.message);
     }
   };
+  
 
   const handleViewBilling = (billing) => {
-    setViewBilling(billing);
-    setIsViewModalOpen(true);
+    setViewBilling(billing); // Set the selected billing for viewing
+    setIsViewModalOpen(true); // Open the view modal
   };
 
   const handleCloseModal = () => {
     setIsViewModalOpen(false);
-    setViewBilling(null);
+    setViewBilling(null); // Clear the billing data when closing the modal
   };
 
   return (
@@ -126,7 +135,7 @@ const Billing = () => {
             filteredBillings.map(billing => (
               <tr key={billing.id} className="hover:bg-gray-100">
                 <td className="border-b px-4 py-2">{patients[billing.patientId]}</td>
-                <td className="border-b px-4 py-2">{billing.amount}</td>
+                <td className="border-b px-4 py-2">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
                 <td className="border-b px-4 py-2">{billing.status}</td>
                 <td className="border-b px-4 py-2">
                   <button onClick={() => handleViewBilling(billing)} className="text-blue-600 hover:underline">View</button>
@@ -142,7 +151,7 @@ const Billing = () => {
         </tbody>
       </table>
 
-      {isViewModalOpen && (
+      {isViewModalOpen && viewBilling && (
         <ViewBill billing={viewBilling} patients={patients} onClose={handleCloseModal} />
       )}
 
@@ -166,16 +175,6 @@ const Billing = () => {
                 </select>
               </div>
               <div className="mt-4">
-                <label htmlFor="amount" className="block text-gray-700 mb-2">Amount</label>
-                <input
-                  type="text"
-                  id="amount"
-                  value={newBillingData.amount}
-                  onChange={(e) => setNewBillingData({ ...newBillingData, amount: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                />
-              </div>
-              <div className="mt-4">
                 <label htmlFor="status" className="block text-gray-700 mb-2">Status</label>
                 <select
                   id="status"
@@ -184,23 +183,16 @@ const Billing = () => {
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
                 >
                   <option value="">Select Status</option>
-                  <option value="Pending">Pending</option>
+                  <option value="Unpaid">Unpaid</option>
                   <option value="Paid">Paid</option>
                 </select>
               </div>
-              <div className="flex justify-end mt-6">
+              <div className="flex justify-end mt-4">
                 <button
-                  type="submit"
-                  className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition"
-                >
-                  Add Billing
-                </button>
-                <button
+                  type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="ml-2 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition"
-                >
-                  Cancel
-                </button>
+                  className="mr-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg">Add Billing</button>
               </div>
             </form>
           </div>

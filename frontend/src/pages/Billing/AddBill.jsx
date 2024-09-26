@@ -36,15 +36,6 @@ const AddBillingModal = ({ isOpen, onClose }) => {
       <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
         <h2 className="text-2xl font-bold mb-4">Add Billing</h2>
         <form onSubmit={handleAddBilling}>
-          <div className="mb-4">
-            <label className="block text-gray-700">Amount:</label>
-            <input
-              type="text"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="border rounded w-full py-2 px-3"
-            />
-          </div>
           <div className="flex justify-end space-x-4">
             <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
               Add Billing
