@@ -58,7 +58,7 @@ const Sidebar = () => {
           <Link
             to="/dashboard"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/dashboard") ? "bg-red-800 text-white" : "text-white"
+              isActive("/dashboard") ? "bg-red-800 text-white shadow-sm" : "text-white"
             } hover:bg-red-800`}
           >
             <HomeIcon className="w-6 h-6 mr-3" />
@@ -68,7 +68,7 @@ const Sidebar = () => {
           <Link
             to="/inventory"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/inventory") ? "bg-red-800 text-white" : "text-white"
+              isActive("/inventory") ? "bg-red-800 text-white shadow-sm" : "text-white"
             } hover:bg-red-800`}
           >
             <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
@@ -78,7 +78,7 @@ const Sidebar = () => {
           <Link
             to="/patients"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/patients") ? "bg-red-800 text-white" : "text-white"
+              isActive("/patients") ? "bg-red-800 text-white shadow-sm" : "text-white"
             } hover:bg-red-800`}
           >
             <UserGroupIcon className="w-6 h-6 mr-3" />
@@ -88,7 +88,7 @@ const Sidebar = () => {
           <Link
             to="/billing"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/billing") ? "bg-red-800 text-white" : "text-white"
+              isActive("/billing") ? "bg-red-800 text-white shadow-sm" : "text-white"
             } hover:bg-red-800`}
           >
             <CreditCardIcon className="w-6 h-6 mr-3" />
@@ -98,7 +98,7 @@ const Sidebar = () => {
           <Link
             to="/analytics"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/analytics") ? "bg-red-800 text-white" : "text-white"
+              isActive("/analytics") ? "bg-red-800 text-white shadow-sm" : "text-white"
             } hover:bg-red-800`}
           >
             <ChartBarIcon className="w-6 h-6 mr-3" />
@@ -107,7 +107,9 @@ const Sidebar = () => {
 
           {/* <Link
             to="/settings"
-            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
+            className={`flex items-center px-4 py-2 mt-2 ${
+              isActive("/analytics") ? "bg-red-800 text-white shadow-sm" : "text-white"
+            } hover:bg-red-800`}
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
