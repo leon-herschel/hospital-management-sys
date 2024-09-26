@@ -2,18 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ref, push, set, get, remove } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ViewBill from './ViewBill'; // Ensure to import ViewBill
+import { string } from 'prop-types';
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newBillingData, setNewBillingData] = useState({ patientId: '', status: '' });
+  const [newBillingData, setNewBillingData] = useState({ amount: '', patientId: '', status: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [patients, setPatients] = useState({});
   const [viewBilling, setViewBilling] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  
-  // Initialize amountRef
-  const amountRef = useRef({}); 
+
 
   // Fetch billings from Firebase
   useEffect(() => {
@@ -23,9 +22,7 @@ const Billing = () => {
       if (snapshot.exists()) {
         const billingList = [];
         snapshot.forEach((childSnapshot) => {
-          const billing = { id: childSnapshot.key, ...childSnapshot.val() };
-          billing.amount = billing.amount || 0; // Ensure amount exists
-          billingList.push(billing);
+          billingList.push({ id: childSnapshot.key, ...childSnapshot.val() });
         });
         setBillings(billingList);
       }
@@ -71,29 +68,29 @@ const Billing = () => {
   const handleAddBilling = async (e) => {
     e.preventDefault();
     
-    // Use amountRef to get the amount value
-    const amount = amountRef.current.value;
-
-    if (!newBillingData.patientId || !newBillingData.status || !amount) {
+ 
+    const amount = ''
+    
+    if (!newBillingData.patientId || !newBillingData.status) {
       alert('Please fill out all fields');
       return;
     }
-
+  
     try {
       const billingRef = ref(database, 'billing');
       const newBillingRef = push(billingRef);
       
-      // Store the billing data
+      // Store the billing data with a default amount
       await set(newBillingRef, { ...newBillingData, amount });
       setBillings([...billings, { id: newBillingRef.key, ...newBillingData, amount }]);
       setIsAddModalOpen(false);
-      setNewBillingData({ patientId: '', status: '' });
-      amountRef.current.value = ''; // Reset the amount input
+      setNewBillingData({ amount: '', patientId: '', status: '' });
     } catch (error) {
       alert('Error adding billing: ' + error.message);
     }
   };
   
+
   const handleViewBilling = (billing) => {
     setViewBilling(billing); // Set the selected billing for viewing
     setIsViewModalOpen(true); // Open the view modal
@@ -136,23 +133,17 @@ const Billing = () => {
         </thead>
         <tbody>
           {filteredBillings.length > 0 ? (
-            filteredBillings.map(billing => {
-              amountRef.current[billing.id] = billing.amount;
-
-              return (
-                <tr key={billing.id} className="hover:bg-gray-100">
-                  <td className="border-b px-4 py-2">{patients[billing.patientId]}</td>
-                  <td className="border-b px-4 py-2">
-                    ₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(amountRef.current[billing.id])}
-                  </td>
-                  <td className="border-b px-4 py-2">{billing.status}</td>
-                  <td className="border-b px-4 py-2">
-                    <button onClick={() => handleViewBilling(billing)} className="text-blue-600 hover:underline">View</button>
-                    <button onClick={() => handleDeleteBilling(billing)} className="text-red-600 hover:underline ml-2">Delete</button>
-                  </td>
-                </tr>
-              );
-            })
+            filteredBillings.map(billing => (
+              <tr key={billing.id} className="hover:bg-gray-100">
+                <td className="border-b px-4 py-2">{patients[billing.patientId]}</td>
+                <td className="border-b px-4 py-2">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
+                <td className="border-b px-4 py-2">{billing.status}</td>
+                <td className="border-b px-4 py-2">
+                  <button onClick={() => handleViewBilling(billing)} className="text-blue-600 hover:underline">View</button>
+                  <button onClick={() => handleDeleteBilling(billing)} className="text-red-600 hover:underline ml-2">Delete</button>
+                </td>
+              </tr>
+            ))
           ) : (
             <tr>
               <td colSpan="4" className="border-b px-4 py-2 text-center">No billings found.</td>
@@ -185,15 +176,6 @@ const Billing = () => {
                 </select>
               </div>
               <div className="mt-4">
-                <label htmlFor="amount" className="block text-gray-700 mb-2">Amount</label>
-                <input
-                  type="number"
-                  ref={amountRef} // Assign the ref to the input
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  placeholder="Enter amount"
-                />
-              </div>
-              <div className="mt-4">
                 <label htmlFor="status" className="block text-gray-700 mb-2">Status</label>
                 <select
                   id="status"
@@ -202,12 +184,15 @@ const Billing = () => {
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
                 >
                   <option value="">Select Status</option>
-                  <option value="Pending">Pending</option>
+                  <option value="Unpaid">Unpaid</option>
                   <option value="Paid">Paid</option>
                 </select>
               </div>
-              <div className="mt-6 flex justify-end">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="mr-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
+              <div className="flex justify-end mt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="mr-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
                 <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg">Add Billing</button>
               </div>
             </form>
@@ -219,3 +204,4 @@ const Billing = () => {
 };
 
 export default Billing;
+
