@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ref, push, set, get, remove } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ViewBill from './ViewBill'; // Ensure to import ViewBill
+import { string } from 'prop-types';
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
@@ -68,7 +69,7 @@ const Billing = () => {
     e.preventDefault();
     
  
-    const amount = null; 
+    const amount = ""; 
     
     if (!newBillingData.patientId || !newBillingData.status) {
       alert('Please fill out all fields');
