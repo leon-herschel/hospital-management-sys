@@ -5,7 +5,8 @@ import { database } from "../../firebase/firebase";
 
 // Helper function to generate a random alphanumeric string
 const generateRandomKey = (length) => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -29,12 +30,12 @@ const calculateStatus = (quantity, maxQuantity) => {
 function AddInventory({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [department, setDepartment] = useState("");
   const [costPrice, setCostPrice] = useState(""); // New state for cost price
   const [retailPrice, setRetailPrice] = useState(""); // New state for retail price
 
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !department || !costPrice || !retailPrice) { // Check if all fields are filled
+    if (!itemName || !quantity || !costPrice || !retailPrice) {
+      // Check if all fields are filled
       alert("Please fill in all the required fields");
       return;
     }
@@ -58,7 +59,6 @@ function AddInventory({ isOpen, toggleModal }) {
         itemName: itemName,
         quantity: maxQuantity, // Use Number to ensure it's a numerical value
         maxQuantity: maxQuantity, // Initial quantity becomes the maxQuantity
-        department: department,
         costPrice: Number(costPrice), // Convert cost price to a number
         retailPrice: Number(retailPrice), // Convert retail price to a number
         status: status, // Dynamically calculated status
@@ -70,7 +70,6 @@ function AddInventory({ isOpen, toggleModal }) {
           alert("Inventory has been added successfully!");
           setItemName("");
           setQuantity("");
-          setDepartment("");
           setCostPrice(""); // Reset cost price field
           setRetailPrice(""); // Reset retail price field
           toggleModal();
@@ -124,26 +123,6 @@ function AddInventory({ isOpen, toggleModal }) {
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="department" className="block text-gray-700 mb-2">
-            Department
-          </label>
-          <select
-            id="department"
-            name="department"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-          >
-            <option value="" disabled>
-              Select Department
-            </option>
-            <option value="IT">IT</option>
-            <option value="Nursing">Nursing</option>
-            <option value="MedTech">Medical Technology</option>
-          </select>
         </div>
 
         <div className="mb-4">
