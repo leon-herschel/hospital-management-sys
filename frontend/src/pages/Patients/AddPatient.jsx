@@ -61,7 +61,9 @@ function AddPatient({ isOpen, toggleModal }) {
     doc.text(`Gender: ${patientInfo.gender}`, 90, 50);
     doc.text(`Contact: ${patientInfo.contact}`, 90, 60);
     doc.text(`Status: ${patientInfo.status}`, 90, 70);
-    doc.text(`Room Type: ${patientInfo.roomType}`, 90, 80);
+    if (patientInfo.roomType) {
+      doc.text(`Room Type: ${patientInfo.roomType}`, 90, 80);
+    }
 
     const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
       width: 100,
@@ -81,7 +83,7 @@ function AddPatient({ isOpen, toggleModal }) {
       !contact ||
       !status ||
       !dateTime ||
-      !roomType
+      (status === "Inpatient" && !roomType) // Ensure roomType is selected for inpatients
     ) {
       alert("Please fill in all required fields");
       return;
@@ -206,7 +208,7 @@ function AddPatient({ isOpen, toggleModal }) {
             <option value="Female">Female</option>
           </select>
         </div>
-        <br></br>
+        <br />
 
         <div className="mb-4">
           <label htmlFor="contact" className="block text-gray-700 mb-2">
@@ -241,24 +243,27 @@ function AddPatient({ isOpen, toggleModal }) {
           </select>
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="roomType" className="block text-gray-700 mb-2">
-            Type of Room
-          </label>
-          <select
-            id="roomType"
-            name="roomType"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-            value={roomType}
-            onChange={(e) => setRoomType(e.target.value)}
-          >
-            <option value="" disabled>
-              Select Room
-            </option>
-            <option value="Private">Private</option>
-            <option value="Public">Public</option>
-          </select>
-        </div>
+        {status === "Inpatient" && (
+          <div className="mb-4">
+            <label htmlFor="roomType" className="block text-gray-700 mb-2">
+              Type of Room
+            </label>
+            <select
+              id="roomType"
+              name="roomType"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              value={roomType}
+              onChange={(e) => setRoomType(e.target.value)}
+            >
+              <option value="" disabled>
+                Select Room
+              </option>
+              <option value="Private">Private</option>
+              <option value="Public">Public</option>
+            </select>
+          </div>
+        )}
+
         <div>
           <label htmlFor="datetime">Date and Time</label>
           <input
