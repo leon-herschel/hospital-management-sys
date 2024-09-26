@@ -4,6 +4,7 @@ import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
 import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
+import Notification from "./Notification";
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
@@ -142,6 +143,7 @@ function Inventory() {
 
   return (
     <div className="w-full">
+      <Notification />
       <div className="flex justify-center text-lg">
         <h2>INVENTORY SYSTEM</h2>
       </div>
