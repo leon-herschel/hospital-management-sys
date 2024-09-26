@@ -4,6 +4,7 @@ import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
 import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
+import Notification from "./Notification";
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
@@ -142,7 +143,11 @@ function Inventory() {
 
   return (
     <div className="w-full">
-      <div className="flex justify-center space-x-4">
+      <Notification />
+      <div className="flex justify-center text-lg">
+        <h2>INVENTORY SYSTEM</h2>
+      </div>
+      <div className="flex justify-center space-x-4 mb-4">
         <button
           onClick={() => setSelectedTab("medicine")}
           className={`px-8 py-3 rounded-md transition duration-200 ${
@@ -168,7 +173,7 @@ function Inventory() {
       {selectedTab === "medicine" && (
         <>
           <div className="flex justify-between items-center">
-          <div className="my-4">
+            <div className="my-4">
               <input
                 type="text"
                 placeholder="Search by item name..."
@@ -188,45 +193,26 @@ function Inventory() {
             <table className="w-full text-md text-gray-800 text-center border border-stone-200">
               <thead className="text-sm uppercase bg-stone-200">
                 <tr>
-                  <th className="px-6 py-3">
-                    Item Name
-                  </th>
-                  <th className="px-6 py-3">
-                    Quantity
-                  </th>
-                  <th className="px-6 py-3">
-                    Department
-                  </th>
-                  <th className="px-6 py-3">
-                    Cost Price (₱)
-                  </th>
-                  <th className="px-6 py-3">
-                    Retail Price (₱)
-                  </th>
-                  <th className="px-6 py-3">
-                    Status
-                  </th>
-                  <th className="px-6 py-3">
-                    QR Code
-                  </th>
-                  <th className="px-6 py-3">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3">Item Name</th>
+                  <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Department</th>
+                  <th className="px-6 py-3">Cost Price (₱)</th>
+                  <th className="px-6 py-3">Retail Price (₱)</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">QR Code</th>
+                  <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredList.length > 0 ? (
                   filteredList.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-stone-100">
-                      <td className="px-6 py-4">
-                        {item.itemName}
-                      </td>
-                      <td className="px-6 py-4">
-                        {item.quantity}
-                      </td>
-                      <td className="px-6 py-4">
-                        {item.department}
-                      </td>
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-stone-100"
+                    >
+                      <td className="px-6 py-4">{item.itemName}</td>
+                      <td className="px-6 py-4">{item.quantity}</td>
+                      <td className="px-6 py-4">{item.department}</td>
                       <td className="px-6 py-4">
                         {(item.costPrice !== undefined
                           ? item.costPrice
@@ -241,9 +227,7 @@ function Inventory() {
                         ).toFixed(2)}{" "}
                         {/* Fallback to 0 if retail price is undefined */}
                       </td>
-                      <td className="px-6 py-4">
-                        {item.status}
-                      </td>
+                      <td className="px-6 py-4">{item.status}</td>
                       <td className="px-6 py-4 flex justify-center items-center">
                         <QRCode size={50} value={item.id} />{" "}
                         {/* Display only the unique ID */}
@@ -266,10 +250,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan="8"
-                      className="px-6 py-4"
-                    >
+                    <td colSpan="8" className="px-6 py-4">
                       No items in inventory
                     </td>
                   </tr>
@@ -285,57 +266,42 @@ function Inventory() {
         <>
           <div className="flex justify-between items-center">
             <div className="my-4">
-                <input
-                  type="text"
-                  placeholder="Search by supply name..."
-                  className="border border-stone-300 px-4 py-2 rounded-lg"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <button
-                onClick={toggleSupplyModal}
-                className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-              >
-                Add Supply Item
-              </button>
+              <input
+                type="text"
+                placeholder="Search by supply name..."
+                className="border border-stone-300 px-4 py-2 rounded-lg"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={toggleSupplyModal}
+              className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+            >
+              Add Supply Item
+            </button>
           </div>
           <table className="w-full text-md text-gray-800 text-center border border-stone-200">
             <thead className="text-sm uppercase bg-stone-200">
               <tr>
-                <th className="px-6 py-3">
-                  Supply Name
-                </th>
-                <th className="px-6 py-3">
-                  Quantity
-                </th>
-                <th className="px-6 py-3">
-                  Cost Price (₱)
-                </th>
-                <th className="px-6 py-3">
-                  Retail Price (₱)
-                </th>
-                <th className="px-6 py-3">
-                  Status
-                </th>
-                <th className="px-6 py-3">
-                  QR Code
-                </th>
-                <th className="px-6 py-3">
-                  Actions
-                </th>
+                <th className="px-6 py-3">Supply Name</th>
+                <th className="px-6 py-3">Quantity</th>
+                <th className="px-6 py-3">Cost Price (₱)</th>
+                <th className="px-6 py-3">Retail Price (₱)</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">QR Code</th>
+                <th className="px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredList.length > 0 ? (
                 filteredList.map((item) => (
-                  <tr key={item.id} className="bg-white border-b hover:bg-stone-100">
-                    <td className="px-6 py-3">
-                      {item.itemName}
-                    </td>
-                    <td className="px-6 py-3">
-                      {item.quantity}
-                    </td>
+                  <tr
+                    key={item.id}
+                    className="bg-white border-b hover:bg-stone-100"
+                  >
+                    <td className="px-6 py-3">{item.itemName}</td>
+                    <td className="px-6 py-3">{item.quantity}</td>
                     <td className="px-6 py-3">
                       {(item.costPrice !== undefined
                         ? item.costPrice
@@ -350,9 +316,7 @@ function Inventory() {
                       ).toFixed(2)}{" "}
                       {/* Fallback to 0 if retail price is undefined */}
                     </td>
-                    <td className="px-6 py-3">
-                      {item.status}
-                    </td>
+                    <td className="px-6 py-3">{item.status}</td>
                     <td className="px-6 py-4 flex justify-center items-center">
                       <QRCode size={50} value={item.id} />{" "}
                       {/* Display only the unique ID */}
@@ -375,10 +339,7 @@ function Inventory() {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="7"
-                    className="px-6 py-3"
-                  >
+                  <td colSpan="7" className="px-6 py-3">
                     No supplies in inventory
                   </td>
                 </tr>
@@ -390,8 +351,8 @@ function Inventory() {
       )}
 
       {editModal && (
-      <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
             <h2 className="text-lg font-bold mb-4">
               Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item
             </h2>
