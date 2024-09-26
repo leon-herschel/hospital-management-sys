@@ -218,37 +218,37 @@ function Inventory() {
                 {filteredList.length > 0 ? (
                   filteredList.map((item) => (
                     <tr key={item.id} className="bg-white border-b hover:bg-stone-100">
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         {item.itemName}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         {item.quantity}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         {item.department}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         {(item.costPrice !== undefined
                           ? item.costPrice
                           : 0
                         ).toFixed(2)}{" "}
                         {/* Fallback to 0 if cost price is undefined */}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         {(item.retailPrice !== undefined
                           ? item.retailPrice
                           : 0
                         ).toFixed(2)}{" "}
                         {/* Fallback to 0 if retail price is undefined */}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         {item.status}
                       </td>
-                      <td className="px-6 py-4 flex justify-center items-center">
+                      <td className="px-6 py-3 flex justify-center items-center">
                         <QRCode size={50} value={item.id} />{" "}
                         {/* Display only the unique ID */}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         <button
                           onClick={() => handleEdit(item)}
                           className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
@@ -268,7 +268,7 @@ function Inventory() {
                   <tr>
                     <td
                       colSpan="8"
-                      className="px-6 py-4"
+                      className="px-6 py-3"
                     >
                       No items in inventory
                     </td>
@@ -353,7 +353,7 @@ function Inventory() {
                     <td className="px-6 py-3">
                       {item.status}
                     </td>
-                    <td className="px-6 py-4 flex justify-center items-center">
+                    <td className="px-6 py-3 flex justify-center items-center">
                       <QRCode size={50} value={item.id} />{" "}
                       {/* Display only the unique ID */}
                     </td>
