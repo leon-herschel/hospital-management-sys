@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
 
@@ -27,7 +27,7 @@ const Modal = ({ isOpen, onClose, notifications }) => {
 
 function Notification() {
   const [notifications, setNotifications] = useState([]);
-  const [itemsTracked, setItemsTracked] = useState({});
+  const itemsTrackedRef = useRef({}); // Use a ref for tracking items
   const [modal, setModal] = useState(false);
 
   const toggleModal = () => {
@@ -40,28 +40,17 @@ function Notification() {
 
     const notifyLowStock = (data) => {
       const newNotifications = [];
-      const updatedItemsTracked = { ...itemsTracked };
+      const updatedItemsTracked = { ...itemsTrackedRef.current };
 
       for (const key in data) {
         const item = data[key];
         console.log(`Checking item: ${item.itemName}, Status: ${item.status}`); // Log each item's status
 
-        if (!updatedItemsTracked[key] && item.status === "Very Low") {
+        // If the status is low and it's not already notified
+        if (item.status === "Very Low" && !updatedItemsTracked[key]) {
           console.log(
             `Notifying about low stock: ${item.itemName}, Status: ${item.status}`
           );
-        } else if (
-          updatedItemsTracked[key] &&
-          item.status !== "Low" &&
-          item.status !== "Very Low"
-        ) {
-          console.log(
-            `Status improved for: ${item.itemName}, Status: ${item.status}`
-          );
-        }
-
-        // If the status is low and it's not already notified
-        if (item.status === "Very Low" && !updatedItemsTracked[key]) {
           newNotifications.push({
             id: key,
             message: `${item.itemName} is ${item.status}`,
@@ -72,6 +61,9 @@ function Notification() {
           item.status !== "Low" &&
           item.status !== "Very Low"
         ) {
+          console.log(
+            `Status improved for: ${item.itemName}, Status: ${item.status}`
+          );
           // If the item is no longer low, remove from tracking
           delete updatedItemsTracked[key];
           // Remove the notification when stock status improves
@@ -81,7 +73,7 @@ function Notification() {
         }
       }
 
-      setItemsTracked(updatedItemsTracked);
+      itemsTrackedRef.current = updatedItemsTracked; // Update ref without causing a re-render
       return newNotifications.filter(
         (newNotif) =>
           !notifications.some(
@@ -116,7 +108,7 @@ function Notification() {
       unsubscribeInventory();
       unsubscribeSupplies();
     };
-  }, [itemsTracked]);
+  }, []); // Removed itemsTracked from the dependencies
 
   return (
     <div className="notification-container">
