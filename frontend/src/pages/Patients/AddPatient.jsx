@@ -29,6 +29,28 @@ function AddPatient({ isOpen, toggleModal }) {
     setDateTime(formatDateToLocal(currentDateTime));
   }, []);
 
+  useEffect(() => {
+    if (birth) {
+      const calculatedAge = calculateAge(new Date(birth));
+      setAge(calculatedAge);
+    } else {
+      setAge(""); // Reset age if no birth date is provided
+    }
+  }, [birth]);
+
+  const calculateAge = (birthDate) => {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+    // Adjust age if the birthday hasn't occurred yet this year
+    if (
+      monthDifference < 0 ||
+      (monthDifference === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+    return age;
+  };
 
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
@@ -157,12 +179,12 @@ function AddPatient({ isOpen, toggleModal }) {
             Age
           </label>
           <input
-            type="number"
+            type="text"
             id="age"
             name="age"
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={age}
-            onChange={(e) => setAge(e.target.value)}
+            readOnly
           />
         </div>
 
@@ -239,8 +261,14 @@ function AddPatient({ isOpen, toggleModal }) {
         </div>
         <div>
           <label htmlFor="datetime">Date and Time</label>
-          <input type="datetime-local" id="datetime" name="datetime" className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300" value={dateTime}
-          onChange={(e) => setDateTime(e.target.value)}/>
+          <input
+            type="datetime-local"
+            id="datetime"
+            name="datetime"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            value={dateTime}
+            onChange={(e) => setDateTime(e.target.value)}
+          />
         </div>
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
