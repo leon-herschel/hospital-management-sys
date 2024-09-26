@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ref, push, set, get, remove } from 'firebase/database';
 import { database } from '../../firebase/firebase';
-import ViewBill from './ViewBill'; // Ensure to import ViewBill
-import { string } from 'prop-types';
+import ViewBill from './ViewBill'; 
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
@@ -103,62 +102,59 @@ const Billing = () => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-center">
-        <h1 className="text-3xl font-bold mb-4">Billing List</h1>
-      </div>
-
       <div className="flex justify-between items-center mb-4">
         <input
           type="text"
           placeholder="Search by patient name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border px-4 py-2 rounded-lg w-full max-w-xs"
+          className="border border-stone-300 px-4 py-2 rounded-md"
         />
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+          className="ml-auto bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
           Add New Billing
         </button>
       </div>
 
-      <table className="min-w-full border-collapse border border-gray-300 bg-white">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border-b px-4 py-2 text-left">Patient</th>
-            <th className="border-b px-4 py-2 text-left">Amount</th>
-            <th className="border-b px-4 py-2 text-left">Status</th>
-            <th className="border-b px-4 py-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredBillings.length > 0 ? (
-            filteredBillings.map(billing => (
-              <tr key={billing.id} className="hover:bg-gray-100">
-                <td className="border-b px-4 py-2">{patients[billing.patientId]}</td>
-                <td className="border-b px-4 py-2">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
-                <td className="border-b px-4 py-2">{billing.status}</td>
-                <td className="border-b px-4 py-2">
-                  <button onClick={() => handleViewBilling(billing)} className="text-blue-600 hover:underline">View</button>
-                  <button onClick={() => handleDeleteBilling(billing)} className="text-red-600 hover:underline ml-2">Delete</button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="4" className="border-b px-4 py-2 text-center">No billings found.</td>
+      <div className="relative overflow-x-auto shadow-sm">
+        <table className="w-full text-md text-gray-800 text-center border border-stone-200">
+          <thead className="text-sm uppercase bg-stone-200">
+            <tr className="bg-gray-200">
+              <th className="px-6 py-3">Patient</th>
+              <th className="px-6 py-3">Amount</th>
+              <th className="px-6 py-3">Status</th>
+              <th className="px-6 py-3">Actions</th>
             </tr>
-          )}
-        </tbody>
-      </table>
-
+          </thead>
+          <tbody>
+            {filteredBillings.length > 0 ? (
+              filteredBillings.map(billing => (
+                <tr key={billing.id} className="bg-white border-b hover:bg-stone-100">
+                  <td className="px-6 py-3">{patients[billing.patientId]}</td>
+                  <td className="px-6 py-3">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
+                  <td className="px-6 py-3">{billing.status}</td>
+                  <td className="px-6 py-3">
+                    <button onClick={() => handleViewBilling(billing)} className="ml-4 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-md">View</button>
+                    <button onClick={() => handleDeleteBilling(billing)} className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md">Delete</button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="px-6 py-3">No billings found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       {isViewModalOpen && viewBilling && (
         <ViewBill billing={viewBilling} patients={patients} onClose={handleCloseModal} />
       )}
 
       {isAddModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
             <h2 className="text-2xl font-bold mb-4">Add New Billing</h2>
             <form onSubmit={handleAddBilling}>
               <div className="mt-4">
