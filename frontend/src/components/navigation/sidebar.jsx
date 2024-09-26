@@ -28,7 +28,6 @@ const Sidebar = () => {
     "/settings": "Settings",
     "/analytics": "Analytics",
     "/billing": "Billing",
-    "/admin": "Admin",
   };
 
   const currentTitle = titles[location.pathname] || "Overview";
@@ -101,14 +100,6 @@ const Sidebar = () => {
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
-          </Link>
-
-          <Link
-            to="/admin"
-            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
-          >
-            <ShieldCheckIcon className="w-6 h-6 mr-3" />
-            Admin
           </Link>
 
           <a
