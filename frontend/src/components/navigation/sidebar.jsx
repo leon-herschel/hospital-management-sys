@@ -9,8 +9,9 @@ import {
   ChartBarIcon,
   PowerIcon,
   Bars3Icon,
-  Cog8ToothIcon,
+  //Cog8ToothIcon,
   UserGroupIcon,
+  CreditCardIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 
@@ -21,17 +22,17 @@ const Sidebar = () => {
 
   const titles = {
     "/dashboard": "Overview",
-    "/patients": "Patients",
-    "/inventory": "Inventory",
+    "/patients": "Patient Management System",
+    "/inventory": "Inventory Management System",
     "/settings": "Settings",
     "/analytics": "Analytics",
-    "/billing": "Billing",
+    "/billing": "Billing List",
   };
 
   const currentTitle = titles[location.pathname] || "Overview";
 
   return (
-    <div className="flex h-screen shadow-lg">
+    <div className="flex h-screen">
       {/* Sidebar Toggle */}
       <div
         className={`fixed inset-0 z-20 transition-opacity bg-neutral-100 opacity-50 lg:hidden ${
@@ -47,14 +48,14 @@ const Sidebar = () => {
         } lg:translate-x-0 lg:static lg:inset-0`}
       >
         <div className="flex items-center justify-center">
-          <img src={logoSidebar} alt="Logo" className="w-auto h-30" />
+          <img src={logoSidebar} alt="Logo" className="w-auto h-24" />
         </div>
 
         {/* Navigation */}
         <nav className="mt-1">
           <Link
             to="/dashboard"
-            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
           >
             <HomeIcon className="w-6 h-6 mr-3" />
             Overview
@@ -62,7 +63,7 @@ const Sidebar = () => {
 
           <Link
             to="/inventory"
-            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
           >
             <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
             Inventory
@@ -70,7 +71,7 @@ const Sidebar = () => {
 
           <Link
             to="/patients"
-            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
           >
             <UserGroupIcon className="w-6 h-6 mr-3" />
             Patients
@@ -78,27 +79,27 @@ const Sidebar = () => {
 
           <Link
             to="/billing"
-            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
           >
-            <UserGroupIcon className="w-6 h-6 mr-3" />
+            <CreditCardIcon className="w-6 h-6 mr-3" />
             Billing
           </Link>
 
           <Link
             to="/analytics"
-            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
           >
             <ChartBarIcon className="w-6 h-6 mr-3" />
             Analytics
           </Link>
 
-          <Link
+         {/* <Link
             to="/settings"
-            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
-          </Link>
+          </Link> */}
 
           <a
             onClick={() => {
@@ -106,7 +107,7 @@ const Sidebar = () => {
                 navigate("/signin");
               });
             }}
-            className="flex items-center px-4 py-2 mt-2 text-white opacity-85 hover:opacity-100 hover:bg-red-800 cursor-pointer"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800 cursor-pointer"
           >
             <PowerIcon className="w-6 h-6 mr-3" />
             Logout
@@ -115,8 +116,8 @@ const Sidebar = () => {
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Navbar */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Navbar */}
         <header className="flex justify-between items-center p-4 bg-red-900">
           <button
             className="lg:hidden text-white"
@@ -131,8 +132,8 @@ const Sidebar = () => {
           </div>
         </header>
 
-        {/* Pages Area */}
-        <div className="flex-grow p-4 bg-neutral-100">
+        {/* Pages Area*/}
+        <div className="flex-grow overflow-y-auto pt-8 px-6 bg-stone-50">
           <Outlet />
         </div>
       </div>

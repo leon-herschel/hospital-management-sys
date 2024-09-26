@@ -150,9 +150,9 @@ function Inventory() {
       <div className="flex justify-center space-x-4 mb-4">
         <button
           onClick={() => setSelectedTab("medicine")}
-          className={`px-4 py-2 rounded-lg transition duration-200 ${
+          className={`px-8 py-3 rounded-md transition duration-200 ${
             selectedTab === "medicine"
-              ? "bg-blue-500 text-white"
+              ? "bg-red-800 text-white text-bold"
               : "bg-gray-200 text-black"
           }`}
         >
@@ -160,9 +160,9 @@ function Inventory() {
         </button>
         <button
           onClick={() => setSelectedTab("supplies")}
-          className={`px-4 py-2 rounded-lg transition duration-200 ${
+          className={`px-6 py-2 rounded-md transition duration-200 ${
             selectedTab === "supplies"
-              ? "bg-blue-500 text-white"
+              ? "bg-red-800 text-white text-bold"
               : "bg-gray-200 text-black"
           }`}
         >
@@ -172,216 +172,174 @@ function Inventory() {
 
       {selectedTab === "medicine" && (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={toggleModal}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
-            >
-              Add New Medicine Item
-            </button>
+          <div className="flex justify-between items-center">
             <div className="my-4">
               <input
                 type="text"
                 placeholder="Search by item name..."
-                className="border px-4 py-2 w-full"
+                className="border border-stone-300 px-4 py-2 rounded-md"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <button
+              onClick={toggleModal}
+              className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+            >
+              Add New Medicine Item
+            </button>
           </div>
-          <table className="min-w-full border-collapse border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Item Name
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Quantity
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Department
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Cost Price (₱)
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Retail Price (₱)
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Status
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  QR Code
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredList.length > 0 ? (
-                filteredList.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.itemName}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.quantity}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.department}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {(item.costPrice !== undefined
-                        ? item.costPrice
-                        : 0
-                      ).toFixed(2)}{" "}
-                      {/* Fallback to 0 if cost price is undefined */}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {(item.retailPrice !== undefined
-                        ? item.retailPrice
-                        : 0
-                      ).toFixed(2)}{" "}
-                      {/* Fallback to 0 if retail price is undefined */}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.status}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <QRCode size={50} value={item.id} />{" "}
-                      {/* Display only the unique ID */}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
-                      >
-                        DELETE
-                      </button>
+          <div className="relative overflow-x-auto shadow-sm">
+            <table className="w-full text-md text-gray-800 text-center border border-stone-200">
+              <thead className="text-sm uppercase bg-stone-200">
+                <tr>
+                  <th className="px-6 py-3">Item Name</th>
+                  <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Department</th>
+                  <th className="px-6 py-3">Cost Price (₱)</th>
+                  <th className="px-6 py-3">Retail Price (₱)</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">QR Code</th>
+                  <th className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredList.length > 0 ? (
+                  filteredList.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-stone-100"
+                    >
+                      <td className="px-6 py-4">{item.itemName}</td>
+                      <td className="px-6 py-4">{item.quantity}</td>
+                      <td className="px-6 py-4">{item.department}</td>
+                      <td className="px-6 py-4">
+                        {(item.costPrice !== undefined
+                          ? item.costPrice
+                          : 0
+                        ).toFixed(2)}{" "}
+                        {/* Fallback to 0 if cost price is undefined */}
+                      </td>
+                      <td className="px-6 py-4">
+                        {(item.retailPrice !== undefined
+                          ? item.retailPrice
+                          : 0
+                        ).toFixed(2)}{" "}
+                        {/* Fallback to 0 if retail price is undefined */}
+                      </td>
+                      <td className="px-6 py-4">{item.status}</td>
+                      <td className="px-6 py-4 flex justify-center items-center">
+                        <QRCode size={50} value={item.id} />{" "}
+                        {/* Display only the unique ID */}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="px-6 py-4">
+                      No items in inventory
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="8"
-                    className="border border-gray-300 px-4 py-2 text-center"
-                  >
-                    No items in inventory
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
           <AddInventory isOpen={modal} toggleModal={toggleModal} />
         </>
       )}
 
       {selectedTab === "supplies" && (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={toggleSupplyModal}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
-            >
-              Add Supply Item
-            </button>
+          <div className="flex justify-between items-center">
             <div className="my-4">
               <input
                 type="text"
                 placeholder="Search by supply name..."
-                className="border px-4 py-2 w-full"
+                className="border border-stone-300 px-4 py-2 rounded-lg"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <button
+              onClick={toggleSupplyModal}
+              className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+            >
+              Add Supply Item
+            </button>
           </div>
-          <table className="min-w-full border-collapse border border-gray-300">
-            <thead className="bg-gray-100">
+          <table className="w-full text-md text-gray-800 text-center border border-stone-200">
+            <thead className="text-sm uppercase bg-stone-200">
               <tr>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Supply Name
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Quantity
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Cost Price (₱)
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Retail Price (₱)
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Status
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  QR Code
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Action
-                </th>
+                <th className="px-6 py-3">Supply Name</th>
+                <th className="px-6 py-3">Quantity</th>
+                <th className="px-6 py-3">Cost Price (₱)</th>
+                <th className="px-6 py-3">Retail Price (₱)</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">QR Code</th>
+                <th className="px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredList.length > 0 ? (
                 filteredList.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.itemName}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.quantity}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
+                  <tr
+                    key={item.id}
+                    className="bg-white border-b hover:bg-stone-100"
+                  >
+                    <td className="px-6 py-3">{item.itemName}</td>
+                    <td className="px-6 py-3">{item.quantity}</td>
+                    <td className="px-6 py-3">
                       {(item.costPrice !== undefined
                         ? item.costPrice
                         : 0
                       ).toFixed(2)}{" "}
                       {/* Fallback to 0 if cost price is undefined */}
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
+                    <td className="px-6 py-3">
                       {(item.retailPrice !== undefined
                         ? item.retailPrice
                         : 0
                       ).toFixed(2)}{" "}
                       {/* Fallback to 0 if retail price is undefined */}
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.status}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
+                    <td className="px-6 py-3">{item.status}</td>
+                    <td className="px-6 py-4 flex justify-center items-center">
                       <QRCode size={50} value={item.id} />{" "}
                       {/* Display only the unique ID */}
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
+                    <td className="px-6 py-3">
                       <button
                         onClick={() => handleEdit(item)}
-                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
+                        className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
+                        className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
                       >
-                        DELETE
+                        Delete
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="7"
-                    className="border border-gray-300 px-4 py-2 text-center"
-                  >
+                  <td colSpan="7" className="px-6 py-3">
                     No supplies in inventory
                   </td>
                 </tr>
@@ -394,7 +352,7 @@ function Inventory() {
 
       {editModal && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
             <h2 className="text-lg font-bold mb-4">
               Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item
             </h2>
