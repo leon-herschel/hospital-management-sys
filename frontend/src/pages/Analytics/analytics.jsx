@@ -1,24 +1,60 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { get, ref } from 'firebase/database'; // Import necessary Firebase functions
+import { database } from "../../firebase/firebase";
 
 const Analytics = () => {
-  // Data for the pie chart (Medicines)
-  const medicineData = [
-    { name: 'Ibuprofen', value: 33.7 },
-    { name: 'Cephalexin', value: 21.4 },
-    { name: 'Melatonin', value: 14.3 },
-    { name: 'Amoxicillin', value: 17.6 },
-    { name: 'Naproxen', value: 10.7 }
-  ];
+  const [inventoryHistory, setInventoryHistory] = useState([]); // State to hold fetched data
+
+  useEffect(() => {
+    const inventoryRef = ref(database, "inventoryHistory"); // Reference to the inventoryHistory collection
+
+    // Fetch the data
+    get(inventoryRef)
+      .then(snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          // Convert the object to an array
+          const items = Object.values(data);
+          setInventoryHistory(items); // Update the state with fetched data
+        } else {
+          console.log("No data available");
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching data: ", error);
+      });
+  }, []);
+
+  // Process data for the pie chart (Medicines)
+  const medicineData = inventoryHistory.reduce((acc, item) => {
+    // Check if the item is a medicine
+    if (item.type === "medicines") {
+      const existingItem = acc.find(data => data.name === item.itemName);
+      if (existingItem) {
+        existingItem.value += item.quantity; // Aggregate quantity
+      } else {
+        acc.push({ name: item.itemName, value: item.quantity }); // Add new item
+      }
+    }
+    return acc;
+  }, []);
+
+  // Process data for the bar chart (Supplies)
+  const suppliesData = inventoryHistory.reduce((acc, item) => {
+    // Check if the item is a supply
+    if (item.type === "supplies") {
+      const existingItem = acc.find(data => data.name === item.itemName);
+      if (existingItem) {
+        existingItem.value += item.quantity; // Aggregate quantity
+      } else {
+        acc.push({ name: item.itemName, value: item.quantity }); // Add new item
+      }
+    }
+    return acc;
+  }, []);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-  // Data for the bar chart (Equipments)
-  const equipmentData = [
-    { name: 'Hypodermic needles', currentMonth: 5, lastMonth: 3 },
-    { name: 'Glove', currentMonth: 10, lastMonth: 8 },
-    { name: 'Gauze', currentMonth: 15, lastMonth: 12 }
-  ];
 
   return (
     <div style={{ display: 'flex', justifyContent: 'space-around', padding: '20px' }}>
@@ -30,7 +66,7 @@ const Analytics = () => {
             data={medicineData}
             cx={250}
             cy={250}
-            label={({ name, value }) => `${name}: ${value}%`}  // Custom label showing name and value
+            label={({ name, value }) => `${name}: ${value}`}  // Custom label showing name and value
             labelLine={false}
             outerRadius={150}  // Increased radius for better spacing
             fill="#8884d8"
@@ -43,13 +79,13 @@ const Analytics = () => {
         </PieChart>
       </div>
 
-      {/* Equipments Bar Chart */}
+      {/* Supplies Bar Chart */}
       <div>
-        <h3>Equipments</h3>
+        <h3>Supplies</h3>
         <BarChart
           width={400}
           height={300}
-          data={equipmentData}
+          data={suppliesData}
           margin={{
             top: 5, right: 30, left: 20, bottom: 5,
           }}
@@ -59,8 +95,7 @@ const Analytics = () => {
           <YAxis />
           <Tooltip />
           <Legend />
-          <Bar dataKey="currentMonth" fill="#8884d8" />
-          <Bar dataKey="lastMonth" fill="#82ca9d" />
+          <Bar dataKey="value" fill="#8884d8" />
         </BarChart>
       </div>
     </div>
