@@ -224,8 +224,8 @@ function Inventory() {
                         ).toFixed(2)}{" "}
                         {/* Fallback to 0 if retail price is undefined */}
                       </td>
-                      <td className="px-6 py-4">{item.status}</td>
-                      <td className="px-6 py-4 flex justify-center items-center">
+                      <td className="px-6 py-3">{item.status}</td>
+                      <td className="px-6 py-3 flex justify-center items-center">
                         <QRCode size={50} value={item.id} />{" "}
                         {/* Display only the unique ID */}
                       </td>
@@ -247,8 +247,8 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="px-6 py-4">
-                      No items in inventory
+                    <td colSpan="8" className="px-6 py-3">
+                      No items found in inventory.
                     </td>
                   </tr>
                 )}
@@ -314,7 +314,7 @@ function Inventory() {
                       {/* Fallback to 0 if retail price is undefined */}
                     </td>
                     <td className="px-6 py-3">{item.status}</td>
-                    <td className="px-6 py-4 flex justify-center items-center">
+                    <td className="px-6 py-3 flex justify-center items-center">
                       <QRCode size={50} value={item.id} />{" "}
                       {/* Display only the unique ID */}
                     </td>
