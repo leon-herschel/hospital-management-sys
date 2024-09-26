@@ -12,7 +12,6 @@ import {
   Cog8ToothIcon,
   UserGroupIcon,
   CreditCardIcon,
-  ShieldCheckIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 
@@ -94,13 +93,13 @@ const Sidebar = () => {
             Analytics
           </Link>
 
-          <Link
+         <Link
             to="/settings"
             className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800"
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
-          </Link>
+          </Link> 
 
           <a
             onClick={() => {
@@ -118,7 +117,7 @@ const Sidebar = () => {
 
       {/* Right Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Navbar */}
+        {/* Top Navbar */}
         <header className="flex justify-between items-center p-4 bg-red-900">
           <button
             className="lg:hidden text-white"
@@ -134,7 +133,7 @@ const Sidebar = () => {
         </header>
 
         {/* Pages Area*/}
-        <div className="flex-grow overflow-y-auto pt-8 px-6 bg-stone-100">
+        <div className="flex-grow overflow-y-auto pt-8 px-6 bg-stone-50">
           <Outlet />
         </div>
       </div>

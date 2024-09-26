@@ -68,13 +68,13 @@ const UsersTable = () => {
       <div className="mb-4 flex justify-between items-center">
         <input
           type="text"
-          placeholder="Search by Name"
+          placeholder="Search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border px-4 py-2 rounded-lg"
+          className="border border-stone-300 px-4 py-2 rounded-lg"
         />
         <button
-          className="ml-4 bg-green-800 text-white px-6 py-2 rounded-lg"
+          className="ml-4 bg-green-600 text-white px-6 py-2 rounded-md"
           onClick={() => setShowAddUserModal(true)}
         >
           Add Account
@@ -82,9 +82,9 @@ const UsersTable = () => {
       </div>
 
       {/* Table */}
-      <div className="relative overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-500">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+      <div className="relative overflow-x-auto shadow-sm">
+        <table className="w-full text-md text-gray-800 text-center border border-stone-200">
+          <thead className="text-sm uppercase bg-stone-200">
             <tr>
               <th scope="col" className="px-6 py-3">Name</th>
               <th scope="col" className="px-6 py-3">Email</th>
@@ -95,20 +95,20 @@ const UsersTable = () => {
           </thead>
           <tbody>
             {filteredUsers.map((user) => (
-              <tr key={user.id} className="bg-white border-b">
-                <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
+              <tr key={user.id} className="bg-white border-b hover:bg-stone-100">
+                <td className="px-6 py-4">{user.name}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">{user.department}</td>
                 <td className="px-6 py-4">{user.role}</td>
-                <td className="px-6 py-4 flex space-x-2">
+                <td className="px-6 py-4 flex justify-center space-x-4">
                   <button
-                    className="text-blue-600 hover:text-blue-800"
+                    className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
                     onClick={() => handleEditClick(user)}
                   >
                     Edit
                   </button>
                   <button
-                    className="text-red-600 hover:text-red-800"
+                    className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
                     onClick={() => handleDeleteUser(user)}
                   >
                     Delete
