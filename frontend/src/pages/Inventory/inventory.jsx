@@ -220,7 +220,7 @@ function Inventory() {
                         ).toFixed(2)}{" "}
                         {/* Fallback to 0 if cost price is undefined */}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         {(item.retailPrice !== undefined
                           ? item.retailPrice
                           : 0
@@ -232,7 +232,7 @@ function Inventory() {
                         <QRCode size={50} value={item.id} />{" "}
                         {/* Display only the unique ID */}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         <button
                           onClick={() => handleEdit(item)}
                           className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
