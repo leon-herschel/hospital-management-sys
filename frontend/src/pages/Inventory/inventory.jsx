@@ -49,7 +49,7 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { itemName, quantity, department, retailPrice, costPrice } =
+    const { itemName, quantity, retailPrice, costPrice } =
       event.target.elements;
 
     const updatedQuantity = Number(quantity.value);
@@ -60,7 +60,6 @@ function Inventory() {
       itemName: itemName.value,
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
-      department: department.value,
       retailPrice: Number(retailPrice.value), // Updated retail price field
       costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
@@ -193,9 +192,8 @@ function Inventory() {
             <table className="w-full text-md text-gray-800 text-center border border-stone-200">
               <thead className="text-sm uppercase bg-stone-200">
                 <tr>
-                  <th className="px-6 py-3">Item Name</th>
+                  <th className="px-6 py-3">Medicine Name</th>
                   <th className="px-6 py-3">Quantity</th>
-                  <th className="px-6 py-3">Department</th>
                   <th className="px-6 py-3">Cost Price (₱)</th>
                   <th className="px-6 py-3">Retail Price (₱)</th>
                   <th className="px-6 py-3">Status</th>
@@ -210,10 +208,9 @@ function Inventory() {
                       key={item.id}
                       className="bg-white border-b hover:bg-stone-100"
                     >
-                      <td className="px-6 py-3">{item.itemName}</td>
-                      <td className="px-6 py-3">{item.quantity}</td>
-                      <td className="px-6 py-3">{item.department}</td>
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">{item.itemName}</td>
+                      <td className="px-6 py-4">{item.quantity}</td>
+                      <td className="px-6 py-4">
                         {(item.costPrice !== undefined
                           ? item.costPrice
                           : 0
@@ -227,8 +224,8 @@ function Inventory() {
                         ).toFixed(2)}{" "}
                         {/* Fallback to 0 if retail price is undefined */}
                       </td>
-                      <td className="px-6 py-3">{item.status}</td>
-                      <td className="px-6 py-3 flex justify-center items-center">
+                      <td className="px-6 py-4">{item.status}</td>
+                      <td className="px-6 py-4 flex justify-center items-center">
                         <QRCode size={50} value={item.id} />{" "}
                         {/* Display only the unique ID */}
                       </td>
@@ -250,7 +247,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="px-6 py-3">
+                    <td colSpan="8" className="px-6 py-4">
                       No items in inventory
                     </td>
                   </tr>
@@ -317,7 +314,7 @@ function Inventory() {
                       {/* Fallback to 0 if retail price is undefined */}
                     </td>
                     <td className="px-6 py-3">{item.status}</td>
-                    <td className="px-6 py-3 flex justify-center items-center">
+                    <td className="px-6 py-4 flex justify-center items-center">
                       <QRCode size={50} value={item.id} />{" "}
                       {/* Display only the unique ID */}
                     </td>
