@@ -49,7 +49,7 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { itemName, quantity, department, retailPrice, costPrice } =
+    const { itemName, quantity, retailPrice, costPrice } =
       event.target.elements;
 
     const updatedQuantity = Number(quantity.value);
@@ -60,7 +60,6 @@ function Inventory() {
       itemName: itemName.value,
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
-      department: department.value,
       retailPrice: Number(retailPrice.value), // Updated retail price field
       costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
@@ -193,9 +192,8 @@ function Inventory() {
             <table className="w-full text-md text-gray-800 text-center border border-stone-200">
               <thead className="text-sm uppercase bg-stone-200">
                 <tr>
-                  <th className="px-6 py-3">Item Name</th>
+                  <th className="px-6 py-3">Medicine Name</th>
                   <th className="px-6 py-3">Quantity</th>
-                  <th className="px-6 py-3">Department</th>
                   <th className="px-6 py-3">Cost Price (₱)</th>
                   <th className="px-6 py-3">Retail Price (₱)</th>
                   <th className="px-6 py-3">Status</th>
@@ -212,7 +210,6 @@ function Inventory() {
                     >
                       <td className="px-6 py-4">{item.itemName}</td>
                       <td className="px-6 py-4">{item.quantity}</td>
-                      <td className="px-6 py-4">{item.department}</td>
                       <td className="px-6 py-4">
                         {(item.costPrice !== undefined
                           ? item.costPrice
