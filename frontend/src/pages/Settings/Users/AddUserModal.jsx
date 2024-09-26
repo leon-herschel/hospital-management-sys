@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ref, get, set } from 'firebase/database';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import { auth, database } from '../../firebase/firebase';
+import { auth, database } from '../../../firebase/firebase';
 
 const AddUserModal = ({ showModal, setShowModal }) => {
   const [selectedDepartment, setSelectedDepartment] = useState('');

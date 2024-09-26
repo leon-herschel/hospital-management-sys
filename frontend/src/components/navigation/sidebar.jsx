@@ -134,7 +134,7 @@ const Sidebar = () => {
         </header>
 
         {/* Pages Area*/}
-        <div className="flex-grow overflow-y-auto pt-8 px-6 bg-neutral-100">
+        <div className="flex-grow overflow-y-auto pt-8 px-6 bg-stone-100">
           <Outlet />
         </div>
       </div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { db } from '../../firebase/firebase';
+import { useState } from 'react';
+import { database } from '../../../firebase/firebase';
 import { ref, set } from 'firebase/database';
 
 const AddRoleModal = ({ isOpen, onClose }) => {
@@ -10,7 +10,7 @@ const AddRoleModal = ({ isOpen, onClose }) => {
     e.preventDefault();
     try {
       // Create a reference for the new role using rolename as the key
-      const roleRef = ref(db, 'roles/' + rolename);
+      const roleRef = ref(database, 'roles/' + rolename);
       
       // Add the new role to the Realtime Database
       await set(roleRef, {
