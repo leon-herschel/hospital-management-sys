@@ -48,8 +48,9 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { itemName, quantity, department } = event.target.elements;
-  
+    const { itemName, quantity, department, retailPrice, costPrice } =
+      event.target.elements;
+
     const updatedQuantity = Number(quantity.value);
     const maxQuantity = currentItem.maxQuantity || updatedQuantity;
     const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
@@ -59,9 +60,11 @@ function Inventory() {
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
       department: department.value,
+      retailPrice: Number(retailPrice.value), // Updated retail price field
+      costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
     };
-    
+
     await update(
       ref(database, `${selectedTab}/${currentItem.id}`),
       updatedInventory
@@ -71,7 +74,8 @@ function Inventory() {
 
   const handleUpdateSupply = async (event) => {
     event.preventDefault();
-    const { itemName, quantity } = event.target.elements;
+    const { itemName, quantity, retailPrice, costPrice } =
+      event.target.elements;
 
     const updatedQuantity = Number(quantity.value);
     const maxQuantity = currentItem.maxQuantity || updatedQuantity;
@@ -81,10 +85,15 @@ function Inventory() {
       itemName: itemName.value,
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
+      retailPrice: Number(retailPrice.value), // Updated retail price field
+      costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
     };
 
-    await update(ref(database, `${selectedTab}/${currentItem.id}`), updatedSupply);
+    await update(
+      ref(database, `${selectedTab}/${currentItem.id}`),
+      updatedSupply
+    );
     toggleEditModal();
   };
 
@@ -191,6 +200,12 @@ function Inventory() {
                   Department
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-center">
+                  Cost Price (₱)
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-center">
+                  Retail Price (₱)
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-center">
                   Status
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-center">
@@ -215,10 +230,25 @@ function Inventory() {
                       {item.department}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
+                      {(item.costPrice !== undefined
+                        ? item.costPrice
+                        : 0
+                      ).toFixed(2)}{" "}
+                      {/* Fallback to 0 if cost price is undefined */}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {(item.retailPrice !== undefined
+                        ? item.retailPrice
+                        : 0
+                      ).toFixed(2)}{" "}
+                      {/* Fallback to 0 if retail price is undefined */}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
                       {item.status}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
-                      <QRCode size={50} value={item.id} /> {/* Display only the unique ID */}
+                      <QRCode size={50} value={item.id} />{" "}
+                      {/* Display only the unique ID */}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button
@@ -238,7 +268,10 @@ function Inventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="border border-gray-300 px-4 py-2 text-center">
+                  <td
+                    colSpan="8"
+                    className="border border-gray-300 px-4 py-2 text-center"
+                  >
                     No items in inventory
                   </td>
                 </tr>
@@ -278,6 +311,12 @@ function Inventory() {
                   Quantity
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-center">
+                  Cost Price (₱)
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-center">
+                  Retail Price (₱)
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-center">
                   Status
                 </th>
                 <th className="border border-gray-300 px-4 py-2 text-center">
@@ -299,10 +338,25 @@ function Inventory() {
                       {item.quantity}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
+                      {(item.costPrice !== undefined
+                        ? item.costPrice
+                        : 0
+                      ).toFixed(2)}{" "}
+                      {/* Fallback to 0 if cost price is undefined */}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
+                      {(item.retailPrice !== undefined
+                        ? item.retailPrice
+                        : 0
+                      ).toFixed(2)}{" "}
+                      {/* Fallback to 0 if retail price is undefined */}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">
                       {item.status}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
-                      <QRCode size={50} value={item.id} /> {/* Display only the unique ID */}
+                      <QRCode size={50} value={item.id} />{" "}
+                      {/* Display only the unique ID */}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button
@@ -322,7 +376,10 @@ function Inventory() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="border border-gray-300 px-4 py-2 text-center">
+                  <td
+                    colSpan="7"
+                    className="border border-gray-300 px-4 py-2 text-center"
+                  >
                     No supplies in inventory
                   </td>
                 </tr>
@@ -336,8 +393,14 @@ function Inventory() {
       {editModal && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
           <div className="bg-white p-8 rounded-lg shadow-lg">
-            <h2 className="text-lg font-bold mb-4">Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item</h2>
-            <form onSubmit={selectedTab === "medicine" ? handleUpdate : handleUpdateSupply}>
+            <h2 className="text-lg font-bold mb-4">
+              Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item
+            </h2>
+            <form
+              onSubmit={
+                selectedTab === "medicine" ? handleUpdate : handleUpdateSupply
+              }
+            >
               <div className="mb-4">
                 <label className="block mb-2">Item Name</label>
                 <input
@@ -370,6 +433,26 @@ function Inventory() {
                   />
                 </div>
               )}
+              <div className="mb-4">
+                <label className="block mb-2">Cost Price (₱)</label>
+                <input
+                  type="number"
+                  name="costPrice"
+                  defaultValue={currentItem?.costPrice || ""}
+                  className="border px-4 py-2 w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-2">Retail Price (₱)</label>
+                <input
+                  type="number"
+                  name="retailPrice"
+                  defaultValue={currentItem?.retailPrice || ""}
+                  className="border px-4 py-2 w-full"
+                  required
+                />
+              </div>
               <div className="flex justify-end">
                 <button
                   type="button"

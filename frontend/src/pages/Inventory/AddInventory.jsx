@@ -5,7 +5,7 @@ import { database } from "../../firebase/firebase";
 
 // Helper function to generate a random alphanumeric string
 const generateRandomKey = (length) => {
-  const characters = " =";
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -30,9 +30,11 @@ function AddInventory({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [department, setDepartment] = useState("");
+  const [costPrice, setCostPrice] = useState(""); // New state for cost price
+  const [retailPrice, setRetailPrice] = useState(""); // New state for retail price
 
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !department) {
+    if (!itemName || !quantity || !department || !costPrice || !retailPrice) { // Check if all fields are filled
       alert("Please fill in all the required fields");
       return;
     }
@@ -57,6 +59,8 @@ function AddInventory({ isOpen, toggleModal }) {
         quantity: maxQuantity, // Use Number to ensure it's a numerical value
         maxQuantity: maxQuantity, // Initial quantity becomes the maxQuantity
         department: department,
+        costPrice: Number(costPrice), // Convert cost price to a number
+        retailPrice: Number(retailPrice), // Convert retail price to a number
         status: status, // Dynamically calculated status
         qrCode: qrCodeDataUrl, // Optionally store the QR code as a data URL
       };
@@ -67,6 +71,8 @@ function AddInventory({ isOpen, toggleModal }) {
           setItemName("");
           setQuantity("");
           setDepartment("");
+          setCostPrice(""); // Reset cost price field
+          setRetailPrice(""); // Reset retail price field
           toggleModal();
         })
         .catch((error) => {
@@ -138,6 +144,34 @@ function AddInventory({ isOpen, toggleModal }) {
             <option value="Nursing">Nursing</option>
             <option value="MedTech">Medical Technology</option>
           </select>
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="costPrice" className="block text-gray-700 mb-2">
+            Cost Price
+          </label>
+          <input
+            type="number"
+            id="costPrice"
+            name="costPrice"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)} // Update state with cost price
+          />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="retailPrice" className="block text-gray-700 mb-2">
+            Retail Price
+          </label>
+          <input
+            type="number"
+            id="retailPrice"
+            name="retailPrice"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            value={retailPrice}
+            onChange={(e) => setRetailPrice(e.target.value)} // Update state with retail price
+          />
         </div>
 
         <button
