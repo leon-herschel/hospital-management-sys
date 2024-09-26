@@ -359,7 +359,7 @@ function Inventory() {
               }
             >
               <div className="mb-4">
-                <label className="block mb-2">Item Name</label>
+                <label className="block mb-2">Medicine Name</label>
                 <input
                   type="text"
                   name="itemName"
@@ -378,18 +378,6 @@ function Inventory() {
                   required
                 />
               </div>
-              {selectedTab === "medicine" && (
-                <div className="mb-4">
-                  <label className="block mb-2">Department</label>
-                  <input
-                    type="text"
-                    name="department"
-                    defaultValue={currentItem?.department || ""}
-                    className="border px-4 py-2 w-full"
-                    required
-                  />
-                </div>
-              )}
               <div className="mb-4">
                 <label className="block mb-2">Cost Price (₱)</label>
                 <input
