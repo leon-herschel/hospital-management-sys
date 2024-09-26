@@ -248,7 +248,7 @@ function Inventory() {
                 ) : (
                   <tr>
                     <td colSpan="8" className="px-6 py-3">
-                      No items in inventory
+                      No items found in inventory.
                     </td>
                   </tr>
                 )}

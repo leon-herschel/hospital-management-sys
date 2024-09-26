@@ -213,7 +213,7 @@ function Patient() {
                   colSpan="9"
                   className="px-6 py-3"
                 >
-                  No Patients
+                  No patients found.
                 </td>
               </tr>
             )}
