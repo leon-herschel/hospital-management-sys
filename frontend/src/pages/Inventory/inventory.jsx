@@ -143,9 +143,6 @@ function Inventory() {
   return (
     <div className="w-full">
       <Notification />
-      <div className="flex justify-center text-lg">
-        <h2>INVENTORY SYSTEM</h2>
-      </div>
       <div className="flex justify-center space-x-4 mb-4">
         <button
           onClick={() => setSelectedTab("medicine")}

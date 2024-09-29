@@ -1,13 +1,12 @@
 import express from 'express';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import rolesRouter from './roles.js'; 
 
 const app = express();
-const PORT = process.env.PORT;
 
-app.use(express.json()); //allows us to accept JSON data in the body
+app.use(express.json()); 
+app.use('/api', rolesRouter); 
 
-app.listen(3000, () => {
-    console.log("Server started at http://localhost:"+ PORT);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
