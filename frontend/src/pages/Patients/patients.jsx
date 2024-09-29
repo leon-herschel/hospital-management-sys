@@ -4,6 +4,7 @@ import AddPatient from "./AddPatient";
 import QRCode from "react-qr-code";
 import { database } from "../../firebase/firebase";
 import View from "./ViewPatient";
+import DeleteConfirmationModal from "./DeleteConfirmationModal"; // Import the modal
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
@@ -11,6 +12,7 @@ function Patient() {
   const [modal, setModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [viewModal, setViewModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false); // State for delete confirmation modal
   const [currentPatient, setCurrentPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -28,6 +30,10 @@ function Patient() {
     setViewModal(!viewModal);
   };
 
+  const toggleDeleteModal = () => {
+    setDeleteModal(!deleteModal);
+  };
+
   useEffect(() => {
     const unsubscribe = onValue(patientCollection, (snapshot) => {
       const data = snapshot.val();
@@ -37,7 +43,7 @@ function Patient() {
             ...data[key],
             id: key,
           };
-  
+
           // Format the dateTime to a human-readable format if it's available
           if (patient.dateTime) {
             patient.dateTime = new Date(patient.dateTime).toLocaleString(); // Format date-time
@@ -55,10 +61,18 @@ function Patient() {
       unsubscribe();
     };
   }, [patientCollection]);
-  
 
-  const handleDelete = async (id) => {
-    await remove(ref(database, `patient/${id}`));
+  // Trigger the delete confirmation modal
+  const handleDeleteConfirmation = (patient) => {
+    setCurrentPatient(patient);
+    toggleDeleteModal(); // Open the delete confirmation modal
+  };
+
+  const handleDelete = async () => {
+    if (currentPatient) {
+      await remove(ref(database, `patient/${currentPatient.id}`));
+      toggleDeleteModal(); // Close the delete modal after deletion
+    }
   };
 
   const handleEdit = (patient) => {
@@ -94,7 +108,6 @@ function Patient() {
     patient.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
@@ -117,74 +130,36 @@ function Patient() {
         <table className="w-full text-md text-gray-800 text-center border border-stone-200">
           <thead className="text-sm uppercase bg-stone-200">
             <tr>
-              <th className="px-6 py-3">
-                Name
-              </th>
-              <th className="px-6 py-3">
-                Date of Birth
-              </th>
-              <th className="px-6 py-3">
-                Age
-              </th>
-              <th className="px-6 py-3">
-                Gender
-              </th>
-              <th className="px-6 py-3">
-                Status
-              </th>
-              <th className="px-6 py-3">
-                Contact
-              </th>
-              <th className="px-6 py-3">
-                Type of Room
-              </th>
-              <th className="px-6 py-3">
-                QR Code
-              </th>
-              <th className="px-6 py-3">
-                Date and Time Created
-              </th>
-              <th className="px-6 py-3">
-                Actions
-              </th>
+              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">Date of Birth</th>
+              <th className="px-6 py-3">Age</th>
+              <th className="px-6 py-3">Gender</th>
+              <th className="px-6 py-3">Status</th>
+              <th className="px-6 py-3">Contact</th>
+              <th className="px-6 py-3">Type of Room</th>
+              <th className="px-6 py-3">QR Code</th>
+              <th className="px-6 py-3">Date and Time Created</th>
+              <th className="px-6 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredPatients.length > 0 ? (
               filteredPatients.map((patient) => (
-                <tr key={patient.id} className="bg-white border-b hover:bg-stone-100">
+                <tr
+                  key={patient.id}
+                  className="bg-white border-b hover:bg-stone-100"
+                >
+                  <td className="px-6 py-3">{patient.name}</td>
+                  <td className="px-6 py-3">{patient.birth}</td>
+                  <td className="px-6 py-3">{patient.age}</td>
+                  <td className="px-6 py-3">{patient.gender}</td>
+                  <td className="px-6 py-3">{patient.status}</td>
+                  <td className="px-6 py-3">{patient.contact}</td>
+                  <td className="px-6 py-3">{patient.roomType}</td>
                   <td className="px-6 py-3">
-                    {patient.name}
+                    <QRCode size={50} bgColor="white" fgColor="black" value={patient.id} />
                   </td>
-                  <td className="px-6 py-3">
-                    {patient.birth}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.age}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.gender}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.status}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.contact}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.roomType}
-                  </td>
-                  <td className="px-6 py-3">
-                    <QRCode
-                      size={50}
-                      bgColor="white"
-                      fgColor="black"
-                      value={patient.id}
-                    />
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.dateTime}
-                  </td>
+                  <td className="px-6 py-3">{patient.dateTime}</td>
                   <td className="flex flex-col px-6 py-3 space-y-2 justify-center">
                     <button
                       onClick={() => handleViewClick(patient.id)}
@@ -199,7 +174,7 @@ function Patient() {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(patient.id)}
+                      onClick={() => handleDeleteConfirmation(patient)} // Trigger delete confirmation
                       className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
                     >
                       Delete
@@ -209,10 +184,7 @@ function Patient() {
               ))
             ) : (
               <tr>
-                <td
-                  colSpan="9"
-                  className="px-6 py-3"
-                >
+                <td colSpan="10" className="px-6 py-3">
                   No Patients
                 </td>
               </tr>
@@ -220,6 +192,7 @@ function Patient() {
           </tbody>
         </table>
       </div>
+
       {viewModal && (
         <View
           isOpen={viewModal}
@@ -229,9 +202,16 @@ function Patient() {
       )}
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
 
+      {/* Use the DeleteConfirmationModal component */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal}
+        toggleModal={toggleDeleteModal}
+        onConfirm={handleDelete} // Pass the delete action
+      />
+
       {editModal && currentPatient && (
-      <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
             <form onSubmit={handleUpdate}>
               <h2 className="text-2xl font-bold mb-6 text-center">
                 Edit Patient

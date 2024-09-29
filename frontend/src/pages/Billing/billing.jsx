@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ref, push, set, get, remove } from 'firebase/database';
 import { database } from '../../firebase/firebase';
-import ViewBill from './ViewBill'; // Ensure to import ViewBill
-import { string } from 'prop-types';
+import ViewBill from './ViewBill';
+import DeleteConfirmationModal from './DeleteConfirmationModalBilling'; // Import the confirmation modal
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
@@ -13,6 +13,8 @@ const Billing = () => {
   const [viewBilling, setViewBilling] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // State for delete confirmation modal
+  const [billingToDelete, setBillingToDelete] = useState(null); // Store the billing to delete
 
   // Fetch billings from Firebase
   useEffect(() => {
@@ -53,43 +55,46 @@ const Billing = () => {
     patients[billing.patientId]?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteBilling = async (billing) => {
-    if (window.confirm('Are you sure you want to delete this billing?')) {
+  const handleDeleteBilling = async () => {
+    if (billingToDelete) {
       try {
-        const billingRef = ref(database, `billing/${billing.id}`);
+        const billingRef = ref(database, `billing/${billingToDelete.id}`);
         await remove(billingRef);
-        setBillings(billings.filter((b) => b.id !== billing.id));
+        setBillings(billings.filter((b) => b.id !== billingToDelete.id));
+        setIsDeleteModalOpen(false); // Close the delete modal after deleting
+        setBillingToDelete(null); // Clear the billing to delete
       } catch (error) {
         alert('Error deleting billing: ' + error.message);
       }
     }
   };
 
+  const openDeleteModal = (billing) => {
+    setBillingToDelete(billing); // Set the billing to delete
+    setIsDeleteModalOpen(true); // Open the delete confirmation modal
+  };
+
   const handleAddBilling = async (e) => {
     e.preventDefault();
-    
- 
-    const amount = ''
-    
+
     if (!newBillingData.patientId || !newBillingData.status) {
       alert('Please fill out all fields');
       return;
     }
-  
+
     try {
       const billingRef = ref(database, 'billing');
       const newBillingRef = push(billingRef);
       
       // Store the billing data with a default amount
-      await set(newBillingRef, { ...newBillingData, amount });
-      setBillings([...billings, { id: newBillingRef.key, ...newBillingData, amount }]);
+      await set(newBillingRef, { ...newBillingData });
+      setBillings([...billings, { id: newBillingRef.key, ...newBillingData }]);
       setIsAddModalOpen(false);
       setNewBillingData({ amount: '', patientId: '', status: '' });
     } catch (error) {
       alert('Error adding billing: ' + error.message);
     }
   };
-  
 
   const handleViewBilling = (billing) => {
     setViewBilling(billing); // Set the selected billing for viewing
@@ -140,7 +145,7 @@ const Billing = () => {
                 <td className="border-b px-4 py-2">{billing.status}</td>
                 <td className="border-b px-4 py-2">
                   <button onClick={() => handleViewBilling(billing)} className="text-blue-600 hover:underline">View</button>
-                  <button onClick={() => handleDeleteBilling(billing)} className="text-red-600 hover:underline ml-2">Delete</button>
+                  <button onClick={() => openDeleteModal(billing)} className="text-red-600 hover:underline ml-2">Delete</button>
                 </td>
               </tr>
             ))
@@ -199,9 +204,17 @@ const Billing = () => {
           </div>
         </div>
       )}
+
+      {/* Use the DeleteConfirmationModal component */}
+      {isDeleteModalOpen && (
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onConfirm={handleDeleteBilling}
+          onCancel={() => setIsDeleteModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
 
 export default Billing;
-
