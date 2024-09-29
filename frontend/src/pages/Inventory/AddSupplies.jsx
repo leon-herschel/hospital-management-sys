@@ -28,23 +28,23 @@ function AddSupplies({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [brand, setBrand] = useState("");
-  const [costPrice, setCostPrice] = useState(""); // New state for cost price
-  const [retailPrice, setRetailPrice] = useState(""); // New state for retail price
+  const [costPrice, setCostPrice] = useState("");
+  const [retailPrice, setRetailPrice] = useState("");
+  const [loading, setLoading] = useState(false); // New state to track loading
 
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !brand || !costPrice || !retailPrice) { // Check if all fields are filled
+    if (!itemName || !quantity || !brand || !costPrice || !retailPrice) {
       alert("Please fill in all the required fields");
       return;
     }
+
+    setLoading(true); // Set loading to true when submission starts
 
     const supplyRef = ref(database, "supplies");
     const newSupplyRef = push(supplyRef);
 
     const maxQuantity = Number(quantity);
-
     const status = calculateStatus(maxQuantity, maxQuantity);
-
-    // Generate a random key for QR code
     const qrKey = generateRandomKey(20);
 
     try {
@@ -56,28 +56,25 @@ function AddSupplies({ isOpen, toggleModal }) {
         quantity: maxQuantity,
         maxQuantity: maxQuantity,
         brand: brand,
-        costPrice: Number(costPrice), // Convert cost price to a number
-        retailPrice: Number(retailPrice), // Convert retail price to a number
+        costPrice: Number(costPrice),
+        retailPrice: Number(retailPrice),
         status: status,
         qrCode: qrCodeDataUrl, // Storing the QR code image as a data URL
       };
 
-      set(newSupplyRef, supplyData)
-        .then(() => {
-          alert("Supply has been added successfully!");
-          setItemName("");
-          setQuantity("");
-          setBrand("");
-          setCostPrice(""); // Reset cost price field
-          setRetailPrice(""); // Reset retail price field
-          toggleModal();
-        })
-        .catch((error) => {
-          alert("Error adding supply: " + error);
-        });
+      await set(newSupplyRef, supplyData);
+
+      alert("Supply has been added successfully!");
+      setItemName("");
+      setQuantity("");
+      setBrand("");
+      setCostPrice("");
+      setRetailPrice("");
+      toggleModal();
     } catch (error) {
-      console.error("Error generating QR code:", error);
-      alert("Error generating QR code.");
+      alert("Error adding supply: " + error);
+    } finally {
+      setLoading(false); // Reset loading to false when submission is done
     }
   };
 
@@ -92,7 +89,7 @@ function AddSupplies({ isOpen, toggleModal }) {
         >
           &times;
         </button>
-        <h2> Add New Supply</h2>
+        <h2>Add New Supply</h2>
 
         <div className="mb-4">
           <label htmlFor="itemName" className="block text-gray-700 mb-2">
@@ -105,6 +102,7 @@ function AddSupplies({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
+            disabled={loading} // Disable input while loading
           />
         </div>
 
@@ -119,6 +117,7 @@ function AddSupplies({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
+            disabled={loading} // Disable input while loading
           />
         </div>
 
@@ -133,6 +132,7 @@ function AddSupplies({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
+            disabled={loading} // Disable input while loading
           />
         </div>
 
@@ -146,7 +146,8 @@ function AddSupplies({ isOpen, toggleModal }) {
             name="costPrice"
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={costPrice}
-            onChange={(e) => setCostPrice(e.target.value)} // Update state with cost price
+            onChange={(e) => setCostPrice(e.target.value)}
+            disabled={loading} // Disable input while loading
           />
         </div>
 
@@ -160,15 +161,17 @@ function AddSupplies({ isOpen, toggleModal }) {
             name="retailPrice"
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={retailPrice}
-            onChange={(e) => setRetailPrice(e.target.value)} // Update state with retail price
+            onChange={(e) => setRetailPrice(e.target.value)}
+            disabled={loading} // Disable input while loading
           />
         </div>
 
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handlesubmit}
+          disabled={loading} // Disable button while loading
         >
-          Submit
+          {loading ? <span>Loading...</span> : "Submit"} {/* Show loading text */}
         </button>
       </div>
     </div>
