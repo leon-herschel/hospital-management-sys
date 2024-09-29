@@ -4,7 +4,6 @@ import AddPatient from "./AddPatient";
 import QRCode from "react-qr-code";
 import { database } from "../../firebase/firebase";
 import View from "./ViewPatient";
-import DeleteConfirmationModal from "./DeleteConfirmationModal"; // Import the modal
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
@@ -43,13 +42,12 @@ function Patient() {
             ...data[key],
             id: key,
           };
-
-          // Format the dateTime to a human-readable format if it's available
+  
           if (patient.dateTime) {
-            patient.dateTime = new Date(patient.dateTime).toLocaleString(); // Format date-time
+            patient.dateTime = new Date(patient.dateTime).toLocaleString();
           }
           
-          return patient; // Return the formatted patient object
+          return patient;
         });
         setPatientList(patientData);
       } else {
@@ -62,7 +60,6 @@ function Patient() {
     };
   }, [patientCollection]);
 
-  // Trigger the delete confirmation modal
   const handleDeleteConfirmation = (patient) => {
     setCurrentPatient(patient);
     toggleDeleteModal(); // Open the delete confirmation modal
@@ -157,7 +154,7 @@ function Patient() {
                   <td className="px-6 py-3">{patient.contact}</td>
                   <td className="px-6 py-3">{patient.roomType}</td>
                   <td className="px-6 py-3">
-                    <QRCode size={50} bgColor="white" fgColor="black" value={patient.id} />
+                    <QRCode size={50} value={patient.id} />
                   </td>
                   <td className="px-6 py-3">{patient.dateTime}</td>
                   <td className="flex flex-col px-6 py-3 space-y-2 justify-center">
@@ -202,12 +199,29 @@ function Patient() {
       )}
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
 
-      {/* Use the DeleteConfirmationModal component */}
-      <DeleteConfirmationModal
-        isOpen={deleteModal}
-        toggleModal={toggleDeleteModal}
-        onConfirm={handleDelete} // Pass the delete action
-      />
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
+            <h2 className="text-lg font-bold mb-4">Delete Confirmation</h2>
+            <p>Are you sure you want to delete this patient?</p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={toggleDeleteModal}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 mr-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete} // Confirm deletion
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editModal && currentPatient && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
