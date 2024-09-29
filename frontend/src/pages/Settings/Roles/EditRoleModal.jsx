@@ -1,25 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
-const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
-  const [role, setRole] = useState(''); 
-  const [description, setDescription] = useState(''); 
-  const [accessInventory, setAccessInventory] = useState(false); 
-  const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
-  const [accessPatients, setAccessPatients] = useState(false); 
+const EditRoleModal = ({ showModal, setShowModal, role, onEditRole }) => {
+  const [roleData, setRoleData] = useState({
+    description: '',
+    accessInventory: false,
+    accessInventoryHistory: false,
+    accessPatients: false,
+  });
+
+  useEffect(() => {
+    if (role) {
+      setRoleData({ ...role });
+    }
+  }, [role]);
+
+  const handleChange = (e) => {
+    const { name, type, checked, value } = e.target;
+    setRoleData({
+      ...roleData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const newRole = {
-      [role]: { 
-        accessInventory,
-        accessInventoryHistory,
-        accessPatients,
-        description,
-      },
-    };
-    onAddRole(newRole);
+    onEditRole(role.id, roleData);
     setShowModal(false);
   };
 
@@ -35,28 +41,17 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
           <XMarkIcon className="h-6 w-6" />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6">Add Role</h2>
+        <h2 className="text-2xl font-bold mb-6">Edit Role</h2>
 
         <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
-          <div className="mb-4">
-            <label className="block text-gray-700">Role</label>
-            <input
-              type="text"
-              placeholder="Role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              required
-              className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
           <div className="mb-4">
             <label className="block text-gray-700">Description</label>
             <input
               type="text"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              name="description"
+              value={roleData.description}
+              onChange={handleChange}
+              placeholder="Role Description"
               required
               className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
             />
@@ -67,8 +62,9 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={accessInventory}
-                onChange={() => setAccessInventory(!accessInventory)}
+                name="accessInventory"
+                checked={roleData.accessInventory}
+                onChange={handleChange}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">Access Inventory</span>
@@ -76,8 +72,9 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={accessInventoryHistory}
-                onChange={() => setAccessInventoryHistory(!accessInventoryHistory)}
+                name="accessInventoryHistory"
+                checked={roleData.accessInventoryHistory}
+                onChange={handleChange}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">Access Inventory History</span>
@@ -85,20 +82,28 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
             <label className="flex items-center mb-4">
               <input
                 type="checkbox"
-                checked={accessPatients}
-                onChange={() => setAccessPatients(!accessPatients)}
+                name="accessPatients"
+                checked={roleData.accessPatients}
+                onChange={handleChange}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">Access Patients</span>
             </label>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-center space-x-4 mt-4">
             <button
               type="submit"
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
             >
-              Add Role
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="bg-gray-300 text-black px-4 py-2 rounded-md hover:bg-gray-400"
+            >
+              Cancel
             </button>
           </div>
         </form>
@@ -107,4 +112,4 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
   );
 };
 
-export default AddRoleModal;
+export default EditRoleModal;
