@@ -1,67 +1,62 @@
 import { useState, useEffect } from 'react';
-import { ref, get, remove, update } from 'firebase/database';
+import { ref, onValue, remove } from 'firebase/database';
 import { database } from '../../../firebase/firebase';
 import EditUserModal from './EditUserModal';
 import AddUserModal from './AddUserModal';
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
-  const [editUser, setEditUser] = useState(null);
-  const [editedData, setEditedData] = useState({ name: '', email: '', department: '', role: '' });
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editedData, setEditedData] = useState({ email: '', department: '', role: '' });
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const usersRef = ref(database, 'users');
-      const snapshot = await get(usersRef);
-      if (snapshot.exists()) {
-        const usersList = [];
-        snapshot.forEach((childSnapshot) => {
-          usersList.push({ id: childSnapshot.key, ...childSnapshot.val() });
-        });
-        setUsers(usersList);
-      }
-    };
+    const usersRef = ref(database, 'users');
+    const unsubscribe = onValue(usersRef, (snapshot) => {
+      const usersList = [];
+      snapshot.forEach((childSnapshot) => {
+        usersList.push({ id: childSnapshot.key, ...childSnapshot.val() });
+      });
+      setUsers(usersList);
+    });
 
-    fetchUsers();
+    return () => unsubscribe();
   }, []);
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteUser = async (user) => {
-    try {
-      const userRef = ref(database, `users/${user.id}`);
-      await remove(userRef);
-      setUsers(users.filter((u) => u.id !== user.id));
-    } catch (error) {
-      alert('Error deleting user: ' + error.message);
+  const handleDeleteUser = async () => {
+    if (userToDelete) {
+      try {
+        const userRef = ref(database, `users/${userToDelete.id}`);
+        await remove(userRef);
+        setUserToDelete(null); 
+        setShowDeleteConfirm(false); 
+      } catch (error) {
+        console.error('Error deleting user: ', error.message);
+      }
     }
   };
 
   const handleEditClick = (user) => {
-    setEditUser(user);
+    setSelectedUserId(user.id);
     setEditedData(user);
-    setIsEditModalOpen(true);
+    setShowEditModal(true);
   };
 
-  const handleEditSave = async (userId) => {
-    try {
-      const userRef = ref(database, `users/${userId}`);
-      await update(userRef, editedData);
-      setUsers(users.map((u) => (u.id === userId ? { ...u, ...editedData } : u)));
-      setIsEditModalOpen(false);
-    } catch (error) {
-      alert('Error updating user: ' + error.message);
-    }
+  const confirmDeleteUser = (user) => {
+    setUserToDelete(user);
+    setShowDeleteConfirm(true);
   };
 
   return (
-    <div className="p-6">
-      {/* Title */}
+    <div className="w-full">
       <h2 className="text-2xl font-bold mb-4 text-center">User Management</h2>
 
       {/* Search and Add Account Button */}
@@ -86,7 +81,6 @@ const UsersTable = () => {
         <table className="w-full text-md text-gray-800 text-center border border-stone-200">
           <thead className="text-sm uppercase bg-stone-200">
             <tr>
-              <th scope="col" className="px-6 py-3">Name</th>
               <th scope="col" className="px-6 py-3">Email</th>
               <th scope="col" className="px-6 py-3">Department</th>
               <th scope="col" className="px-6 py-3">Role</th>
@@ -96,7 +90,6 @@ const UsersTable = () => {
           <tbody>
             {filteredUsers.map((user) => (
               <tr key={user.id} className="bg-white border-b hover:bg-stone-100">
-                <td className="px-6 py-4">{user.name}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">{user.department}</td>
                 <td className="px-6 py-4">{user.role}</td>
@@ -109,7 +102,7 @@ const UsersTable = () => {
                   </button>
                   <button
                     className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
-                    onClick={() => handleDeleteUser(user)}
+                    onClick={() => confirmDeleteUser(user)}
                   >
                     Delete
                   </button>
@@ -120,16 +113,45 @@ const UsersTable = () => {
         </table>
       </div>
 
-      {/* Modals */}
-      <EditUserModal
-        isOpen={isEditModalOpen}
-        setIsOpen={setIsEditModalOpen}
-        userData={editedData}
-        setEditedData={setEditedData}
-        handleEditSave={handleEditSave}
+      {/* Edit User Modal */}
+      <EditUserModal 
+        showModal={showEditModal} 
+        setShowModal={setShowEditModal} 
+        userId={selectedUserId} 
+        onClose={() => setShowEditModal(false)}
       />
+
+      {/* Add User Modal */}
       {showAddUserModal && (
-        <AddUserModal showModal={showAddUserModal} setShowModal={setShowAddUserModal} />
+        <AddUserModal
+          showModal={showAddUserModal}
+          setShowModal={setShowAddUserModal}
+          onUserAdded={() => {/* leave blank sa*/}}
+        />
+      )}
+
+      {/* Confirmation Modal for Deleting User */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
+            <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
+            <p className="text-gray-700 mb-6">Are you sure you want to delete this user? Note: Delete function is not complete yet and will not delete a user from Firebase Authentication.</p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={handleDeleteUser}
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -10,8 +10,8 @@ const Settings = () => {
   };
 
   return (
-    <div className="p-6">
-      {/* Dropdown for switching tables */}
+    <div className="w-full">
+      {/* Dropdown */}
       <div className="mb-4 flex justify-start items-center">
         <select
           value={tableView}
@@ -22,8 +22,7 @@ const Settings = () => {
           <option value="Role Management">Role Management</option>
         </select>
       </div>
-
-      {/* Render the appropriate table */}
+      
       {tableView === 'User Management' && <UsersTable />}
       {tableView === 'Role Management' && <RolesTable />}
     </div>

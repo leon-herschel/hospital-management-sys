@@ -22,7 +22,7 @@ const RolesTable = () => {
   }, []);
 
   return (
-    <div className="relative overflow-x-auto">
+    <div className="relative overflow-x-auto shadow-sm">
       <h2 className="text-2xl font-bold mb-4 text-center text-maroon-600">Role Management</h2>
 
       <table className="w-full text-md text-gray-800 text-center border border-stone-200">
