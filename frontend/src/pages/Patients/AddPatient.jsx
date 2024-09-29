@@ -16,6 +16,7 @@ function AddPatient({ isOpen, toggleModal }) {
   const [medUse, setMedUse] = useState("");
   const [suppliesUsed, setSuppliesUsed] = useState("");
   const [dateTime, setDateTime] = useState("");
+  const [submitting, setSubmitting] = useState(false); // Add submitting state
 
   const formatDateToLocal = (date) => {
     const offset = date.getTimezoneOffset();
@@ -24,7 +25,6 @@ function AddPatient({ isOpen, toggleModal }) {
   };
 
   useEffect(() => {
-    // Set the default date-time to current date and time in local format
     const currentDateTime = new Date();
     setDateTime(formatDateToLocal(currentDateTime));
   }, []);
@@ -34,7 +34,7 @@ function AddPatient({ isOpen, toggleModal }) {
       const calculatedAge = calculateAge(new Date(birth));
       setAge(calculatedAge);
     } else {
-      setAge(""); // Reset age if no birth date is provided
+      setAge(""); 
     }
   }, [birth]);
 
@@ -42,7 +42,6 @@ function AddPatient({ isOpen, toggleModal }) {
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDifference = today.getMonth() - birthDate.getMonth();
-    // Adjust age if the birthday hasn't occurred yet this year
     if (
       monthDifference < 0 ||
       (monthDifference === 0 && today.getDate() < birthDate.getDate())
@@ -54,7 +53,6 @@ function AddPatient({ isOpen, toggleModal }) {
 
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
-
     doc.text(`Name: ${patientInfo.name}`, 90, 20);
     doc.text(`Date of Birth: ${patientInfo.birth}`, 90, 30);
     doc.text(`Age: ${patientInfo.age}`, 90, 40);
@@ -83,7 +81,7 @@ function AddPatient({ isOpen, toggleModal }) {
       !contact ||
       !status ||
       !dateTime ||
-      (status === "Inpatient" && !roomType) // Ensure roomType is selected for inpatients
+      (status === "Inpatient" && !roomType) 
     ) {
       alert("Please fill in all required fields");
       return;
@@ -93,6 +91,8 @@ function AddPatient({ isOpen, toggleModal }) {
       alert("Contact Number is invalid");
       return;
     }
+
+    setSubmitting(true); // Disable the button and show loading
 
     const patientRef = ref(database, "patient");
     const newPatientRef = push(patientRef);
@@ -119,6 +119,7 @@ function AddPatient({ isOpen, toggleModal }) {
 
         generatePDF(patientInfo);
 
+        setSubmitting(false); // Re-enable the button
         toggleModal();
         setName("");
         setBirth("");
@@ -130,6 +131,7 @@ function AddPatient({ isOpen, toggleModal }) {
         setDateTime("");
       })
       .catch((error) => {
+        setSubmitting(false); // Re-enable the button
         alert("Error adding patient: ", error);
       });
   };
@@ -159,6 +161,7 @@ function AddPatient({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
         </div>
 
@@ -173,6 +176,7 @@ function AddPatient({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={birth}
             onChange={(e) => setBirth(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
         </div>
 
@@ -200,6 +204,7 @@ function AddPatient({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={gender}
             onChange={(e) => setGender(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           >
             <option value="" disabled>
               Select Gender
@@ -221,6 +226,7 @@ function AddPatient({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
         </div>
 
@@ -234,6 +240,7 @@ function AddPatient({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           >
             <option value="" disabled>
               Select Status
@@ -254,6 +261,7 @@ function AddPatient({ isOpen, toggleModal }) {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
               value={roomType}
               onChange={(e) => setRoomType(e.target.value)}
+              disabled={submitting} // Disable input when submitting
             >
               <option value="" disabled>
                 Select Room
@@ -273,13 +281,15 @@ function AddPatient({ isOpen, toggleModal }) {
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
             value={dateTime}
             onChange={(e) => setDateTime(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
         </div>
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handlesubmit}
+          disabled={submitting} // Disable the button when submitting
         >
-          Submit
+          {submitting ? "Submitting..." : "Submit"} {/* Show loading text */}
         </button>
       </div>
     </div>
