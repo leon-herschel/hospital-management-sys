@@ -97,87 +97,84 @@ function Patient() {
   
   return (
     <div className="w-full">
-      <div className="flex justify-center text-xl font-bold mb-4">
-        <h2>PATIENT MANAGEMENT SYSTEM</h2>
-      </div>
-      <div className="flex justify-between items-center my-4">
+      <div className="flex justify-between items-center mb-4">
         <input
           type="text"
           placeholder="Search by name"
-          className="border px-4 py-2 rounded-lg w-full max-w-xs"
+          className="border border-stone-300 px-4 py-2 rounded-md"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <button
           onClick={toggleModal}
-          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg"
+          className="ml-auto bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
         >
           Add Patient
         </button>
       </div>
 
-      <div>
-        <table className="min-w-full border-collapse border border-gray-300">
-          <thead className="bg-gray-100">
+      <div className="relative overflow-x-auto shadow-sm">
+        <table className="w-full text-md text-gray-800 text-center border border-stone-200">
+          <thead className="text-sm uppercase bg-stone-200">
             <tr>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Name
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Date of Birth
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Age
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Gender
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Status
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Contact
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Type of Room
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 QR Code
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
+              <th className="px-6 py-3">
                 Date and Time Created
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-center">
-                Action
+              <th className="px-6 py-3">
+                Actions
               </th>
             </tr>
           </thead>
           <tbody>
             {filteredPatients.length > 0 ? (
               filteredPatients.map((patient) => (
-                <tr key={patient.id}>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                <tr key={patient.id} className="bg-white border-b hover:bg-stone-100">
+                  <td className="px-6 py-3">
                     {patient.name}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     {patient.birth}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     {patient.age}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     {patient.gender}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     {patient.status}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     {patient.contact}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     {patient.roomType}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     <QRCode
                       size={50}
                       bgColor="white"
@@ -185,27 +182,27 @@ function Patient() {
                       value={patient.id}
                     />
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="px-6 py-3">
                     {patient.dateTime}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
+                  <td className="flex flex-col px-6 py-3 space-y-2 justify-center">
                     <button
                       onClick={() => handleViewClick(patient.id)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition duration-200 mr-2"
+                      className="ml-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md"
                     >
-                      VIEW
+                      View
                     </button>
                     <button
                       onClick={() => handleEdit(patient)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600 transition duration-200 mr-2"
+                      className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                     >
-                      EDIT
+                      Edit
                     </button>
                     <button
                       onClick={() => handleDelete(patient.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition duration-200"
+                      className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
                     >
-                      DELETE
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -214,9 +211,9 @@ function Patient() {
               <tr>
                 <td
                   colSpan="9"
-                  className="border border-gray-300 px-4 py-2 text-center"
+                  className="px-6 py-3"
                 >
-                  No Patients
+                  No patients found.
                 </td>
               </tr>
             )}
@@ -233,8 +230,8 @@ function Patient() {
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
 
       {editModal && currentPatient && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
             <form onSubmit={handleUpdate}>
               <h2 className="text-2xl font-bold mb-6 text-center">
                 Edit Patient
@@ -350,7 +347,7 @@ function Patient() {
                 <div className="w-full">
                   <button
                     type="submit"
-                    className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+                    className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
                   >
                     Update
                   </button>
