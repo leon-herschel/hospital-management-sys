@@ -108,10 +108,7 @@ const Billing = () => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-center">
-        <h1 className="text-3xl font-bold mb-4">Billing List</h1>
-      </div>
-
+      
       <div className="flex justify-between items-center mb-4">
         <input
           type="text"
