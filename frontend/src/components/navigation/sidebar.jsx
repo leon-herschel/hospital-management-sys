@@ -9,7 +9,7 @@ import {
   ChartBarIcon,
   PowerIcon,
   Bars3Icon,
-  //Cog8ToothIcon,
+  Cog8ToothIcon,
   UserGroupIcon,
   CreditCardIcon,
 } from "@heroicons/react/16/solid";
@@ -105,15 +105,15 @@ const Sidebar = () => {
             Analytics
           </Link>
 
-          {/* <Link
+          <Link
             to="/settings"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/analytics") ? "bg-red-800 text-white shadow-sm" : "text-white"
+              isActive("/settings") ? "bg-red-800 text-white shadow-sm" : "text-white"
             } hover:bg-red-800`}
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
-          </Link> */}
+          </Link> 
 
           <a
             onClick={() => {
