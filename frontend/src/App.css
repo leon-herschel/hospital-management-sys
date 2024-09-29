@@ -1,4 +1,13 @@
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 .fade-enter {
-    opacity: 0;
-    transform: translateY(20px);
-  }
+  opacity: 0;
+  transform: translateY(20px);
+}

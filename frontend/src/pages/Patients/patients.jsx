@@ -46,17 +46,17 @@ function Patient() {
 
           // Format the dateTime to a human-readable format if it's available
           if (patient.dateTime) {
-            patient.dateTime = new Date(patient.dateTime).toLocaleString(); // Format date-time
+            patient.dateTime = new Date(patient.dateTime).toLocaleString();
           }
-          
-          return patient; // Return the formatted patient object
+
+          return patient;
         });
         setPatientList(patientData);
       } else {
         setPatientList([]);
       }
     });
-  
+
     return () => {
       unsubscribe();
     };
@@ -157,7 +157,12 @@ function Patient() {
                   <td className="px-6 py-3">{patient.contact}</td>
                   <td className="px-6 py-3">{patient.roomType}</td>
                   <td className="px-6 py-3">
-                    <QRCode size={50} bgColor="white" fgColor="black" value={patient.id} />
+                    <QRCode
+                      size={50}
+                      bgColor="white"
+                      fgColor="black"
+                      value={patient.id}
+                    />
                   </td>
                   <td className="px-6 py-3">{patient.dateTime}</td>
                   <td className="flex flex-col px-6 py-3 space-y-2 justify-center">

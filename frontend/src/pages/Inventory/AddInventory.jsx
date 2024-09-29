@@ -34,14 +34,38 @@ function AddInventory({ isOpen, toggleModal }) {
   const [retailPrice, setRetailPrice] = useState("");
   const [loading, setLoading] = useState(false); // New state to track loading
 
+  const [itemNameError, setItemNameError] = useState(false);
+  const [quantityError, setQuantityError] = useState(false);
+  const [costPriceError, setCostPriceError] = useState(false);
+  const [retailPriceError, setRetailPriceError] = useState(false);
+
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !costPrice || !retailPrice) {
-      alert("Please fill in all the required fields");
+    setItemNameError(false);
+    setQuantityError(false);
+    setCostPriceError(false);
+    setRetailPriceError(false);
+
+    let hasError = false;
+
+    if (!itemName) {
+      setItemNameError(true);
+      hasError = true;
+    }
+    if (!quantity) {
+      setQuantityError(true);
+      hasError = true;
+    }
+    if (!costPrice) {
+      setCostPriceError(true);
+      hasError = true;
+    }
+    if (!retailPrice) {
+      setRetailPriceError(true);
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
-
-    setLoading(true); // Set loading to true when submission starts
-
     const inventoryRef = ref(database, "medicine");
     const newInventoryRef = push(inventoryRef);
 
@@ -99,11 +123,16 @@ function AddInventory({ isOpen, toggleModal }) {
             type="text"
             id="item"
             name="item"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              itemNameError ? "border-red-500" : "border-gray-300"
+            }`}
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
             disabled={loading} // Disable the input while loading
           />
+          {itemNameError && (
+            <p className="text-red-500 mt-1">Item name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -114,11 +143,16 @@ function AddInventory({ isOpen, toggleModal }) {
             type="number"
             id="quantity"
             name="quantity"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              quantityError ? "border-red-500" : "border-gray-300"
+            }`}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             disabled={loading} // Disable the input while loading
           />
+          {quantityError && (
+            <p className="text-red-500 mt-1">Quantity is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -129,11 +163,16 @@ function AddInventory({ isOpen, toggleModal }) {
             type="number"
             id="costPrice"
             name="costPrice"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              costPriceError ? "border-red-500" : "border-gray-300"
+            }`}
             value={costPrice}
             onChange={(e) => setCostPrice(e.target.value)}
             disabled={loading} // Disable the input while loading
           />
+          {costPriceError && (
+            <p className="text-red-500 mt-1">Cost price is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -144,11 +183,16 @@ function AddInventory({ isOpen, toggleModal }) {
             type="number"
             id="retailPrice"
             name="retailPrice"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              retailPriceError ? "border-red-500" : "border-gray-300"
+            }`}
             value={retailPrice}
             onChange={(e) => setRetailPrice(e.target.value)}
             disabled={loading} // Disable the input while loading
           />
+          {retailPriceError && (
+            <p className="text-red-500 mt-1">Retail price is required</p>
+          )}
         </div>
 
         <button
