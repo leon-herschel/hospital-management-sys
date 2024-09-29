@@ -132,7 +132,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="text"
             id="itemName"
             name="itemName"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              itemNameError ? "border-red-500" : "border-gray-300"
+            }`}
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
             disabled={loading} // Disable input while loading
@@ -150,7 +152,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="number"
             id="quantity"
             name="quantity"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              quantityError ? "border-red-500" : "border-gray-300"
+            }`}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             disabled={loading} // Disable input while loading
@@ -168,7 +172,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="text"
             id="brand"
             name="brand"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              brandError ? "border-red-500" : "border-gray-300"
+            }`}
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
             disabled={loading} // Disable input while loading
@@ -184,7 +190,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="number"
             id="costPrice"
             name="costPrice"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              costPriceError ? "border-red-500" : "border-gray-300"
+            }`}
             value={costPrice}
             onChange={(e) => setCostPrice(e.target.value)}
             disabled={loading} // Disable input while loading
@@ -202,7 +210,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="number"
             id="retailPrice"
             name="retailPrice"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              retailPriceError ? "border-red-500" : "border-gray-300"
+            }`}
             value={retailPrice}
             onChange={(e) => setRetailPrice(e.target.value)}
             disabled={loading} // Disable input while loading
