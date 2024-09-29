@@ -37,25 +37,23 @@ function Patient() {
             ...data[key],
             id: key,
           };
-  
-          // Format the dateTime to a human-readable format if it's available
+
           if (patient.dateTime) {
-            patient.dateTime = new Date(patient.dateTime).toLocaleString(); // Format date-time
+            patient.dateTime = new Date(patient.dateTime).toLocaleString();
           }
-          
-          return patient; // Return the formatted patient object
+
+          return patient;
         });
         setPatientList(patientData);
       } else {
         setPatientList([]);
       }
     });
-  
+
     return () => {
       unsubscribe();
     };
   }, [patientCollection]);
-  
 
   const handleDelete = async (id) => {
     await remove(ref(database, `patient/${id}`));
@@ -94,7 +92,6 @@ function Patient() {
     patient.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
@@ -117,63 +114,32 @@ function Patient() {
         <table className="w-full text-md text-gray-800 text-center border border-stone-200">
           <thead className="text-sm uppercase bg-stone-200">
             <tr>
-              <th className="px-6 py-3">
-                Name
-              </th>
-              <th className="px-6 py-3">
-                Date of Birth
-              </th>
-              <th className="px-6 py-3">
-                Age
-              </th>
-              <th className="px-6 py-3">
-                Gender
-              </th>
-              <th className="px-6 py-3">
-                Status
-              </th>
-              <th className="px-6 py-3">
-                Contact
-              </th>
-              <th className="px-6 py-3">
-                Type of Room
-              </th>
-              <th className="px-6 py-3">
-                QR Code
-              </th>
-              <th className="px-6 py-3">
-                Date and Time Created
-              </th>
-              <th className="px-6 py-3">
-                Actions
-              </th>
+              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">Date of Birth</th>
+              <th className="px-6 py-3">Age</th>
+              <th className="px-6 py-3">Gender</th>
+              <th className="px-6 py-3">Status</th>
+              <th className="px-6 py-3">Contact</th>
+              <th className="px-6 py-3">Type of Room</th>
+              <th className="px-6 py-3">QR Code</th>
+              <th className="px-6 py-3">Date and Time Created</th>
+              <th className="px-6 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredPatients.length > 0 ? (
               filteredPatients.map((patient) => (
-                <tr key={patient.id} className="bg-white border-b hover:bg-stone-100">
-                  <td className="px-6 py-3">
-                    {patient.name}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.birth}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.age}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.gender}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.status}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.contact}
-                  </td>
-                  <td className="px-6 py-3">
-                    {patient.roomType}
-                  </td>
+                <tr
+                  key={patient.id}
+                  className="bg-white border-b hover:bg-stone-100"
+                >
+                  <td className="px-6 py-3">{patient.name}</td>
+                  <td className="px-6 py-3">{patient.birth}</td>
+                  <td className="px-6 py-3">{patient.age}</td>
+                  <td className="px-6 py-3">{patient.gender}</td>
+                  <td className="px-6 py-3">{patient.status}</td>
+                  <td className="px-6 py-3">{patient.contact}</td>
+                  <td className="px-6 py-3">{patient.roomType}</td>
                   <td className="px-6 py-3">
                     <QRCode
                       size={50}
@@ -182,9 +148,7 @@ function Patient() {
                       value={patient.id}
                     />
                   </td>
-                  <td className="px-6 py-3">
-                    {patient.dateTime}
-                  </td>
+                  <td className="px-6 py-3">{patient.dateTime}</td>
                   <td className="flex flex-col px-6 py-3 space-y-2 justify-center">
                     <button
                       onClick={() => handleViewClick(patient.id)}
@@ -209,10 +173,7 @@ function Patient() {
               ))
             ) : (
               <tr>
-                <td
-                  colSpan="9"
-                  className="px-6 py-3"
-                >
+                <td colSpan="9" className="px-6 py-3">
                   No patients found.
                 </td>
               </tr>
@@ -230,8 +191,8 @@ function Patient() {
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
 
       {editModal && currentPatient && (
-      <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
             <form onSubmit={handleUpdate}>
               <h2 className="text-2xl font-bold mb-6 text-center">
                 Edit Patient

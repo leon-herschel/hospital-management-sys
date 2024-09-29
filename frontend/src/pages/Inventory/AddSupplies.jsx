@@ -16,7 +16,8 @@ const calculateStatus = (quantity, maxQuantity) => {
 };
 
 const generateRandomKey = (length) => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -31,9 +32,41 @@ function AddSupplies({ isOpen, toggleModal }) {
   const [costPrice, setCostPrice] = useState(""); // New state for cost price
   const [retailPrice, setRetailPrice] = useState(""); // New state for retail price
 
+  const [itemNameError, setItemNameError] = useState(false);
+  const [quantityError, setQuantityError] = useState(false);
+  const [brandError, setBrandError] = useState(false);
+  const [costPriceError, setCostPriceError] = useState(false);
+  const [retailPriceError, setRetailPriceError] = useState(false);
+
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !brand || !costPrice || !retailPrice) { // Check if all fields are filled
-      alert("Please fill in all the required fields");
+    setItemNameError(false);
+    setQuantityError(false);
+    setCostPriceError(false);
+    setRetailPriceError(false);
+
+    let hasError = false;
+
+    if (!itemName) {
+      setItemNameError(true);
+      hasError = true;
+    }
+    if (!quantity) {
+      setQuantityError(true);
+      hasError = true;
+    }
+    if (!brand) {
+      setBrandError(true);
+      hasError = true;
+    }
+    if (!costPrice) {
+      setCostPriceError(true);
+      hasError = true;
+    }
+    if (!retailPrice) {
+      setRetailPriceError(true);
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
 
@@ -106,6 +139,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
           />
+          {itemNameError && (
+            <p className="text-red-500 mt-1">Supply name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -120,6 +156,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
+          {quantityError && (
+            <p className="text-red-500 mt-1">Quantity is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -134,6 +173,7 @@ function AddSupplies({ isOpen, toggleModal }) {
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
           />
+          {brandError && <p className="text-red-500 mt-1">Brand is required</p>}
         </div>
 
         <div className="mb-4">
@@ -148,6 +188,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             value={costPrice}
             onChange={(e) => setCostPrice(e.target.value)} // Update state with cost price
           />
+          {costPriceError && (
+            <p className="text-red-500 mt-1">Cost price is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -162,6 +205,9 @@ function AddSupplies({ isOpen, toggleModal }) {
             value={retailPrice}
             onChange={(e) => setRetailPrice(e.target.value)} // Update state with retail price
           />
+          {retailPriceError && (
+            <p className="text-red-500 mt-1">Retail price is required</p>
+          )}
         </div>
 
         <button

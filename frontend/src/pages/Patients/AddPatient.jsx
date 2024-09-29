@@ -15,7 +15,6 @@ function AddPatient({ isOpen, toggleModal }) {
   const [roomType, setRoomType] = useState("");
   const [dateTime, setDateTime] = useState("");
 
-  // Error states for each field
   const [nameError, setNameError] = useState(false);
   const [birthError, setBirthError] = useState(false);
   const [ageError, setAgeError] = useState(false);
@@ -41,7 +40,7 @@ function AddPatient({ isOpen, toggleModal }) {
       const calculatedAge = calculateAge(new Date(birth));
       setAge(calculatedAge);
     } else {
-      setAge(""); // Reset age if no birth date is provided
+      setAge("");
     }
   }, [birth]);
 
@@ -61,7 +60,6 @@ function AddPatient({ isOpen, toggleModal }) {
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
     doc.text(`Name: ${patientInfo.name}`, 90, 20);
-    // More PDF logic here...
     const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
       width: 100,
     });
@@ -70,7 +68,6 @@ function AddPatient({ isOpen, toggleModal }) {
   };
 
   const handleSubmit = () => {
-    // Reset all error states
     setNameError(false);
     setBirthError(false);
     setAgeError(false);
@@ -82,7 +79,6 @@ function AddPatient({ isOpen, toggleModal }) {
 
     let hasError = false;
 
-    // Validate each field and set error states
     if (!name) {
       setNameError(true);
       hasError = true;
