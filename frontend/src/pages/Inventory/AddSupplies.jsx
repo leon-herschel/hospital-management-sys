@@ -16,7 +16,8 @@ const calculateStatus = (quantity, maxQuantity) => {
 };
 
 const generateRandomKey = (length) => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -32,9 +33,41 @@ function AddSupplies({ isOpen, toggleModal }) {
   const [retailPrice, setRetailPrice] = useState("");
   const [loading, setLoading] = useState(false); // New state to track loading
 
+  const [itemNameError, setItemNameError] = useState(false);
+  const [quantityError, setQuantityError] = useState(false);
+  const [brandError, setBrandError] = useState(false);
+  const [costPriceError, setCostPriceError] = useState(false);
+  const [retailPriceError, setRetailPriceError] = useState(false);
+
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !brand || !costPrice || !retailPrice) {
-      alert("Please fill in all the required fields");
+    setItemNameError(false);
+    setQuantityError(false);
+    setCostPriceError(false);
+    setRetailPriceError(false);
+
+    let hasError = false;
+
+    if (!itemName) {
+      setItemNameError(true);
+      hasError = true;
+    }
+    if (!quantity) {
+      setQuantityError(true);
+      hasError = true;
+    }
+    if (!brand) {
+      setBrandError(true);
+      hasError = true;
+    }
+    if (!costPrice) {
+      setCostPriceError(true);
+      hasError = true;
+    }
+    if (!retailPrice) {
+      setRetailPriceError(true);
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
 
@@ -99,11 +132,16 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="text"
             id="itemName"
             name="itemName"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              itemNameError ? "border-red-500" : "border-gray-300"
+            }`}
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
             disabled={loading} // Disable input while loading
           />
+          {itemNameError && (
+            <p className="text-red-500 mt-1">Supply name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -114,11 +152,16 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="number"
             id="quantity"
             name="quantity"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              quantityError ? "border-red-500" : "border-gray-300"
+            }`}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             disabled={loading} // Disable input while loading
           />
+          {quantityError && (
+            <p className="text-red-500 mt-1">Quantity is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -129,11 +172,14 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="text"
             id="brand"
             name="brand"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              brandError ? "border-red-500" : "border-gray-300"
+            }`}
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
             disabled={loading} // Disable input while loading
           />
+          {brandError && <p className="text-red-500 mt-1">Brand is required</p>}
         </div>
 
         <div className="mb-4">
@@ -144,11 +190,16 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="number"
             id="costPrice"
             name="costPrice"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              costPriceError ? "border-red-500" : "border-gray-300"
+            }`}
             value={costPrice}
             onChange={(e) => setCostPrice(e.target.value)}
             disabled={loading} // Disable input while loading
           />
+          {costPriceError && (
+            <p className="text-red-500 mt-1">Cost price is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -159,11 +210,16 @@ function AddSupplies({ isOpen, toggleModal }) {
             type="number"
             id="retailPrice"
             name="retailPrice"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              retailPriceError ? "border-red-500" : "border-gray-300"
+            }`}
             value={retailPrice}
             onChange={(e) => setRetailPrice(e.target.value)}
             disabled={loading} // Disable input while loading
           />
+          {retailPriceError && (
+            <p className="text-red-500 mt-1">Retail price is required</p>
+          )}
         </div>
 
         <button
@@ -171,7 +227,8 @@ function AddSupplies({ isOpen, toggleModal }) {
           onClick={handlesubmit}
           disabled={loading} // Disable button while loading
         >
-          {loading ? <span>Loading...</span> : "Submit"} {/* Show loading text */}
+          {loading ? <span>Loading...</span> : "Submit"}{" "}
+          {/* Show loading text */}
         </button>
       </div>
     </div>

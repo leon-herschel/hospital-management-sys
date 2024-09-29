@@ -3,6 +3,7 @@ import { ref, push, set } from "firebase/database";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 import { database } from "../../firebase/firebase";
+import "../../App.css";
 
 function AddPatient({ isOpen, toggleModal }) {
   const [name, setName] = useState("");
@@ -12,16 +13,22 @@ function AddPatient({ isOpen, toggleModal }) {
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState("");
   const [roomType, setRoomType] = useState("");
-  const [diagnosis, setDiagnosis] = useState("");
-  const [medUse, setMedUse] = useState("");
-  const [suppliesUsed, setSuppliesUsed] = useState("");
   const [dateTime, setDateTime] = useState("");
   const [submitting, setSubmitting] = useState(false); // Add submitting state
+
+  const [nameError, setNameError] = useState(false);
+  const [birthError, setBirthError] = useState(false);
+  const [ageError, setAgeError] = useState(false);
+  const [genderError, setGenderError] = useState(false);
+  const [contactError, setContactError] = useState(false);
+  const [statusError, setStatusError] = useState(false);
+  const [roomTypeError, setRoomTypeError] = useState(false);
+  const [dateTimeError, setDateTimeError] = useState(false);
 
   const formatDateToLocal = (date) => {
     const offset = date.getTimezoneOffset();
     const adjustedDate = new Date(date.getTime() - offset * 60 * 1000);
-    return adjustedDate.toISOString().slice(0, 16); // This gives the format YYYY-MM-DDTHH:MM
+    return adjustedDate.toISOString().slice(0, 16);
   };
 
   useEffect(() => {
@@ -34,7 +41,7 @@ function AddPatient({ isOpen, toggleModal }) {
       const calculatedAge = calculateAge(new Date(birth));
       setAge(calculatedAge);
     } else {
-      setAge(""); 
+      setAge("");
     }
   }, [birth]);
 
@@ -54,42 +61,60 @@ function AddPatient({ isOpen, toggleModal }) {
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
     doc.text(`Name: ${patientInfo.name}`, 90, 20);
-    doc.text(`Date of Birth: ${patientInfo.birth}`, 90, 30);
-    doc.text(`Age: ${patientInfo.age}`, 90, 40);
-    doc.text(`Gender: ${patientInfo.gender}`, 90, 50);
-    doc.text(`Contact: ${patientInfo.contact}`, 90, 60);
-    doc.text(`Status: ${patientInfo.status}`, 90, 70);
-    if (patientInfo.roomType) {
-      doc.text(`Room Type: ${patientInfo.roomType}`, 90, 80);
-    }
-
     const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
       width: 100,
     });
-
     doc.addImage(qrCodeDataUrl, "PNG", 10, 0, 80, 80);
-
     doc.output("dataurlnewwindow");
   };
 
-  const handlesubmit = () => {
-    if (
-      !name ||
-      !birth ||
-      !age ||
-      !gender ||
-      !contact ||
-      !status ||
-      !dateTime ||
-      (status === "Inpatient" && !roomType) 
-    ) {
-      alert("Please fill in all required fields");
-      return;
+  const handleSubmit = () => {
+    setNameError(false);
+    setBirthError(false);
+    setAgeError(false);
+    setGenderError(false);
+    setContactError(false);
+    setStatusError(false);
+    setRoomTypeError(false);
+    setDateTimeError(false);
+
+    let hasError = false;
+
+    if (!name) {
+      setNameError(true);
+      hasError = true;
+    }
+    if (!birth) {
+      setBirthError(true);
+      hasError = true;
+    }
+    if (!age) {
+      setAgeError(true);
+      hasError = true;
+    }
+    if (!gender) {
+      setGenderError(true);
+      hasError = true;
+    }
+    if (!contact || contact.length !== 11) {
+      setContactError(true);
+      hasError = true;
+    }
+    if (!status) {
+      setStatusError(true);
+      hasError = true;
+    }
+    if (status === "Inpatient" && !roomType) {
+      setRoomTypeError(true);
+      hasError = true;
+    }
+    if (!dateTime) {
+      setDateTimeError(true);
+      hasError = true;
     }
 
-    if (contact.length !== 11) {
-      alert("Contact Number is invalid");
-      return;
+    if (hasError) {
+      return; // Stop if there's an error
     }
 
     setSubmitting(true); // Disable the button and show loading
@@ -99,41 +124,41 @@ function AddPatient({ isOpen, toggleModal }) {
     const uniqueKey = newPatientRef.key;
 
     const patientInfo = {
-      name: name,
-      birth: birth,
-      age: age,
-      gender: gender,
-      contact: contact,
-      status: status,
-      roomType: roomType,
-      diagnosis: diagnosis,
-      medUse: medUse,
-      suppliesUsed: suppliesUsed,
+      name,
+      birth,
+      age,
+      gender,
+      contact,
+      status,
+      roomType,
+      dateTime,
       qrData: uniqueKey,
-      dateTime: dateTime,
     };
 
     set(newPatientRef, patientInfo)
       .then(() => {
         alert("Patient has been added successfully!");
-
         generatePDF(patientInfo);
 
         setSubmitting(false); // Re-enable the button
         toggleModal();
-        setName("");
-        setBirth("");
-        setAge("");
-        setGender("");
-        setContact("");
-        setStatus("");
-        setRoomType("");
-        setDateTime("");
+        resetForm();
       })
       .catch((error) => {
         setSubmitting(false); // Re-enable the button
         alert("Error adding patient: ", error);
       });
+  };
+
+  const resetForm = () => {
+    setName("");
+    setBirth("");
+    setAge("");
+    setGender("");
+    setContact("");
+    setStatus("");
+    setRoomType("");
+    setDateTime("");
   };
 
   if (!isOpen) return null;
@@ -158,26 +183,34 @@ function AddPatient({ isOpen, toggleModal }) {
             type="text"
             id="name"
             name="name"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              nameError ? "border-red-500" : "border-gray-300"
+            }`}
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
+          {nameError && <p className="text-red-500 mt-1">Name is required</p>}
         </div>
 
         <div className="mb-4">
-          <label htmlFor="dateofbirth" className="block text-gray-700 mb-2">
+          <label htmlFor="birth" className="block text-gray-700 mb-2">
             Date of Birth
           </label>
           <input
             type="date"
-            id="dateofbirth"
-            name="dateofbirth"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            id="birth"
+            name="birth"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              birthError ? "border-red-500" : "border-gray-300"
+            }`}
             value={birth}
             onChange={(e) => setBirth(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
+          {birthError && (
+            <p className="text-red-500 mt-1">Birth date is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -188,20 +221,25 @@ function AddPatient({ isOpen, toggleModal }) {
             type="text"
             id="age"
             name="age"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              ageError ? "border-red-500" : "border-gray-300"
+            }`}
             value={age}
             readOnly
           />
+          {ageError && <p className="text-red-500 mt-1">Age is required</p>}
         </div>
 
-        <div>
+        <div className="mb-4">
           <label htmlFor="gender" className="block text-gray-700 mb-2">
             Gender
           </label>
           <select
             id="gender"
             name="gender"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              genderError ? "border-red-500" : "border-gray-300"
+            }`}
             value={gender}
             onChange={(e) => setGender(e.target.value)}
             disabled={submitting} // Disable input when submitting
@@ -212,8 +250,10 @@ function AddPatient({ isOpen, toggleModal }) {
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
+          {genderError && (
+            <p className="text-red-500 mt-1">Gender is required</p>
+          )}
         </div>
-        <br />
 
         <div className="mb-4">
           <label htmlFor="contact" className="block text-gray-700 mb-2">
@@ -223,11 +263,16 @@ function AddPatient({ isOpen, toggleModal }) {
             type="number"
             id="contact"
             name="contact"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              contactError ? "border-red-500" : "border-gray-300"
+            }`}
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
+          {contactError && (
+            <p className="text-red-500 mt-1">Contact must be 11 digits</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -237,7 +282,9 @@ function AddPatient({ isOpen, toggleModal }) {
           <select
             id="status"
             name="status"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              statusError ? "border-red-500" : "border-gray-300"
+            }`}
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             disabled={submitting} // Disable input when submitting
@@ -248,17 +295,22 @@ function AddPatient({ isOpen, toggleModal }) {
             <option value="Inpatient">Inpatient</option>
             <option value="Outpatient">Outpatient</option>
           </select>
+          {statusError && (
+            <p className="text-red-500 mt-1">Status is required</p>
+          )}
         </div>
 
         {status === "Inpatient" && (
           <div className="mb-4">
             <label htmlFor="roomType" className="block text-gray-700 mb-2">
-              Type of Room
+              Room Type
             </label>
             <select
               id="roomType"
               name="roomType"
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                roomTypeError ? "border-red-500" : "border-gray-300"
+              }`}
               value={roomType}
               onChange={(e) => setRoomType(e.target.value)}
               disabled={submitting} // Disable input when submitting
@@ -269,24 +321,37 @@ function AddPatient({ isOpen, toggleModal }) {
               <option value="Private">Private</option>
               <option value="Public">Public</option>
             </select>
+            {roomTypeError && (
+              <p className="text-red-500 mt-1">
+                Room type is required for inpatients
+              </p>
+            )}
           </div>
         )}
 
-        <div>
-          <label htmlFor="datetime">Date and Time</label>
+        <div className="mb-4">
+          <label htmlFor="dateTime" className="block text-gray-700 mb-2">
+            Date/Time
+          </label>
           <input
             type="datetime-local"
-            id="datetime"
-            name="datetime"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            id="dateTime"
+            name="dateTime"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              dateTimeError ? "border-red-500" : "border-gray-300"
+            }`}
             value={dateTime}
             onChange={(e) => setDateTime(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
+          {dateTimeError && (
+            <p className="text-red-500 mt-1">Date and time is required</p>
+          )}
         </div>
+
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
-          onClick={handlesubmit}
+          onClick={handleSubmit}
           disabled={submitting} // Disable the button when submitting
         >
           {submitting ? "Submitting..." : "Submit"} {/* Show loading text */}
