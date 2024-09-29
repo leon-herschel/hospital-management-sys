@@ -4,6 +4,7 @@ import AddPatient from "./AddPatient";
 import QRCode from "react-qr-code";
 import { database } from "../../firebase/firebase";
 import View from "./ViewPatient";
+import DeleteConfirmationModal from "./DeleteConfirmationModalPatient"; // Import the modal
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
@@ -11,6 +12,7 @@ function Patient() {
   const [modal, setModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [viewModal, setViewModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false); // State for delete confirmation modal
   const [currentPatient, setCurrentPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -28,6 +30,10 @@ function Patient() {
     setViewModal(!viewModal);
   };
 
+  const toggleDeleteModal = () => {
+    setDeleteModal(!deleteModal);
+  };
+
   useEffect(() => {
     const unsubscribe = onValue(patientCollection, (snapshot) => {
       const data = snapshot.val();
@@ -38,6 +44,7 @@ function Patient() {
             id: key,
           };
 
+          // Format the dateTime to a human-readable format if it's available
           if (patient.dateTime) {
             patient.dateTime = new Date(patient.dateTime).toLocaleString();
           }
@@ -55,8 +62,17 @@ function Patient() {
     };
   }, [patientCollection]);
 
-  const handleDelete = async (id) => {
-    await remove(ref(database, `patient/${id}`));
+  // Trigger the delete confirmation modal
+  const handleDeleteConfirmation = (patient) => {
+    setCurrentPatient(patient);
+    toggleDeleteModal(); // Open the delete confirmation modal
+  };
+
+  const handleDelete = async () => {
+    if (currentPatient) {
+      await remove(ref(database, `patient/${currentPatient.id}`));
+      toggleDeleteModal(); // Close the delete modal after deletion
+    }
   };
 
   const handleEdit = (patient) => {
@@ -163,7 +179,7 @@ function Patient() {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(patient.id)}
+                      onClick={() => handleDeleteConfirmation(patient)} // Trigger delete confirmation
                       className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
                     >
                       Delete
@@ -173,14 +189,15 @@ function Patient() {
               ))
             ) : (
               <tr>
-                <td colSpan="9" className="px-6 py-3">
-                  No patients found.
+                <td colSpan="10" className="px-6 py-3">
+                  No Patients
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
       {viewModal && (
         <View
           isOpen={viewModal}
@@ -189,6 +206,13 @@ function Patient() {
         />
       )}
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
+
+      {/* Use the DeleteConfirmationModal component */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal}
+        toggleModal={toggleDeleteModal}
+        onConfirm={handleDelete} // Pass the delete action
+      />
 
       {editModal && currentPatient && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">

@@ -14,6 +14,7 @@ function AddPatient({ isOpen, toggleModal }) {
   const [status, setStatus] = useState("");
   const [roomType, setRoomType] = useState("");
   const [dateTime, setDateTime] = useState("");
+  const [submitting, setSubmitting] = useState(false); // Add submitting state
 
   const [nameError, setNameError] = useState(false);
   const [birthError, setBirthError] = useState(false);
@@ -116,7 +117,8 @@ function AddPatient({ isOpen, toggleModal }) {
       return; // Stop if there's an error
     }
 
-    // If all validations pass, continue with Firebase set and PDF generation
+    setSubmitting(true); // Disable the button and show loading
+
     const patientRef = ref(database, "patient");
     const newPatientRef = push(patientRef);
     const uniqueKey = newPatientRef.key;
@@ -137,10 +139,13 @@ function AddPatient({ isOpen, toggleModal }) {
       .then(() => {
         alert("Patient has been added successfully!");
         generatePDF(patientInfo);
+
+        setSubmitting(false); // Re-enable the button
         toggleModal();
         resetForm();
       })
       .catch((error) => {
+        setSubmitting(false); // Re-enable the button
         alert("Error adding patient: ", error);
       });
   };
@@ -183,6 +188,7 @@ function AddPatient({ isOpen, toggleModal }) {
             }`}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
           {nameError && <p className="text-red-500 mt-1">Name is required</p>}
         </div>
@@ -200,6 +206,7 @@ function AddPatient({ isOpen, toggleModal }) {
             }`}
             value={birth}
             onChange={(e) => setBirth(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
           {birthError && (
             <p className="text-red-500 mt-1">Birth date is required</p>
@@ -235,6 +242,7 @@ function AddPatient({ isOpen, toggleModal }) {
             }`}
             value={gender}
             onChange={(e) => setGender(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           >
             <option value="" disabled>
               Select Gender
@@ -260,6 +268,7 @@ function AddPatient({ isOpen, toggleModal }) {
             }`}
             value={contact}
             onChange={(e) => setContact(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
           {contactError && (
             <p className="text-red-500 mt-1">Contact must be 11 digits</p>
@@ -278,6 +287,7 @@ function AddPatient({ isOpen, toggleModal }) {
             }`}
             value={status}
             onChange={(e) => setStatus(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           >
             <option value="" disabled>
               Select Status
@@ -295,8 +305,7 @@ function AddPatient({ isOpen, toggleModal }) {
             <label htmlFor="roomType" className="block text-gray-700 mb-2">
               Room Type
             </label>
-            <input
-              type="text"
+            <select
               id="roomType"
               name="roomType"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
@@ -304,7 +313,14 @@ function AddPatient({ isOpen, toggleModal }) {
               }`}
               value={roomType}
               onChange={(e) => setRoomType(e.target.value)}
-            />
+              disabled={submitting} // Disable input when submitting
+            >
+              <option value="" disabled>
+                Select Room
+              </option>
+              <option value="Private">Private</option>
+              <option value="Public">Public</option>
+            </select>
             {roomTypeError && (
               <p className="text-red-500 mt-1">
                 Room type is required for inpatients
@@ -326,20 +342,20 @@ function AddPatient({ isOpen, toggleModal }) {
             }`}
             value={dateTime}
             onChange={(e) => setDateTime(e.target.value)}
+            disabled={submitting} // Disable input when submitting
           />
           {dateTimeError && (
             <p className="text-red-500 mt-1">Date and time is required</p>
           )}
         </div>
 
-        <div className="flex justify-end">
-          <button
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
-            onClick={handleSubmit}
-          >
-            Add Patient
-          </button>
-        </div>
+        <button
+          className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+          onClick={handleSubmit}
+          disabled={submitting} // Disable the button when submitting
+        >
+          {submitting ? "Submitting..." : "Submit"} {/* Show loading text */}
+        </button>
       </div>
     </div>
   );
