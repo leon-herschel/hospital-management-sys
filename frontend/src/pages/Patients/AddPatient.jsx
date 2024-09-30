@@ -61,6 +61,10 @@ function AddPatient({ isOpen, toggleModal }) {
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
     doc.text(`Name: ${patientInfo.name}`, 90, 20);
+    doc.text(`Birth Date: ${patientInfo.birth}`, 90, 30);
+    doc.text(`Age: ${patientInfo.age}`, 90, 40);
+    doc.text(`Gender: ${patientInfo.gender}`, 90, 50);
+    doc.text(`Room Type: ${patientInfo.roomType}`, 90, 60);
     const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
       width: 100,
     });
@@ -133,6 +137,7 @@ function AddPatient({ isOpen, toggleModal }) {
       roomType,
       dateTime,
       qrData: uniqueKey,
+      dateTime: dateTime,
     };
 
     set(newPatientRef, patientInfo)
@@ -348,7 +353,6 @@ function AddPatient({ isOpen, toggleModal }) {
             <p className="text-red-500 mt-1">Date and time is required</p>
           )}
         </div>
-
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handleSubmit}
