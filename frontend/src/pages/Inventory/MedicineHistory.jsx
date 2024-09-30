@@ -54,7 +54,7 @@ function MedicineHistory() {
           ) : (
             <tr>
               <td colSpan="5" className="px-6 py-3">
-                No medicine history available.
+                No medicine history available yet.
               </td>
             </tr>
           )}
