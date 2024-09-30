@@ -56,7 +56,6 @@ function Patient() {
         setPatientList([]);
       }
     });
-
     return () => {
       unsubscribe();
     };

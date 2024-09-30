@@ -61,6 +61,10 @@ function AddPatient({ isOpen, toggleModal }) {
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
     doc.text(`Name: ${patientInfo.name}`, 90, 20);
+    doc.text(`Birth Date: ${patientInfo.birth}`, 90, 30);
+    doc.text(`Age: ${patientInfo.age}`, 90, 40);
+    doc.text(`Gender: ${patientInfo.gender}`, 90, 50);
+    doc.text(`Room Type: ${patientInfo.roomType}`, 90, 60);
     const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
       width: 100,
     });
