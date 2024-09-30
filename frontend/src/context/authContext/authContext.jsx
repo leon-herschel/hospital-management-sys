@@ -1,7 +1,8 @@
 import React, { useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types"; 
-import { auth } from "../../firebase/firebase";
+import { auth, database } from "../../firebase/firebase"; 
 import { onAuthStateChanged } from "firebase/auth";
+import { ref, get } from "firebase/database"; 
 
 const AuthContext = React.createContext();
 
@@ -14,6 +15,8 @@ export function AuthProvider({ children }) {
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [isEmailUser, setIsEmailUser] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState(null);  
+  const [department, setDepartment] = useState(null);  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, initializeUser);
@@ -30,9 +33,21 @@ export function AuthProvider({ children }) {
       setIsEmailUser(isEmail);
 
       setUserLoggedIn(true);
+
+      const userRef = ref(database, `users/${user.uid}`);
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        setRole(userData.role);  
+        setDepartment(userData.department);  
+      } else {
+        console.log("No user data found in Realtime Database");
+      }
     } else {
       setCurrentUser(null);
       setUserLoggedIn(false);
+      setRole(null);  
+      setDepartment(null);  
     }
 
     setLoading(false);
@@ -42,6 +57,8 @@ export function AuthProvider({ children }) {
     userLoggedIn,
     isEmailUser,
     currentUser,
+    role,  
+    department,  
     setCurrentUser
   };
 
