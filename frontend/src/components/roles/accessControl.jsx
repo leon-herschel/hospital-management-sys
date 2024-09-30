@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getDatabase, ref, onValue } from 'firebase/database';
-import { useAuth } from "../context/authContext/authContext";
+import { useAuth } from "../../context/authContext/authContext";
 
 export const useAccessControl = () => {
   const [roleData, setRoleData] = useState(null);
