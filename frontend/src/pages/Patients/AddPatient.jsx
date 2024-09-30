@@ -61,6 +61,10 @@ function AddPatient({ isOpen, toggleModal }) {
   const generatePDF = async (patientInfo) => {
     const doc = new jsPDF();
     doc.text(`Name: ${patientInfo.name}`, 90, 20);
+    doc.text(`Birth Date: ${patientInfo.birth}`, 90, 30);
+    doc.text(`Age: ${patientInfo.age}`, 90, 40);
+    doc.text(`Gender: ${patientInfo.gender}`, 90, 50);
+    doc.text(`Room Type: ${patientInfo.roomType}`, 90, 60);
     const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
       width: 100,
     });
@@ -348,11 +352,6 @@ function AddPatient({ isOpen, toggleModal }) {
           {dateTimeError && (
             <p className="text-red-500 mt-1">Date and time is required</p>
           )}
-        </div>
-        <div>
-          <label htmlFor="datetime">Date and Time</label>
-          <input type="datetime-local" id="datetime" name="datetime" className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300" value={dateTime}
-          onChange={(e) => setDateTime(e.target.value)}/>
         </div>
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
