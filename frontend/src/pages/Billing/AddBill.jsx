@@ -4,6 +4,7 @@ import { database } from '../../firebase/firebase';
 
 const AddBillingModal = ({ isOpen, onClose }) => {
   const [amount, setAmount] = useState('');
+  const [submitting, setSubmitting] = useState(false); // Add submitting state
 
   const handleAddBilling = async (e) => {
     e.preventDefault();
@@ -12,8 +13,10 @@ const AddBillingModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    setSubmitting(true); // Disable the button and show loading
+
     try {
-      const billingRef = ref(database, 'billing'); // Change 'users' to 'billing'
+      const billingRef = ref(database, 'billing');
       const newBillingRef = push(billingRef);
 
       await set(newBillingRef, {
@@ -21,11 +24,12 @@ const AddBillingModal = ({ isOpen, onClose }) => {
       });
 
       alert('Amount added successfully');
-      // Clear input field
-      setAmount('');
+      setAmount(''); // Clear input field
       onClose(); // Close the modal after adding the amount
     } catch (error) {
       alert('Error adding amount: ' + error.message);
+    } finally {
+      setSubmitting(false); // Re-enable the button after the operation completes
     }
   };
 
@@ -37,19 +41,30 @@ const AddBillingModal = ({ isOpen, onClose }) => {
         <h2 className="text-2xl font-bold mb-4">Add Billing</h2>
         <form onSubmit={handleAddBilling}>
           <div className="mb-4">
-            <label className="block text-gray-700">Amount:</label>
+            <label htmlFor="amount" className="block text-gray-700 mb-2">Amount</label>
             <input
               type="text"
+              id="amount"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="border rounded w-full py-2 px-3"
+              disabled={submitting} // Disable input when submitting
             />
           </div>
           <div className="flex justify-end space-x-4">
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-              Add Billing
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              disabled={submitting} // Disable the button when submitting
+            >
+              {submitting ? 'Submitting...' : 'Add Billing'} {/* Show loading text */}
             </button>
-            <button type="button" className="bg-gray-500 text-white px-4 py-2 rounded" onClick={onClose}>
+            <button
+              type="button"
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+              onClick={onClose}
+              disabled={submitting} // Disable the cancel button when submitting
+            >
               Cancel
             </button>
           </div>

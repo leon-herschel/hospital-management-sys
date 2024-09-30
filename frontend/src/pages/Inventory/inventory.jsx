@@ -4,6 +4,7 @@ import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
 import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
+import Notification from "./Notification";
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
@@ -22,6 +23,7 @@ function Inventory() {
   const [modal, setModal] = useState(false);
   const [supplyModal, setSupplyModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false); // New state for delete confirmation
   const [currentItem, setCurrentItem] = useState(null);
   const [selectedTab, setSelectedTab] = useState("medicine");
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +43,10 @@ function Inventory() {
     setEditModal(!editModal);
   };
 
+  const toggleDeleteModal = () => {
+    setDeleteModal(!deleteModal);
+  };
+
   const handleEdit = (item) => {
     setCurrentItem(item);
     toggleEditModal();
@@ -48,8 +54,9 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { itemName, quantity, department } = event.target.elements;
-  
+    const { itemName, quantity, retailPrice, costPrice } =
+      event.target.elements;
+
     const updatedQuantity = Number(quantity.value);
     const maxQuantity = currentItem.maxQuantity || updatedQuantity;
     const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
@@ -58,7 +65,8 @@ function Inventory() {
       itemName: itemName.value,
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
-      department: department.value,
+      retailPrice: Number(retailPrice.value), // Updated retail price field
+      costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
     };
     
@@ -71,7 +79,8 @@ function Inventory() {
 
   const handleUpdateSupply = async (event) => {
     event.preventDefault();
-    const { itemName, quantity } = event.target.elements;
+    const { itemName, quantity, retailPrice, costPrice } =
+      event.target.elements;
 
     const updatedQuantity = Number(quantity.value);
     const maxQuantity = currentItem.maxQuantity || updatedQuantity;
@@ -81,10 +90,15 @@ function Inventory() {
       itemName: itemName.value,
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
+      retailPrice: Number(retailPrice.value), // Updated retail price field
+      costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
     };
 
-    await update(ref(database, `${selectedTab}/${currentItem.id}`), updatedSupply);
+    await update(
+      ref(database, `${selectedTab}/${currentItem.id}`),
+      updatedSupply
+    );
     toggleEditModal();
   };
 
@@ -121,8 +135,14 @@ function Inventory() {
     };
   }, []);
 
-  const handleDelete = async (id) => {
-    await remove(ref(database, `${selectedTab}/${id}`));
+  const confirmDelete = (item) => {
+    setCurrentItem(item);
+    toggleDeleteModal(); // Open the delete confirmation modal
+  };
+
+  const handleDelete = async () => {
+    await remove(ref(database, `${selectedTab}/${currentItem.id}`));
+    toggleDeleteModal(); // Close the delete confirmation modal after deleting
   };
 
   const filteredList = (
@@ -133,15 +153,16 @@ function Inventory() {
 
   return (
     <div className="w-full">
+      <Notification />
       <div className="flex justify-center text-lg">
         <h2>INVENTORY SYSTEM</h2>
       </div>
       <div className="flex justify-center space-x-4 mb-4">
         <button
           onClick={() => setSelectedTab("medicine")}
-          className={`px-4 py-2 rounded-lg transition duration-200 ${
+          className={`px-8 py-3 rounded-md transition duration-200 ${
             selectedTab === "medicine"
-              ? "bg-blue-500 text-white"
+              ? "bg-red-800 text-white text-bold"
               : "bg-gray-200 text-black"
           }`}
         >
@@ -149,9 +170,9 @@ function Inventory() {
         </button>
         <button
           onClick={() => setSelectedTab("supplies")}
-          className={`px-4 py-2 rounded-lg transition duration-200 ${
+          className={`px-6 py-2 rounded-md transition duration-200 ${
             selectedTab === "supplies"
-              ? "bg-blue-500 text-white"
+              ? "bg-red-800 text-white text-bold"
               : "bg-gray-200 text-black"
           }`}
         >
@@ -161,168 +182,166 @@ function Inventory() {
 
       {selectedTab === "medicine" && (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={toggleModal}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
-            >
-              Add New Medicine Item
-            </button>
+          <div className="flex justify-between items-center">
             <div className="my-4">
               <input
                 type="text"
                 placeholder="Search by item name..."
-                className="border px-4 py-2 w-full"
+                className="border border-stone-300 px-4 py-2 rounded-md"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <button
+              onClick={toggleModal}
+              className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+            >
+              Add New Medicine Item
+            </button>
           </div>
-          <table className="min-w-full border-collapse border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Item Name
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Quantity
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Department
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Status
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  QR Code
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredList.length > 0 ? (
-                filteredList.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.itemName}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.quantity}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.department}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.status}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <QRCode size={50} value={item.id} /> {/* Display only the unique ID */}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
-                      >
-                        DELETE
-                      </button>
+          <div className="relative overflow-x-auto shadow-sm">
+            <table className="w-full text-md text-gray-800 text-center border border-stone-200">
+              <thead className="text-sm uppercase bg-stone-200">
+                <tr>
+                  <th className="px-6 py-3">Medicine Name</th>
+                  <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Cost Price (₱)</th>
+                  <th className="px-6 py-3">Retail Price (₱)</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">QR Code</th>
+                  <th className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredList.length > 0 ? (
+                  filteredList.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-stone-100"
+                    >
+                      <td className="px-6 py-4">{item.itemName}</td>
+                      <td className="px-6 py-4">{item.quantity}</td>
+                      <td className="px-6 py-4">
+                        {(item.costPrice !== undefined
+                          ? item.costPrice
+                          : 0
+                        ).toFixed(2)}{" "}
+                      </td>
+                      <td className="px-6 py-3">
+                        {(item.retailPrice !== undefined
+                          ? item.retailPrice
+                          : 0
+                        ).toFixed(2)}{" "}
+                      </td>
+                      <td className="px-6 py-4">{item.status}</td>
+                      <td className="px-6 py-4 flex justify-center items-center">
+                        <QRCode size={50} value={item.id} />
+                      </td>
+                      <td className="px-6 py-3">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(item)} // Ask for delete confirmation
+                          className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="px-6 py-4">
+                      No items in inventory
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="border border-gray-300 px-4 py-2 text-center">
-                    No items in inventory
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
           <AddInventory isOpen={modal} toggleModal={toggleModal} />
         </>
       )}
 
       {selectedTab === "supplies" && (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={toggleSupplyModal}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
-            >
-              Add Supply Item
-            </button>
+          <div className="flex justify-between items-center">
             <div className="my-4">
               <input
                 type="text"
                 placeholder="Search by supply name..."
-                className="border px-4 py-2 w-full"
+                className="border border-stone-300 px-4 py-2 rounded-lg"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <button
+              onClick={toggleSupplyModal}
+              className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+            >
+              Add Supply Item
+            </button>
           </div>
-          <table className="min-w-full border-collapse border border-gray-300">
-            <thead className="bg-gray-100">
+          <table className="w-full text-md text-gray-800 text-center border border-stone-200">
+            <thead className="text-sm uppercase bg-stone-200">
               <tr>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Supply Name
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Quantity
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Status
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  QR Code
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-center">
-                  Action
-                </th>
+                <th className="px-6 py-3">Supply Name</th>
+                <th className="px-6 py-3">Quantity</th>
+                <th className="px-6 py-3">Cost Price (₱)</th>
+                <th className="px-6 py-3">Retail Price (₱)</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">QR Code</th>
+                <th className="px-6 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredList.length > 0 ? (
                 filteredList.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.itemName}
+                  <tr
+                    key={item.id}
+                    className="bg-white border-b hover:bg-stone-100"
+                  >
+                    <td className="px-6 py-3">{item.itemName}</td>
+                    <td className="px-6 py-3">{item.quantity}</td>
+                    <td className="px-6 py-3">
+                      {(item.costPrice !== undefined
+                        ? item.costPrice
+                        : 0
+                      ).toFixed(2)}{" "}
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.quantity}
+                    <td className="px-6 py-3">
+                      {(item.retailPrice !== undefined
+                        ? item.retailPrice
+                        : 0
+                      ).toFixed(2)}{" "}
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      {item.status}
+                    <td className="px-6 py-3">{item.status}</td>
+                    <td className="px-6 py-4 flex justify-center items-center">
+                      <QRCode size={50} value={item.id} />
                     </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
-                      <QRCode size={50} value={item.id} /> {/* Display only the unique ID */}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">
+                    <td className="px-6 py-3">
                       <button
                         onClick={() => handleEdit(item)}
-                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition duration-200"
+                        className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(item.id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200 ml-2"
+                        onClick={() => confirmDelete(item)} // Ask for delete confirmation
+                        className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
                       >
-                        DELETE
+                        Delete
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="border border-gray-300 px-4 py-2 text-center">
+                  <td colSpan="7" className="px-6 py-3">
                     No supplies in inventory
                   </td>
                 </tr>
@@ -333,13 +352,43 @@ function Inventory() {
         </>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
+            <h2 className="text-lg font-bold mb-4">Delete Confirmation</h2>
+            <p>Are you sure you want to delete this item?</p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={toggleDeleteModal}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 mr-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete} // Confirm deletion
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editModal && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <h2 className="text-lg font-bold mb-4">Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item</h2>
-            <form onSubmit={selectedTab === "medicine" ? handleUpdate : handleUpdateSupply}>
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
+            <h2 className="text-lg font-bold mb-4">
+              Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item
+            </h2>
+            <form
+              onSubmit={
+                selectedTab === "medicine" ? handleUpdate : handleUpdateSupply
+              }
+            >
               <div className="mb-4">
-                <label className="block mb-2">Item Name</label>
+                <label className="block mb-2">Medicine Name</label>
                 <input
                   type="text"
                   name="itemName"
@@ -358,18 +407,26 @@ function Inventory() {
                   required
                 />
               </div>
-              {selectedTab === "medicine" && (
-                <div className="mb-4">
-                  <label className="block mb-2">Department</label>
-                  <input
-                    type="text"
-                    name="department"
-                    defaultValue={currentItem?.department || ""}
-                    className="border px-4 py-2 w-full"
-                    required
-                  />
-                </div>
-              )}
+              <div className="mb-4">
+                <label className="block mb-2">Cost Price (₱)</label>
+                <input
+                  type="number"
+                  name="costPrice"
+                  defaultValue={currentItem?.costPrice || ""}
+                  className="border px-4 py-2 w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-2">Retail Price (₱)</label>
+                <input
+                  type="number"
+                  name="retailPrice"
+                  defaultValue={currentItem?.retailPrice || ""}
+                  className="border px-4 py-2 w-full"
+                  required
+                />
+              </div>
               <div className="flex justify-end">
                 <button
                   type="button"

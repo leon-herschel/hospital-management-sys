@@ -5,7 +5,8 @@ import { database } from "../../firebase/firebase";
 
 // Helper function to generate a random alphanumeric string
 const generateRandomKey = (length) => {
-  const characters = " =";
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -29,52 +30,74 @@ const calculateStatus = (quantity, maxQuantity) => {
 function AddInventory({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [department, setDepartment] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+  const [retailPrice, setRetailPrice] = useState("");
+  const [loading, setLoading] = useState(false); // New state to track loading
+
+  const [itemNameError, setItemNameError] = useState(false);
+  const [quantityError, setQuantityError] = useState(false);
+  const [costPriceError, setCostPriceError] = useState(false);
+  const [retailPriceError, setRetailPriceError] = useState(false);
 
   const handlesubmit = async () => {
-    if (!itemName || !quantity || !department) {
-      alert("Please fill in all the required fields");
+    setItemNameError(false);
+    setQuantityError(false);
+    setCostPriceError(false);
+    setRetailPriceError(false);
+
+    let hasError = false;
+
+    if (!itemName) {
+      setItemNameError(true);
+      hasError = true;
+    }
+    if (!quantity) {
+      setQuantityError(true);
+      hasError = true;
+    }
+    if (!costPrice) {
+      setCostPriceError(true);
+      hasError = true;
+    }
+    if (!retailPrice) {
+      setRetailPriceError(true);
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
-
     const inventoryRef = ref(database, "medicine");
     const newInventoryRef = push(inventoryRef);
 
-    // Generate a random QR key
-    const qrKey = generateRandomKey(20); // Generate a 20-character alphanumeric key
+    const qrKey = generateRandomKey(20);
+    const maxQuantity = Number(quantity);
+    const status = calculateStatus(maxQuantity, maxQuantity);
 
-    const maxQuantity = Number(quantity); // Set maxQuantity as the initial quantity
-
-    // Calculate the status based on the quantity and maxQuantity
-    const status = calculateStatus(maxQuantity, maxQuantity); // Initially, quantity is equal to maxQuantity
-
-    // Generate QR code with the random QR key as data
     try {
       const qrCodeDataUrl = await QRCode.toDataURL(qrKey, { width: 100 });
 
       const inventoryData = {
         itemName: itemName,
-        quantity: maxQuantity, // Use Number to ensure it's a numerical value
-        maxQuantity: maxQuantity, // Initial quantity becomes the maxQuantity
-        department: department,
-        status: status, // Dynamically calculated status
-        qrCode: qrCodeDataUrl, // Optionally store the QR code as a data URL
+        quantity: maxQuantity,
+        maxQuantity: maxQuantity,
+        costPrice: Number(costPrice),
+        retailPrice: Number(retailPrice),
+        status: status,
+        qrCode: qrCodeDataUrl,
       };
 
-      set(newInventoryRef, inventoryData)
-        .then(() => {
-          alert("Inventory has been added successfully!");
-          setItemName("");
-          setQuantity("");
-          setDepartment("");
-          toggleModal();
-        })
-        .catch((error) => {
-          alert("Error adding inventory: " + error);
-        });
+      await set(newInventoryRef, inventoryData);
+
+      alert("Inventory has been added successfully!");
+      setItemName("");
+      setQuantity("");
+      setCostPrice("");
+      setRetailPrice("");
+      toggleModal();
     } catch (error) {
-      console.error("Error generating QR code:", error);
-      alert("Error generating QR code.");
+      alert("Error adding inventory: " + error);
+    } finally {
+      setLoading(false); // Reset loading to false when submission is done
     }
   };
 
@@ -100,10 +123,16 @@ function AddInventory({ isOpen, toggleModal }) {
             type="text"
             id="item"
             name="item"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              itemNameError ? "border-red-500" : "border-gray-300"
+            }`}
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
+            disabled={loading} // Disable the input while loading
           />
+          {itemNameError && (
+            <p className="text-red-500 mt-1">Item name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -114,37 +143,68 @@ function AddInventory({ isOpen, toggleModal }) {
             type="number"
             id="quantity"
             name="quantity"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              quantityError ? "border-red-500" : "border-gray-300"
+            }`}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
+            disabled={loading} // Disable the input while loading
           />
+          {quantityError && (
+            <p className="text-red-500 mt-1">Quantity is required</p>
+          )}
         </div>
 
         <div className="mb-4">
-          <label htmlFor="department" className="block text-gray-700 mb-2">
-            Department
+          <label htmlFor="costPrice" className="block text-gray-700 mb-2">
+            Cost Price
           </label>
-          <select
-            id="department"
-            name="department"
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-          >
-            <option value="" disabled>
-              Select Department
-            </option>
-            <option value="IT">IT</option>
-            <option value="Nursing">Nursing</option>
-            <option value="MedTech">Medical Technology</option>
-          </select>
+          <input
+            type="number"
+            id="costPrice"
+            name="costPrice"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              costPriceError ? "border-red-500" : "border-gray-300"
+            }`}
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)}
+            disabled={loading} // Disable the input while loading
+          />
+          {costPriceError && (
+            <p className="text-red-500 mt-1">Cost price is required</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="retailPrice" className="block text-gray-700 mb-2">
+            Retail Price
+          </label>
+          <input
+            type="number"
+            id="retailPrice"
+            name="retailPrice"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              retailPriceError ? "border-red-500" : "border-gray-300"
+            }`}
+            value={retailPrice}
+            onChange={(e) => setRetailPrice(e.target.value)}
+            disabled={loading} // Disable the input while loading
+          />
+          {retailPriceError && (
+            <p className="text-red-500 mt-1">Retail price is required</p>
+          )}
         </div>
 
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handlesubmit}
+          disabled={loading} // Disable button while loading
         >
-          Submit
+          {loading ? (
+            <span>Loading...</span> // Display loading text while submitting
+          ) : (
+            "Submit"
+          )}
         </button>
       </div>
     </div>
