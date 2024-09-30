@@ -34,7 +34,7 @@ function MedicineHistory() {
             <th className="px-6 py-3">Medicine Name</th>
             <th className="px-6 py-3">Quantity</th>
             <th className="px-6 py-3">Patient Name</th>
-            <th className="px-6 py-3">Nurse's Name</th>
+            <th className="px-6 py-3">Nurse Name</th>
             <th className="px-6 py-3">Time Stamp</th>
           </tr>
         </thead>
@@ -54,7 +54,7 @@ function MedicineHistory() {
           ) : (
             <tr>
               <td colSpan="5" className="px-6 py-3">
-                No medicine history available{" "}
+                No medicine history available.
               </td>
             </tr>
           )}

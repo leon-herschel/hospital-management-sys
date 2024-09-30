@@ -1,5 +1,6 @@
 import { useState } from "react";
 import MedicineHistory from "./MedicineHistory";
+import SupplyHistory from "./SupplyHistory";
 
 function InventoryHistory() {
   const [selectedHistory, setSelectedHistory] = useState("medicine");
@@ -23,7 +24,7 @@ function InventoryHistory() {
       </button>
 
       {selectedHistory === "medicine" && <MedicineHistory />}
-      {selectedHistory === "supply" && <p>No supply history yet</p>}
+      {selectedHistory === "supply" && <SupplyHistory />}
     </div>
   );
 }
