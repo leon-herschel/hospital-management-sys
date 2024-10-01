@@ -60,7 +60,6 @@ function Patient() {
       unsubscribe();
     };
   }, [patientCollection]);
-  
 
   // Trigger the delete confirmation modal
   const handleDeleteConfirmation = (patient) => {
@@ -108,7 +107,6 @@ function Patient() {
     patient.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
