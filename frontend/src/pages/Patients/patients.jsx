@@ -2,7 +2,8 @@ import { ref, onValue, remove, update } from "firebase/database";
 import { useState, useEffect } from "react";
 import QRCode from "react-qr-code";
 import { database } from "../../firebase/firebase";
-import DeleteConfirmationModal from "./DeleteConfirmationModalPatient"; 
+import DeleteConfirmationModal from "./DeleteConfirmationModalPatient";
+
 import { useAccessControl } from "../../components/roles/accessControl";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useNavigate } from "react-router-dom";
@@ -12,12 +13,12 @@ function Patient() {
   const [patientList, setPatientList] = useState([]);
   const [modal, setModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-  const [deleteModal, setDeleteModal] = useState(false); 
+  const [deleteModal, setDeleteModal] = useState(false);
   const [currentPatient, setCurrentPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const roleData = useAccessControl(); 
+  const roleData = useAccessControl();
   const navigate = useNavigate();
-  
+
   const patientCollection = ref(database, "patient");
 
   const toggleModal = () => {
@@ -48,6 +49,8 @@ function Patient() {
 
           return patient;
         });
+
+        patientData.sort((a, b) => a.name.localeCompare(b.name));
         setPatientList(patientData);
       } else {
         setPatientList([]);
@@ -104,9 +107,7 @@ function Patient() {
   );
 
   if (!roleData?.accessPatients) {
-    return (
-      <AccessDenied />
-    );
+    return <AccessDenied />;
   }
 
   return (

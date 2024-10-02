@@ -32,6 +32,7 @@ const Sidebar = () => {
     "/settings": "Settings",
     "/analytics": "Analytics",
     "/billing": "Billing List",
+    "/history": "History Management",
   };
 
   // Handle dynamic routes like '/patients/:id' by checking if the pathname starts with '/patients'
@@ -70,7 +71,9 @@ const Sidebar = () => {
           <Link
             to="/dashboard"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/dashboard") ? "bg-slate-800 text-white shadow-sm" : "text-white"
+              isActive("/dashboard")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
             } hover:bg-slate-800`}
           >
             <HomeIcon className="w-6 h-6 mr-3" />
@@ -81,7 +84,9 @@ const Sidebar = () => {
             <Link
               to="/inventory"
               className={`flex items-center px-4 py-2 mt-2 ${
-                isActive("/inventory") ? "bg-slate-800 text-white shadow-sm" : "text-white"
+                isActive("/inventory")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
               } hover:bg-slate-800`}
             >
               <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
@@ -93,7 +98,9 @@ const Sidebar = () => {
             <Link
               to="/patients"
               className={`flex items-center px-4 py-2 mt-2 ${
-                isActive("/patients") ? "bg-slate-800 text-white shadow-sm" : "text-white"
+                isActive("/patients")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
               } hover:bg-slate-800`}
             >
               <UserGroupIcon className="w-6 h-6 mr-3" />
@@ -104,7 +111,9 @@ const Sidebar = () => {
           <Link
             to="/billing"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/billing") ? "bg-slate-800 text-white shadow-sm" : "text-white"
+              isActive("/billing")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
             } hover:bg-slate-800`}
           >
             <CreditCardIcon className="w-6 h-6 mr-3" />
@@ -114,7 +123,9 @@ const Sidebar = () => {
           <Link
             to="/analytics"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/analytics") ? "bg-slate-800 text-white shadow-sm" : "text-white"
+              isActive("/analytics")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
             } hover:bg-slate-800`}
           >
             <ChartBarIcon className="w-6 h-6 mr-3" />
@@ -124,13 +135,26 @@ const Sidebar = () => {
           <Link
             to="/settings"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/settings") ? "bg-slate-800 text-white shadow-sm" : "text-white"
+              isActive("/settings")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
             } hover:bg-slate-800`}
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
           </Link>
 
+          <Link
+            to="/InventoryHistory"
+            className={`flex items-center px-4 py-2 mt-2 ${
+              isActive("/InventoryHistory")
+                ? "bg-red-800 text-white shadow-sm"
+                : "text-white"
+            } hover:bg-red-800`}
+          >
+            <ChartBarIcon className="w-6 h-6 mr-3" />
+            History
+          </Link>
           <a
             onClick={() => {
               doSignOut().then(() => {
@@ -155,9 +179,11 @@ const Sidebar = () => {
           >
             <Bars3Icon className="w-6 h-6" />
           </button>
-          <h1 className="text-2xl font-semibold text-gray-800">{currentTitle}</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">
+            {currentTitle}
+          </h1>
           <div className="flex items-center space-x-2">
-          <UserIcon className="w-6 h-6 text-gray-800" />
+            <UserIcon className="w-6 h-6 text-gray-800" />
             <span className="text-gray-800 font-semibold">{role}</span>
           </div>
         </header>

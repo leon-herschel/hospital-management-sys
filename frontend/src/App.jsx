@@ -4,6 +4,7 @@ import Patients from "./pages/Patients/patients";
 import Inventory from "./pages/Inventory/inventory";
 import Analytics from "./pages/Analytics/analytics";
 import Billing from "./pages/Billing/billing";
+import InventoryHistory from "./pages/Inventory/InventoryHistory";
 import ViewBill from "./pages/Billing/ViewBill";
 import { AuthProvider } from "./context/authContext/authContext";
 import { useRoutes } from "react-router-dom";
@@ -40,6 +41,7 @@ function App() {
         { path: "billing", element: <Billing /> },
         { path: "ViewBill", element: <ViewBill /> },
         { path: "access-denied", element: <AccessDenied /> },
+        { path: "InventoryHistory", element: <InventoryHistory /> },
       ],
     },
     {
