@@ -122,7 +122,7 @@ function Patient() {
         <input
           type="text"
           placeholder="Search by name"
-          className="border border-stone-300 px-4 py-2 rounded-md"
+          className="border border-slate-300 px-4 py-2 rounded-md"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -134,9 +134,9 @@ function Patient() {
         </button>
       </div>
 
-      <div className="relative overflow-x-auto shadow-sm">
-        <table className="w-full text-md text-gray-800 text-center border border-stone-200">
-          <thead className="text-sm uppercase bg-stone-200">
+      <div className="relative overflow-x-auto rounded-md shadow-sm">
+        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+          <thead className="text-md bg-slate-200">
             <tr>
               <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Date of Birth</th>
@@ -155,7 +155,7 @@ function Patient() {
               filteredPatients.map((patient) => (
                 <tr
                   key={patient.id}
-                  className="bg-white border-b hover:bg-stone-100"
+                  className="bg-white border-b hover:bg-slate-100"
                 >
                   <td className="px-6 py-3">{patient.name}</td>
                   <td className="px-6 py-3">{patient.birth}</td>
