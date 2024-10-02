@@ -65,7 +65,7 @@ const UsersTable = () => {
           placeholder="Search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-stone-300 px-4 py-2 rounded-lg"
+          className="border border-slate-300 px-4 py-2 rounded-lg"
         />
         <button
           className="ml-4 bg-green-600 text-white px-6 py-2 rounded-md"
@@ -76,9 +76,9 @@ const UsersTable = () => {
       </div>
 
       {/* Table */}
-      <div className="relative overflow-x-auto shadow-sm">
-        <table className="w-full text-md text-gray-800 text-center border border-stone-200">
-          <thead className="text-sm uppercase bg-stone-200">
+      <div className="relative overflow-x-auto rounded-md shadow-sm">
+        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+          <thead className="text-md bg-slate-200">
             <tr>
               <th scope="col" className="px-6 py-3">Email</th>
               <th scope="col" className="px-6 py-3">Department</th>
@@ -88,7 +88,7 @@ const UsersTable = () => {
           </thead>
           <tbody>
             {filteredUsers.map((user) => (
-              <tr key={user.id} className="bg-white border-b hover:bg-stone-100">
+              <tr key={user.id} className="bg-white border-b hover:bg-slate-100">
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">{user.department}</td>
                 <td className="px-6 py-4">{user.role}</td>

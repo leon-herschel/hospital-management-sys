@@ -15,8 +15,7 @@ const SignIn = () => {
     const { name, value } = e.target;
     if (name === 'email') setEmail(value);
     if (name === 'password') setPassword(value);
-    
-    // cclear error message on user input
+  
     setErrorMessage('');
   };
 
@@ -38,7 +37,7 @@ const SignIn = () => {
   };
 
   return (
-    <div className="bg-red-900 flex justify-center items-center h-screen">
+    <div className="bg-slate-900 flex justify-center items-center h-screen">
       {userLoggedIn && <Navigate to={'/dashboard'} replace={true} />}
 
       {/* Left: Image */}
@@ -63,7 +62,7 @@ const SignIn = () => {
               name="email"
               value={email}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-400"
               autoComplete="email"
               required
             />
@@ -78,7 +77,7 @@ const SignIn = () => {
               name="password"
               value={password}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 mb-2 focus:outline-none focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-md py-2 px-3 mb-2 focus:outline-none focus:border-blue-400"
               autoComplete="current-password"
               required
             />
@@ -86,14 +85,14 @@ const SignIn = () => {
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="text-red-300 mb-4">{errorMessage}</div>
+            <div className="text-red-500 mb-4">{errorMessage}</div>
           )}
 
           {/* Submit Button */}
           <button
             type="submit"
             disabled={isSigningIn}
-            className={`w-full px-4 py-2 text-white font-medium rounded-lg ${isSigningIn ? 'bg-red-950 cursor-not-allowed' : 'bg-red-600 hover:bg-red-950 hover:shadow-xl transition duration-300'}`}
+            className={`w-full px-4 py-2 text-white font-medium rounded-lg ${isSigningIn ? 'bg-blue-900 cursor-not-allowed' : 'bg-blue-800 hover:bg-blue-900 hover:shadow-xl transition duration-300'}`}
           >
             {isSigningIn ? 'Signing In...' : 'Sign In'}
           </button>
