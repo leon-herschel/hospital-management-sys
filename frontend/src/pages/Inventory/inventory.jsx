@@ -69,7 +69,7 @@ function Inventory() {
       costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
     };
-    
+
     await update(
       ref(database, `${selectedTab}/${currentItem.id}`),
       updatedInventory
@@ -110,6 +110,7 @@ function Inventory() {
           ...data[key],
           id: key,
         }));
+        inventoryData.sort((a, b) => a.name.localeCompare(b.name));
         setInventoryList(inventoryData);
       } else {
         setInventoryList([]);
@@ -123,6 +124,7 @@ function Inventory() {
           ...data[key],
           id: key,
         }));
+        suppliesData.sort((a, b) => a.name.localeCompare(b.name));
         setSuppliesList(suppliesData);
       } else {
         setSuppliesList([]);
