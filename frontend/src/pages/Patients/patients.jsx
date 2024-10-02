@@ -4,7 +4,9 @@ import AddPatient from "./AddPatient";
 import QRCode from "react-qr-code";
 import { database } from "../../firebase/firebase";
 import View from "./ViewPatient";
-import DeleteConfirmationModal from "./DeleteConfirmationModalPatient"; // Import the modal
+import DeleteConfirmationModal from "./DeleteConfirmationModalPatient"; 
+import { useAccessControl } from "../../components/roles/accessControl";
+import AccessDenied from "../ErrorPages/AccessDenied";
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
@@ -12,10 +14,11 @@ function Patient() {
   const [modal, setModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [viewModal, setViewModal] = useState(false);
-  const [deleteModal, setDeleteModal] = useState(false); // State for delete confirmation modal
+  const [deleteModal, setDeleteModal] = useState(false); 
   const [currentPatient, setCurrentPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
+  const roleData = useAccessControl(); 
+  
   const patientCollection = ref(database, "patient");
 
   const toggleModal = () => {
@@ -106,6 +109,12 @@ function Patient() {
   const filteredPatients = patientList.filter((patient) =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (!roleData?.accessPatients) {
+    return (
+      <AccessDenied />
+    );
+  }
 
   return (
     <div className="w-full">

@@ -14,11 +14,15 @@ import {
   CreditCardIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
+import { useAccessControl } from "../roles/accessControl";
+import { useAuth } from "../../context/authContext/authContext";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { role } = useAuth();
+  const roleData = useAccessControl(); 
 
   const titles = {
     "/dashboard": "Overview",
@@ -65,25 +69,30 @@ const Sidebar = () => {
             Overview
           </Link>
 
-          <Link
-            to="/inventory"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/inventory") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
-          >
-            <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
-            Inventory
-          </Link>
+          {roleData?.accessInventory && (
+            <Link
+              to="/inventory"
+              className={`flex items-center px-4 py-2 mt-2 ${
+                isActive("/inventory") ? "bg-red-800 text-white shadow-sm" : "text-white"
+              } hover:bg-red-800`}
+            >
+              <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
+              Inventory
+            </Link>
+          )}
+          
+          {roleData?.accessPatients && (
+            <Link
+              to="/patients"
+              className={`flex items-center px-4 py-2 mt-2 ${
+                isActive("/patients") ? "bg-red-800 text-white shadow-sm" : "text-white"
+              } hover:bg-red-800`}
+            >
+              <UserGroupIcon className="w-6 h-6 mr-3" />
+              Patients
+            </Link>
+          )}
 
-          <Link
-            to="/patients"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/patients") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
-          >
-            <UserGroupIcon className="w-6 h-6 mr-3" />
-            Patients
-          </Link>
 
           <Link
             to="/billing"
@@ -141,8 +150,8 @@ const Sidebar = () => {
           </button>
           <h1 className="text-2xl text-white">{currentTitle}</h1>
           <div className="flex items-center space-x-2">
-            <span className="text-white">Admin</span>
-            <UserIcon className="w-6 h-6 text-white" />
+          <UserIcon className="w-6 h-6 text-white" />
+            <span className="text-white">{role}</span>
           </div>
         </header>
 
