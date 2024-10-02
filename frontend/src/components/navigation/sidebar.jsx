@@ -22,8 +22,9 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAuth();
-  const roleData = useAccessControl(); 
+  const roleData = useAccessControl();
 
+  // Titles based on route paths
   const titles = {
     "/dashboard": "Overview",
     "/patients": "Patient Management System",
@@ -33,7 +34,14 @@ const Sidebar = () => {
     "/billing": "Billing List",
   };
 
-  const currentTitle = titles[location.pathname] || "Overview";
+  // Handle dynamic routes like '/patients/:id' by checking if the pathname starts with '/patients'
+  let currentTitle = "Overview"; // Default
+
+  if (location.pathname.startsWith("/patients")) {
+    currentTitle = "Patient Management System";
+  } else if (titles[location.pathname]) {
+    currentTitle = titles[location.pathname];
+  }
 
   const isActive = (path) => location.pathname === path;
 
@@ -80,7 +88,7 @@ const Sidebar = () => {
               Inventory
             </Link>
           )}
-          
+
           {roleData?.accessPatients && (
             <Link
               to="/patients"
@@ -92,7 +100,6 @@ const Sidebar = () => {
               Patients
             </Link>
           )}
-
 
           <Link
             to="/billing"
@@ -122,7 +129,7 @@ const Sidebar = () => {
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
-          </Link> 
+          </Link>
 
           <a
             onClick={() => {
