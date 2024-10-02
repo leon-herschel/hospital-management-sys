@@ -12,13 +12,26 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
     roomType: "",
   });
 
+  // State for error handling
+  const [errors, setErrors] = useState({
+    name: false,
+    birth: false,
+    gender: false,
+    contact: false,
+    status: false,
+    roomType: false,
+  });
+
+  // Disable submit button while submitting
+  const [submitting, setSubmitting] = useState(false);
+
   // Populate form data once currentPatient is available
   useEffect(() => {
     if (currentPatient) {
       setFormData({
         name: currentPatient.name || "",
         birth: currentPatient.birth || "",
-        age: currentPatient.age || "",
+        age: calculateAge(currentPatient.birth) || "",
         gender: currentPatient.gender || "",
         contact: currentPatient.contact || "",
         status: currentPatient.status || "",
@@ -33,13 +46,78 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
       ...prevData,
       [name]: value,
     }));
+
+    if (name === "birth") {
+      const calculatedAge = calculateAge(value);
+      setFormData((prevData) => ({
+        ...prevData,
+        age: calculatedAge,
+      }));
+    }
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    // Reset errors
+    setErrors({
+      name: false,
+      birth: false,
+      gender: false,
+      contact: false,
+      status: false,
+      roomType: false,
+    });
+
+    // Validate the fields
+    let hasError = false;
+
+    if (!formData.name) {
+      setErrors((prev) => ({ ...prev, name: true }));
+      hasError = true;
+    }
+    if (!formData.birth) {
+      setErrors((prev) => ({ ...prev, birth: true }));
+      hasError = true;
+    }
+    if (!formData.gender) {
+      setErrors((prev) => ({ ...prev, gender: true }));
+      hasError = true;
+    }
+    if (!formData.contact || formData.contact.length !== 11) {
+      setErrors((prev) => ({ ...prev, contact: true }));
+      hasError = true;
+    }
+    if (!formData.status) {
+      setErrors((prev) => ({ ...prev, status: true }));
+      hasError = true;
+    }
+    if (formData.status === "Inpatient" && !formData.roomType) {
+      setErrors((prev) => ({ ...prev, roomType: true }));
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    setSubmitting(true); // Disable submit button
+
     handleUpdate({
       ...formData,
     });
+
+    setSubmitting(false); // Re-enable the button after updating
+  };
+
+  // Function to calculate age from date of birth
+  const calculateAge = (birthDate) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   if (!isOpen || !currentPatient) {
@@ -64,8 +142,12 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.name ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={submitting}
             />
+            {errors.name && <p className="text-red-500 mt-1">Name is required</p>}
           </div>
 
           <div className="mb-4">
@@ -78,8 +160,12 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               name="birth"
               value={formData.birth}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.birth ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={submitting}
             />
+            {errors.birth && <p className="text-red-500 mt-1">Date of birth is required</p>}
           </div>
 
           <div className="mb-4">
@@ -87,12 +173,12 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               Age
             </label>
             <input
-              type="number"
+              type="text"
               id="age"
               name="age"
               value={formData.age}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              readOnly
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring border-gray-300"
             />
           </div>
 
@@ -105,12 +191,16 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.gender ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={submitting}
             >
               <option value="" disabled>Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
+            {errors.gender && <p className="text-red-500 mt-1">Gender is required</p>}
           </div>
 
           <div className="mb-4">
@@ -123,8 +213,12 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               name="contact"
               value={formData.contact}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.contact ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={submitting}
             />
+            {errors.contact && <p className="text-red-500 mt-1">Contact must be 11 digits</p>}
           </div>
 
           <div className="mb-4">
@@ -136,12 +230,16 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.status ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={submitting}
             >
               <option value="" disabled>Select Status</option>
               <option value="Inpatient">Inpatient</option>
               <option value="Outpatient">Outpatient</option>
             </select>
+            {errors.status && <p className="text-red-500 mt-1">Status is required</p>}
           </div>
 
           {/* Conditionally display "Type of Room" only if status is "Inpatient" */}
@@ -155,12 +253,18 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
                 name="roomType"
                 value={formData.roomType}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                  errors.roomType ? "border-red-500" : "border-gray-300"
+                }`}
+                disabled={submitting}
               >
                 <option value="" disabled>Select Room</option>
                 <option value="Private">Private</option>
                 <option value="Public">Public</option>
               </select>
+              {errors.roomType && (
+                <p className="text-red-500 mt-1">Room type is required for inpatients</p>
+              )}
             </div>
           )}
 
@@ -170,8 +274,9 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               <button
                 type="submit"
                 className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                disabled={submitting}
               >
-                Update
+                {submitting ? "Submitting..." : "Update"}
               </button>
             </div>
 
