@@ -6,6 +6,8 @@ import { database } from '../../../firebase/firebase';
 const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +36,8 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.val();
+          setFirstName(userData.firstName);
+          setLastName(userData.lastName);
           setEmail(userData.email);
           setSelectedDepartment(userData.department);
           setSelectedRole(userData.role);
@@ -50,6 +54,8 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
         const userRef = ref(database, `users/${userId}`);
         await set(userRef, {
             department: selectedDepartment,
+            firstName,
+            lastName,
             email,
             role: selectedRole
         });
@@ -88,6 +94,28 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
             <form onSubmit={handleUpdateAccount}>
               <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
                 <h3 className="text-lg font-semibold mb-4">User Information</h3>
+                <div className="mb-4">
+                  <label className="block text-gray-700">First Name</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter first name"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700">Last Name</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter last name"
+                    required
+                  />
+                </div>
                 <div className="mb-4">
                   <label className="block text-gray-700">Email</label>
                   <input

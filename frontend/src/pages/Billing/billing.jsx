@@ -197,7 +197,7 @@ const Billing = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="mr-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
+                  className="mr-2 bg-slate-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
                 <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg">Add Billing</button>
               </div>
             </form>
