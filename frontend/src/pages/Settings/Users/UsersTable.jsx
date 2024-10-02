@@ -80,6 +80,7 @@ const UsersTable = () => {
         <table className="w-full text-md text-gray-900 text-center border border-slate-200">
           <thead className="text-md bg-slate-200">
             <tr>
+              <th scope="col" className="px-6 py-3">Name</th>
               <th scope="col" className="px-6 py-3">Email</th>
               <th scope="col" className="px-6 py-3">Department</th>
               <th scope="col" className="px-6 py-3">Role</th>
@@ -89,6 +90,7 @@ const UsersTable = () => {
           <tbody>
             {filteredUsers.map((user) => (
               <tr key={user.id} className="bg-white border-b hover:bg-slate-100">
+                <td className="px-6 py-4">{`${user.firstName} ${user.lastName}`}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">{user.department}</td>
                 <td className="px-6 py-4">{user.role}</td>
