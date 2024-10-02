@@ -54,6 +54,8 @@ function Patient() {
 
           return patient;
         });
+
+        patientData.sort((a, b) => a.name.localeCompare(b.name));
         setPatientList(patientData);
       } else {
         setPatientList([]);
