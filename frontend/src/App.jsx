@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/auth/login/protectedRoute";
 import UsersTable from "./pages/Settings/Users/UsersTable";
 import RolesTable from "./pages/Settings/Roles/RolesTable";
 import Settings from "./pages/Settings/settings";
+import AccessDenied from "./pages/ErrorPages/AccessDenied";
 
 function App() {
   const routesArray = [
@@ -36,6 +37,7 @@ function App() {
         { path: "roles", element: <RolesTable /> },
         { path: "billing", element: <Billing /> },
         { path: "ViewBill", element: <ViewBill /> },
+        { path: "access-denied", element: <AccessDenied /> },
       ],
     },
     {
