@@ -1,23 +1,23 @@
 import { ref, onValue, remove, update } from "firebase/database";
 import { useState, useEffect } from "react";
-import AddPatient from "./AddPatient";
 import QRCode from "react-qr-code";
 import { database } from "../../firebase/firebase";
-import View from "./ViewPatient";
 import DeleteConfirmationModal from "./DeleteConfirmationModalPatient";
+
 import { useAccessControl } from "../../components/roles/accessControl";
 import AccessDenied from "../ErrorPages/AccessDenied";
+import { useNavigate } from "react-router-dom";
+import AddPatient from "./AddPatient";
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
-  const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [modal, setModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-  const [viewModal, setViewModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentPatient, setCurrentPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const roleData = useAccessControl();
+  const navigate = useNavigate();
 
   const patientCollection = ref(database, "patient");
 
@@ -27,10 +27,6 @@ function Patient() {
 
   const toggleEditModal = () => {
     setEditModal(!editModal);
-  };
-
-  const toggleViewModal = () => {
-    setViewModal(!viewModal);
   };
 
   const toggleDeleteModal = () => {
@@ -47,7 +43,6 @@ function Patient() {
             id: key,
           };
 
-          // Format the dateTime to a human-readable format if it's available
           if (patient.dateTime) {
             patient.dateTime = new Date(patient.dateTime).toLocaleString();
           }
@@ -66,16 +61,15 @@ function Patient() {
     };
   }, [patientCollection]);
 
-  // Trigger the delete confirmation modal
   const handleDeleteConfirmation = (patient) => {
     setCurrentPatient(patient);
-    toggleDeleteModal(); // Open the delete confirmation modal
+    toggleDeleteModal();
   };
 
   const handleDelete = async () => {
     if (currentPatient) {
       await remove(ref(database, `patient/${currentPatient.id}`));
-      toggleDeleteModal(); // Close the delete modal after deletion
+      toggleDeleteModal();
     }
   };
 
@@ -103,9 +97,9 @@ function Patient() {
     toggleEditModal();
   };
 
+  // Ensure the navigate function uses the correct path
   const handleViewClick = (id) => {
-    setSelectedPatientId(id);
-    toggleViewModal();
+    navigate(`/patients/${id}`); // Use /patients/:id to match the route
   };
 
   const filteredPatients = patientList.filter((patient) =>
@@ -122,7 +116,7 @@ function Patient() {
         <input
           type="text"
           placeholder="Search by name"
-          className="border border-stone-300 px-4 py-2 rounded-md"
+          className="border border-slate-300 px-4 py-2 rounded-md"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -134,9 +128,9 @@ function Patient() {
         </button>
       </div>
 
-      <div className="relative overflow-x-auto shadow-sm">
-        <table className="w-full text-md text-gray-800 text-center border border-stone-200">
-          <thead className="text-sm uppercase bg-stone-200">
+      <div className="relative overflow-x-auto rounded-md shadow-sm">
+        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+          <thead className="text-md bg-slate-200">
             <tr>
               <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Date of Birth</th>
@@ -155,7 +149,7 @@ function Patient() {
               filteredPatients.map((patient) => (
                 <tr
                   key={patient.id}
-                  className="bg-white border-b hover:bg-stone-100"
+                  className="bg-white border-b hover:bg-slate-100"
                 >
                   <td className="px-6 py-3">{patient.name}</td>
                   <td className="px-6 py-3">{patient.birth}</td>
@@ -175,7 +169,7 @@ function Patient() {
                   <td className="px-6 py-3">{patient.dateTime}</td>
                   <td className="flex flex-col px-6 py-3 space-y-2 justify-center">
                     <button
-                      onClick={() => handleViewClick(patient.id)}
+                      onClick={() => handleViewClick(patient.id)} // Redirect to the view page
                       className="ml-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md"
                     >
                       View
@@ -187,7 +181,7 @@ function Patient() {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteConfirmation(patient)} // Trigger delete confirmation
+                      onClick={() => handleDeleteConfirmation(patient)}
                       className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
                     >
                       Delete
@@ -206,20 +200,12 @@ function Patient() {
         </table>
       </div>
 
-      {viewModal && (
-        <View
-          isOpen={viewModal}
-          toggleModal={toggleViewModal}
-          patientId={selectedPatientId}
-        />
-      )}
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
 
-      {/* Use the DeleteConfirmationModal component */}
       <DeleteConfirmationModal
         isOpen={deleteModal}
         toggleModal={toggleDeleteModal}
-        onConfirm={handleDelete} // Pass the delete action
+        onConfirm={handleDelete}
       />
 
       {editModal && currentPatient && (
