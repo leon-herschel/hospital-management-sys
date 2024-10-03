@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import { BellIcon, BellAlertIcon } from '@heroicons/react/16/solid';
+import { BellIcon, BellAlertIcon } from "@heroicons/react/16/solid";
 
 const Modal = ({ isOpen, onClose, notifications }) => {
   if (!isOpen) return null;
@@ -56,6 +56,7 @@ function Notification() {
         const item = data[key];
         console.log(`Checking item: ${item.itemName}, Status: ${item.status}`);
 
+        // Notify if the status is "Very Low" and not already tracked
         if (item.status === "Very Low" && !updatedItemsTracked[key]) {
           console.log(
             `Notifying about low stock: ${item.itemName}, Status: ${item.status}`
@@ -65,17 +66,18 @@ function Notification() {
             message: `${item.itemName} is ${item.status}`,
           });
           updatedItemsTracked[key] = true;
-        } else if (
+        }
+        // Remove from notifications if status is now "Good"
+        else if (
           updatedItemsTracked[key] &&
-          item.status !== "Low" &&
-          item.status !== "Very Low"
+          (item.status === "Good" || item.status === "Low")
         ) {
           console.log(
             `Status improved for: ${item.itemName}, Status: ${item.status}`
           );
-
           delete updatedItemsTracked[key];
 
+          // Remove the notification for the improved item
           setNotifications((prevNotifications) =>
             prevNotifications.filter((notif) => notif.id !== key)
           );
@@ -91,25 +93,27 @@ function Notification() {
       );
     };
 
-    const unsubscribeInventory = onValue(inventoryRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const lowStockNotifications = notifyLowStock(data);
+    const updateNotifications = (data) => {
+      const lowStockNotifications = notifyLowStock(data);
+      if (lowStockNotifications.length > 0) {
         setNotifications((prevNotifications) => [
           ...prevNotifications,
           ...lowStockNotifications,
         ]);
+      }
+    };
+
+    const unsubscribeInventory = onValue(inventoryRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        updateNotifications(data);
       }
     });
 
     const unsubscribeSupplies = onValue(suppliesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const lowStockNotifications = notifyLowStock(data);
-        setNotifications((prevNotifications) => [
-          ...prevNotifications,
-          ...lowStockNotifications,
-        ]);
+        updateNotifications(data);
       }
     });
 
@@ -117,7 +121,8 @@ function Notification() {
       unsubscribeInventory();
       unsubscribeSupplies();
     };
-  }, []);
+  }, [notifications]); // Add `notifications` as dependency to ensure updates
+
   return (
     <div className="notification-container relative">
       <button
@@ -126,11 +131,11 @@ function Notification() {
         aria-label="View notifications"
       >
         {notifications.length > 0 ? (
-          <BellAlertIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
+          <BellAlertIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" />
         ) : (
-          <BellIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
+          <BellIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" />
         )}
-        
+
         {notifications.length > 0 && (
           <span className="notification-count absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {notifications.length}

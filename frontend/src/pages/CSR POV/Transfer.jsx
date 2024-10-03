@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, update, onValue } from 'firebase/database'; // Add onValue for real-time updates
-import { database } from '../../firebase/firebase'; // Firebase configuration
-import { getAuth } from 'firebase/auth'; // Firebase Auth
+import React, { useState, useEffect, useRef } from "react";
+import { ref, get, set, push, update, onValue } from "firebase/database"; // Add onValue for real-time updates
+import { database } from "../../firebase/firebase"; // Firebase configuration
+import { getAuth } from "firebase/auth"; // Firebase Auth
 
 const Transfer = () => {
-  const [activeTab, setActiveTab] = useState('General');
+  const [activeTab, setActiveTab] = useState("General");
   const [formData, setFormData] = useState({
-    name: '',
-    department: 'Pharmacy',
-    status: 'Draft',
-    reason: '',
-    timestamp: ''
+    name: "",
+    department: "Pharmacy",
+    status: "Draft",
+    reason: "",
+    timestamp: "",
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // Will be updated in real-time with only supplies
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
 
-  const searchRef = useRef(''); // Ref to store search term without triggering re-renders
+  const searchRef = useRef(""); // Ref to store search term without triggering re-renders
   const departmentRef = useRef(); // Ref to store Firebase reference for departments
 
   const [submitting, setSubmitting] = useState(false);
@@ -32,35 +32,37 @@ const Transfer = () => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      setFormData(prevData => ({ ...prevData, name: user.displayName || user.email }));
+      setFormData((prevData) => ({
+        ...prevData,
+        name: user.displayName || user.email,
+      }));
     }
   }, []);
 
   // Fetch department data from Firebase
   useEffect(() => {
-    departmentRef.current = ref(database, 'departments');
+    departmentRef.current = ref(database, "departments");
     get(departmentRef.current)
-      .then(snapshot => {
+      .then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           const departmentNames = Object.keys(data);
           setDepartments(departmentNames);
         }
       })
-      .catch(error => console.error('Error fetching departments:', error));
+      .catch((error) => console.error("Error fetching departments:", error));
   }, []);
 
   // Real-time update of supplies using onValue (filter out medicines)
   useEffect(() => {
-    const suppliesRef = ref(database, 'supplies'); // Listen to the 'supplies' node
+    const suppliesRef = ref(database, "supplies"); // Listen to the 'supplies' node
 
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
       if (snapshot.exists()) {
-        const supplies = Object.entries(snapshot.val())
-          .map(([key, value]) => ({
-            ...value,
-            itemKey: key, // Add the key (itemKey) to each item
-          }));
+        const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
+          ...value,
+          itemKey: key, // Add the key (itemKey) to each item
+        }));
         setItems(supplies); // Only supplies will be shown
       }
     });
@@ -80,27 +82,29 @@ const Transfer = () => {
 
   const handleSearchChange = (e) => {
     searchRef.current = e.target.value; // Store the search term in useRef without causing a re-render
-    const filtered = items.filter(item =>
+    const filtered = items.filter((item) =>
       item.itemName.toLowerCase().includes(searchRef.current.toLowerCase())
     );
     setFilteredItems(filtered);
   };
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
+    if (!selectedItems.find((item) => item.itemName === itemToAdd.itemName)) {
       setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
-      searchRef.current = ''; // Clear search input after adding
+      searchRef.current = ""; // Clear search input after adding
       setFilteredItems([]);
     }
   };
 
   const removeItem = (itemToRemove) => {
-    setSelectedItems(selectedItems.filter(item => item.itemName !== itemToRemove.itemName));
+    setSelectedItems(
+      selectedItems.filter((item) => item.itemName !== itemToRemove.itemName)
+    );
   };
 
   const handleQuantityChange = (item, value) => {
     // Fetch the correct item from the database to ensure its quantity
-    const mainInventoryItem = items.find(i => i.itemKey === item.itemKey);
+    const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
     const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
 
     if (value > maxAvailableQuantity) {
@@ -109,8 +113,10 @@ const Transfer = () => {
     }
 
     // Proceed to update the selected item's quantity if it's valid
-    const updatedItems = selectedItems.map(selectedItem =>
-      selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: value } : selectedItem
+    const updatedItems = selectedItems.map((selectedItem) =>
+      selectedItem.itemName === item.itemName
+        ? { ...selectedItem, quantity: value }
+        : selectedItem
     );
     setSelectedItems(updatedItems);
   };
@@ -127,11 +133,11 @@ const Transfer = () => {
 
   const handleTransfer = async () => {
     if (!validateInputs()) {
-      alert('Please fill in all required fields.');
+      alert("Please fill in all required fields.");
       return;
     }
     if (selectedItems.length === 0) {
-      alert('Please select items to transfer.');
+      alert("Please select items to transfer.");
       return;
     }
 
@@ -153,7 +159,7 @@ const Transfer = () => {
       });
 
       // Log the transfer in department inventory history
-      const historyPath = `departments/${formData.department}/inventoryHistory`;
+      const historyPath = `departments/${formData.department}/inventoryHistory/supplies`;
       const newHistoryRef = push(ref(database, historyPath));
       await set(newHistoryRef, {
         itemName: item.itemName,
@@ -167,15 +173,20 @@ const Transfer = () => {
       const snapshot = await get(mainInventoryRef);
       if (snapshot.exists()) {
         const currentData = snapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0); // Ensure quantity does not go below 0
+        const updatedQuantity = Math.max(
+          currentData.quantity - item.quantity,
+          0
+        ); // Ensure quantity does not go below 0
         await update(mainInventoryRef, { quantity: updatedQuantity });
       } else {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        console.error(
+          `Item ${item.itemName} does not exist in the main inventory.`
+        );
       }
     }
 
-    alert('Transfer successful!');
-    setFormData({ ...formData, reason: '', status: 'Draft' });
+    alert("Transfer successful!");
+    setFormData({ ...formData, reason: "", status: "Draft" });
     setSelectedItems([]);
     setSubmitting(false);
   };
@@ -189,7 +200,7 @@ const Transfer = () => {
           onClick={handleTransfer}
           disabled={submitting}
         >
-          {submitting ? 'Transferring...' : 'Transfer'}
+          {submitting ? "Transferring..." : "Transfer"}
         </button>
       </div>
 
@@ -215,21 +226,25 @@ const Transfer = () => {
       {/* Tab Navigation */}
       <div className="flex mb-4 border-b">
         <button
-          onClick={() => handleTabChange('General')}
-          className={`px-4 py-2 ${activeTab === 'General' ? 'bg-maroon text-white' : 'bg-gray-100'}`}
+          onClick={() => handleTabChange("General")}
+          className={`px-4 py-2 ${
+            activeTab === "General" ? "bg-maroon text-white" : "bg-gray-100"
+          }`}
         >
           General
         </button>
         <button
-          onClick={() => handleTabChange('Items')}
-          className={`px-4 py-2 ${activeTab === 'Items' ? 'bg-maroon text-white' : 'bg-gray-100'}`}
+          onClick={() => handleTabChange("Items")}
+          className={`px-4 py-2 ${
+            activeTab === "Items" ? "bg-maroon text-white" : "bg-gray-100"
+          }`}
         >
           Items
         </button>
       </div>
 
       {/* General Tab Content */}
-      {activeTab === 'General' && (
+      {activeTab === "General" && (
         <div className="mb-4">
           <div className="grid grid-cols-2 gap-4">
             {/* To Department */}
@@ -239,7 +254,9 @@ const Transfer = () => {
                 name="department"
                 value={formData.department}
                 onChange={handleInputChange}
-                className={`border p-2 w-full rounded ${errorMessages.departmentError ? 'border-red-500' : ''}`}
+                className={`border p-2 w-full rounded ${
+                  errorMessages.departmentError ? "border-red-500" : ""
+                }`}
               >
                 {departments.map((dept, index) => (
                   <option key={index} value={dept}>
@@ -247,7 +264,11 @@ const Transfer = () => {
                   </option>
                 ))}
               </select>
-              {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
+              {errorMessages.departmentError && (
+                <p className="text-red-500 text-sm">
+                  Please select a department.
+                </p>
+              )}
             </div>
 
             {/* Status */}
@@ -257,12 +278,16 @@ const Transfer = () => {
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
+                className={`border p-2 w-full rounded ${
+                  errorMessages.statusError ? "border-red-500" : ""
+                }`}
               >
                 <option value="Draft">Draft</option>
                 <option value="Final">Final</option>
               </select>
-              {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
+              {errorMessages.statusError && (
+                <p className="text-red-500 text-sm">Please select a status.</p>
+              )}
             </div>
           </div>
 
@@ -273,15 +298,19 @@ const Transfer = () => {
               name="reason"
               value={formData.reason}
               onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
+              className={`border p-2 w-full rounded ${
+                errorMessages.reasonError ? "border-red-500" : ""
+              }`}
             ></textarea>
-            {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
+            {errorMessages.reasonError && (
+              <p className="text-red-500 text-sm">Reason is required.</p>
+            )}
           </div>
         </div>
       )}
 
       {/* Items Tab Content */}
-      {activeTab === 'Items' && (
+      {activeTab === "Items" && (
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-semibold text-lg">Items</h2>
@@ -301,7 +330,9 @@ const Transfer = () => {
             <div className="max-h-40 overflow-y-auto border border-gray-300 rounded mb-4">
               {filteredItems.length > 0 ? (
                 filteredItems.map((item, index) => (
-                  <div key={index} className="flex justify-between p-2 border-b hover:bg-gray-100 cursor-pointer"
+                  <div
+                    key={index}
+                    className="flex justify-between p-2 border-b hover:bg-gray-100 cursor-pointer"
                     onClick={() => addItem(item)}
                   >
                     <span>{item.itemName}</span>
@@ -326,14 +357,18 @@ const Transfer = () => {
             <tbody>
               {selectedItems.map((item, index) => (
                 <tr key={index}>
-                  <td className="border border-gray-300 p-2">{item.itemName}</td>
+                  <td className="border border-gray-300 p-2">
+                    {item.itemName}
+                  </td>
                   <td className="border border-gray-300 p-2">
                     <input
                       type="number"
                       min="1"
                       max={item.quantity}
                       value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleQuantityChange(item, parseInt(e.target.value))
+                      }
                       className="border rounded w-16 text-center"
                     />
                   </td>

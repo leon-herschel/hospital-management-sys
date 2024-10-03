@@ -7,8 +7,7 @@ import OverAllInventory from "./pages/Inventory/OverAllInventory.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <OverAllInventory />
     </BrowserRouter>
   </StrictMode>
 );
-q
