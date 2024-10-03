@@ -21,7 +21,8 @@ import { useAuth } from "../../context/authContext/authContext";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false); // New state for dropdown
+  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false); // State for inventory dropdown
+  const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false); // State for departments dropdown
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAuth();
@@ -29,6 +30,10 @@ const Sidebar = () => {
 
   const toggleInventoryDropdown = () => {
     setInventoryDropdownOpen(!inventoryDropdownOpen);
+  };
+
+  const toggleDepartmentsDropdown = () => {
+    setDepartmentsDropdownOpen(!departmentsDropdownOpen);
   };
 
   // Titles based on route paths
@@ -40,9 +45,8 @@ const Sidebar = () => {
     "/analytics": "Analytics",
     "/billing": "Billing List",
     "/inventory-history": "Inventory History",
-    "/stockTransfer": "Stock Transfer",
-    "/requestStock": "Request Stock",
-
+    "/stockTransfer": "CSR Department",
+    "/requestStock": "ICU Department",
   };
 
   let currentTitle = "Overview";
@@ -162,29 +166,45 @@ const Sidebar = () => {
             Billing
           </Link>
 
-          <Link
-            to="/stockTransfer"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/stockTransfer")
-                ? "bg-slate-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-slate-800`}
+          {/* Departments Dropdown */}
+          <div
+            className="flex items-center px-4 py-2 mt-2 text-white cursor-pointer hover:bg-slate-800"
+            onClick={toggleDepartmentsDropdown}
           >
             <CreditCardIcon className="w-6 h-6 mr-3" />
-            Stock Transfer
-          </Link>
+            <span>Departments</span>
+            <ChevronDownIcon
+              className={`w-5 h-5 ml-auto transform ${
+                departmentsDropdownOpen ? "rotate-180" : ""
+              }`}
+            />
+          </div>
 
-          <Link
-            to="/requestStock"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/requestStock")
-                ? "bg-slate-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-slate-800`}
-          >
-            <CreditCardIcon className="w-6 h-6 mr-3" />
-            Request Stock
-          </Link>
+          {departmentsDropdownOpen && (
+            <div className="ml-8">
+              <Link
+                to="/stockTransfer"
+                className={`flex items-center px-4 py-2 mt-1 ${
+                  isActive("/stockTransfer")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                } hover:bg-slate-800`}
+              >
+                CSR POV
+              </Link>
+
+              <Link
+                to="/requestStock"
+                className={`flex items-center px-4 py-2 mt-1 ${
+                  isActive("/requestStock")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                } hover:bg-slate-800`}
+              >
+                ICU POV
+              </Link>
+            </div>
+          )}
 
           <Link
             to="/analytics"
