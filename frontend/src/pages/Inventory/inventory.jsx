@@ -149,9 +149,7 @@ function Inventory() {
 
   const filteredList = (
     selectedTab === "medicine" ? inventoryList : suppliesList
-  ).filter((item) =>
-    item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
   return (
     <div className="w-full">
@@ -453,4 +451,4 @@ function Inventory() {
   );
 }
 
-export default Inventory;
+export default Inventory; 

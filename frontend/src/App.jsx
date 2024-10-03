@@ -15,9 +15,13 @@ import RolesTable from "./pages/Settings/Roles/RolesTable";
 import Settings from "./pages/Settings/settings";
 import AccessDenied from "./pages/ErrorPages/AccessDenied";
 import ViewPatient from "./pages/Patients/ViewPatient";  
-import StockTransfer from "./pages/Request/stockTransfer";
-import Transfer from "./pages/Request/Transfer";
-import Request from "./pages/Request/Request";
+import StockTransfer from "./pages/CSR POV/stockTransfer";
+import Transfer from "./pages/CSR POV/Transfer";
+import Request from "./pages/CSR POV/ViewRequest";
+import RequestStock from "./pages/ICU POV/requestStock";
+import RequestS from "./pages/ICU POV/requestS";
+import InventoryStock from "./pages/ICU POV/inventoryStock";
+import ViewRequest from "./pages/CSR POV/ViewRequest";
 
 function App() {
   const routesArray = [
@@ -48,6 +52,10 @@ function App() {
         { path: "stockTransfer", element: <StockTransfer /> },
         { path: "Transfer", element: <Transfer /> },
         { path: "Request", element: <Request /> },
+        { path: "requestS", element: <RequestS /> },
+        { path: "inventoryStock", element: <InventoryStock /> },
+        { path: "ViewRequest", element: <ViewRequest /> },
+        { path: "requestStock", element: <RequestStock /> },
 
 
 
