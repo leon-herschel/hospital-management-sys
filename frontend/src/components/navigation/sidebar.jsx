@@ -40,7 +40,7 @@ const Sidebar = () => {
     "/analytics": "Analytics",
     "/billing": "Billing List",
     "/inventory-history": "Inventory History",
-    "/stockTransfer": "Stock Transfer",
+    "/stockTransfer": "Supply Transfer",
   };
 
   let currentTitle = "Overview";
