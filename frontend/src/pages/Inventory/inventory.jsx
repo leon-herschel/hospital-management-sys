@@ -110,6 +110,7 @@ function Inventory() {
           ...data[key],
           id: key,
         }));
+        inventoryData.sort((a, b) => a.name.localeCompare(b.name));
         setInventoryList(inventoryData);
       } else {
         setInventoryList([]);
@@ -123,6 +124,7 @@ function Inventory() {
           ...data[key],
           id: key,
         }));
+        suppliesData.sort((a, b) => a.name.localeCompare(b.name));
         setSuppliesList(suppliesData);
       } else {
         setSuppliesList([]);
@@ -153,28 +155,30 @@ function Inventory() {
 
   return (
     <div className="w-full">
-      <Notification />
-      <div className="flex justify-center space-x-4 mb-4">
-        <button
-          onClick={() => setSelectedTab("medicine")}
-          className={`px-8 py-3 rounded-md transition duration-200 ${
-            selectedTab === "medicine"
-              ? "bg-red-800 text-white text-bold"
-              : "bg-gray-200 text-black"
-          }`}
-        >
-          Medicine Inventory
-        </button>
-        <button
-          onClick={() => setSelectedTab("supplies")}
-          className={`px-6 py-2 rounded-md transition duration-200 ${
-            selectedTab === "supplies"
-              ? "bg-red-800 text-white text-bold"
-              : "bg-gray-200 text-black"
-          }`}
-        >
-          Supplies Inventory
-        </button>
+      <div className="flex justify-between items-center">
+        <div className="flex">
+          <button
+            onClick={() => setSelectedTab("medicine")}
+            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+              selectedTab === "medicine"
+                ? "bg-slate-900 text-white text-bold"
+                : "bg-slate-200 text-gray-900"
+            }`}
+          >
+            Medicine Inventory
+          </button>
+          <button
+            onClick={() => setSelectedTab("supplies")}
+            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+              selectedTab === "supplies"
+                ? "bg-slate-900 text-white text-bold"
+                : "bg-slate-200 text-gray-900"
+            }`}
+          >
+            Supplies Inventory
+          </button>
+        </div>
+        <Notification />
       </div>
 
       {selectedTab === "medicine" && (
@@ -184,7 +188,7 @@ function Inventory() {
               <input
                 type="text"
                 placeholder="Search by item name..."
-                className="border border-stone-300 px-4 py-2 rounded-md"
+                className="border border-slate-300 px-4 py-2 rounded-md"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -196,9 +200,9 @@ function Inventory() {
               Add New Medicine Item
             </button>
           </div>
-          <div className="relative overflow-x-auto shadow-sm">
-            <table className="w-full text-md text-gray-800 text-center border border-stone-200">
-              <thead className="text-sm uppercase bg-stone-200">
+          <div className="relative overflow-x-auto rounded-md shadow-sm">
+            <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+              <thead className="text-md bg-slate-200">
                 <tr>
                   <th className="px-6 py-3">Medicine Name</th>
                   <th className="px-6 py-3">Quantity</th>
@@ -214,7 +218,7 @@ function Inventory() {
                   filteredList.map((item) => (
                     <tr
                       key={item.id}
-                      className="bg-white border-b hover:bg-stone-100"
+                      className="bg-white border-b hover:bg-slate-100"
                     >
                       <td className="px-6 py-4">{item.itemName}</td>
                       <td className="px-6 py-4">{item.quantity}</td>
@@ -271,7 +275,7 @@ function Inventory() {
               <input
                 type="text"
                 placeholder="Search by supply name..."
-                className="border border-stone-300 px-4 py-2 rounded-lg"
+                className="border border-slate-300 px-4 py-2 rounded-lg"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -283,8 +287,8 @@ function Inventory() {
               Add Supply Item
             </button>
           </div>
-          <table className="w-full text-md text-gray-800 text-center border border-stone-200">
-            <thead className="text-sm uppercase bg-stone-200">
+          <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+            <thead className="text-md bg-slate-200">
               <tr>
                 <th className="px-6 py-3">Supply Name</th>
                 <th className="px-6 py-3">Quantity</th>
@@ -300,7 +304,7 @@ function Inventory() {
                 filteredList.map((item) => (
                   <tr
                     key={item.id}
-                    className="bg-white border-b hover:bg-stone-100"
+                    className="bg-white border-b hover:bg-slate-100"
                   >
                     <td className="px-6 py-3">{item.itemName}</td>
                     <td className="px-6 py-3">{item.quantity}</td>

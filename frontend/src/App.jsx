@@ -4,6 +4,7 @@ import Patients from "./pages/Patients/patients";
 import Inventory from "./pages/Inventory/inventory";
 import Analytics from "./pages/Analytics/analytics";
 import Billing from "./pages/Billing/billing";
+import InventoryHistory from "./pages/History/InventoryHistory";
 import ViewBill from "./pages/Billing/ViewBill";
 import { AuthProvider } from "./context/authContext/authContext";
 import { useRoutes } from "react-router-dom";
@@ -12,6 +13,8 @@ import ProtectedRoute from "./components/auth/login/protectedRoute";
 import UsersTable from "./pages/Settings/Users/UsersTable";
 import RolesTable from "./pages/Settings/Roles/RolesTable";
 import Settings from "./pages/Settings/settings";
+import AccessDenied from "./pages/ErrorPages/AccessDenied";
+import ViewPatient from "./pages/Patients/ViewPatient";  
 
 function App() {
   const routesArray = [
@@ -29,6 +32,7 @@ function App() {
       children: [
         { path: "dashboard", element: <Dashboard /> },
         { path: "patients", element: <Patients /> },
+        { path: "patients/:id", element: <ViewPatient /> },  
         { path: "inventory", element: <Inventory /> },
         { path: "analytics", element: <Analytics /> },
         { path: "settings", element: <Settings /> },
@@ -36,6 +40,8 @@ function App() {
         { path: "roles", element: <RolesTable /> },
         { path: "billing", element: <Billing /> },
         { path: "ViewBill", element: <ViewBill /> },
+        { path: "access-denied", element: <AccessDenied /> },
+        { path: "inventory-history", element: <InventoryHistory /> },
       ],
     },
     {

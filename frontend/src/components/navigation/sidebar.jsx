@@ -12,14 +12,20 @@ import {
   Cog8ToothIcon,
   UserGroupIcon,
   CreditCardIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
+import { useAccessControl } from "../roles/accessControl";
+import { useAuth } from "../../context/authContext/authContext";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { role } = useAuth();
+  const roleData = useAccessControl();
 
+  // Titles based on route paths
   const titles = {
     "/dashboard": "Overview",
     "/patients": "Patient Management System",
@@ -27,9 +33,16 @@ const Sidebar = () => {
     "/settings": "Settings",
     "/analytics": "Analytics",
     "/billing": "Billing List",
+    "/inventory-history": "Inventory History",
   };
 
-  const currentTitle = titles[location.pathname] || "Overview";
+  let currentTitle = "Overview";
+
+  if (location.pathname.startsWith("/patients")) {
+    currentTitle = "Patient Management System";
+  } else if (titles[location.pathname]) {
+    currentTitle = titles[location.pathname];
+  }
 
   const isActive = (path) => location.pathname === path;
 
@@ -45,7 +58,7 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-red-900 ${
+        className={`fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-slate-900 ${
           sidebarOpen ? "translate-x-0 ease-out" : "-translate-x-full ease-in"
         } lg:translate-x-0 lg:static lg:inset-0`}
       >
@@ -58,38 +71,64 @@ const Sidebar = () => {
           <Link
             to="/dashboard"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/dashboard") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
+              isActive("/dashboard")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+            } hover:bg-slate-800`}
           >
             <HomeIcon className="w-6 h-6 mr-3" />
             Overview
           </Link>
 
-          <Link
-            to="/inventory"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/inventory") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
-          >
-            <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
-            Inventory
-          </Link>
+          {roleData?.accessInventory && (
+            <Link
+              to="/inventory"
+              className={`flex items-center px-4 py-2 mt-2 ${
+                isActive("/inventory")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
+            >
+              <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
+              Inventory
+            </Link>
+          )}
 
-          <Link
-            to="/patients"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/patients") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
-          >
-            <UserGroupIcon className="w-6 h-6 mr-3" />
-            Patients
-          </Link>
+          {roleData?.accessInventoryHistory && (
+            <Link
+              to="/inventory-history"
+              className={`flex items-center px-4 py-2 mt-2 ${
+                isActive("/inventory-history")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
+            >
+              <ArchiveBoxIcon className="w-6 h-6 mr-3" />
+              History
+            </Link>
+          )}
+
+          {roleData?.accessPatients && (
+            <Link
+              to="/patients"
+              className={`flex items-center px-4 py-2 mt-2 ${
+                isActive("/patients")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
+            >
+              <UserGroupIcon className="w-6 h-6 mr-3" />
+              Patients
+            </Link>
+          )}
 
           <Link
             to="/billing"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/billing") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
+              isActive("/billing")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+            } hover:bg-slate-800`}
           >
             <CreditCardIcon className="w-6 h-6 mr-3" />
             Billing
@@ -98,8 +137,10 @@ const Sidebar = () => {
           <Link
             to="/analytics"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/analytics") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
+              isActive("/analytics")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+            } hover:bg-slate-800`}
           >
             <ChartBarIcon className="w-6 h-6 mr-3" />
             Analytics
@@ -108,12 +149,14 @@ const Sidebar = () => {
           <Link
             to="/settings"
             className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/settings") ? "bg-red-800 text-white shadow-sm" : "text-white"
-            } hover:bg-red-800`}
+              isActive("/settings")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+            } hover:bg-slate-800`}
           >
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
-          </Link> 
+          </Link>
 
           <a
             onClick={() => {
@@ -121,7 +164,7 @@ const Sidebar = () => {
                 navigate("/signin");
               });
             }}
-            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-red-800 cursor-pointer"
+            className="flex items-center px-4 py-2 mt-2 text-white hover:bg-slate-800 cursor-pointer"
           >
             <PowerIcon className="w-6 h-6 mr-3" />
             Logout
@@ -132,22 +175,24 @@ const Sidebar = () => {
       {/* Right Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navbar */}
-        <header className="flex justify-between items-center p-4 bg-red-900">
+        <header className="flex justify-between items-center p-4 bg-white drop-shadow-sm">
           <button
-            className="lg:hidden text-white"
+            className="lg:hidden text-gray-800"
             onClick={() => setSidebarOpen(true)}
           >
             <Bars3Icon className="w-6 h-6" />
           </button>
-          <h1 className="text-2xl text-white">{currentTitle}</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">
+            {currentTitle}
+          </h1>
           <div className="flex items-center space-x-2">
-            <span className="text-white">Admin</span>
-            <UserIcon className="w-6 h-6 text-white" />
+            <UserIcon className="w-6 h-6 text-gray-800" />
+            <span className="text-gray-800 font-semibold">{role}</span>
           </div>
         </header>
 
         {/* Pages Area*/}
-        <div className="flex-grow overflow-y-auto pt-8 px-6 bg-stone-50">
+        <div className="flex-grow overflow-y-auto pt-8 px-6 bg-slate-100">
           <Outlet />
         </div>
       </div>
