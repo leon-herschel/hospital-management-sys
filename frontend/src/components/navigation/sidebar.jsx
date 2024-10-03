@@ -13,6 +13,7 @@ import {
   UserGroupIcon,
   CreditCardIcon,
   ArchiveBoxIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -20,10 +21,15 @@ import { useAuth } from "../../context/authContext/authContext";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false); // New state for dropdown
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAuth();
   const roleData = useAccessControl();
+
+  const toggleInventoryDropdown = () => {
+    setInventoryDropdownOpen(!inventoryDropdownOpen);
+  };
 
   // Titles based on route paths
   const titles = {
@@ -84,31 +90,50 @@ const Sidebar = () => {
           </Link>
 
           {roleData?.accessInventory && (
-            <Link
-              to="/inventory"
-              className={`flex items-center px-4 py-2 mt-2 ${
-                isActive("/inventory")
-                  ? "bg-slate-800 text-white shadow-sm"
-                  : "text-white"
-              } hover:bg-slate-800`}
-            >
-              <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
-              Inventory
-            </Link>
-          )}
+            <>
+              <div
+                className="flex items-center px-4 py-2 mt-2 text-white cursor-pointer hover:bg-slate-800"
+                onClick={toggleInventoryDropdown}
+              >
+                <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
+                <span>Inventory</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 ml-auto transform ${
+                    inventoryDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
 
-          {roleData?.accessInventoryHistory && (
-            <Link
-              to="/inventory-history"
-              className={`flex items-center px-4 py-2 mt-2 ${
-                isActive("/inventory-history")
-                  ? "bg-slate-800 text-white shadow-sm"
-                  : "text-white"
-              } hover:bg-slate-800`}
-            >
-              <ArchiveBoxIcon className="w-6 h-6 mr-3" />
-              History
-            </Link>
+              {inventoryDropdownOpen && (
+                <div className="ml-8">
+                  <Link
+                    to="/inventory"
+                    className={`flex items-center px-4 py-2 mt-1 ${
+                      isActive("/inventory")
+                        ? "bg-slate-800 text-white shadow-sm"
+                        : "text-white"
+                    } hover:bg-slate-800`}
+                  >
+                    <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                    Inventory
+                  </Link>
+
+                  {roleData?.accessInventoryHistory && (
+                    <Link
+                      to="/inventory-history"
+                      className={`flex items-center px-4 py-2 mt-1 ${
+                        isActive("/inventory-history")
+                          ? "bg-slate-800 text-white shadow-sm"
+                          : "text-white"
+                      } hover:bg-slate-800`}
+                    >
+                      <ArchiveBoxIcon className="w-5 h-5 mr-3" />
+                      History
+                    </Link>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           {roleData?.accessPatients && (
