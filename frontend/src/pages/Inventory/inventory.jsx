@@ -153,28 +153,30 @@ function Inventory() {
 
   return (
     <div className="w-full">
-      <Notification />
-      <div className="flex justify-center space-x-4 mb-4">
-        <button
-          onClick={() => setSelectedTab("medicine")}
-          className={`px-8 py-3 rounded-md transition duration-200 ${
-            selectedTab === "medicine"
-              ? "bg-slate-900 text-white text-bold"
-              : "bg-slate-200 text-gray-900"
-          }`}
-        >
-          Medicine Inventory
-        </button>
-        <button
-          onClick={() => setSelectedTab("supplies")}
-          className={`px-6 py-2 rounded-md transition duration-200 ${
-            selectedTab === "supplies"
-              ? "bg-slate-900 text-white text-bold"
-              : "bg-slate-200 text-gray-900"
-          }`}
-        >
-          Supplies Inventory
-        </button>
+      <div className="flex justify-between items-center">
+        <div className="flex">
+          <button
+            onClick={() => setSelectedTab("medicine")}
+            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+              selectedTab === "medicine"
+                ? "bg-slate-900 text-white text-bold"
+                : "bg-slate-200 text-gray-900"
+            }`}
+          >
+            Medicine Inventory
+          </button>
+          <button
+            onClick={() => setSelectedTab("supplies")}
+            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+              selectedTab === "supplies"
+                ? "bg-slate-900 text-white text-bold"
+                : "bg-slate-200 text-gray-900"
+            }`}
+          >
+            Supplies Inventory
+          </button>
+        </div>
+        <Notification />
       </div>
 
       {selectedTab === "medicine" && (

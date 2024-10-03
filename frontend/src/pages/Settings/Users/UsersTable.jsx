@@ -57,7 +57,6 @@ const UsersTable = () => {
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold mb-4 text-center">User Management</h2>
       {/* Search and Add Account Button */}
       <div className="mb-4 flex justify-between items-center">
         <input

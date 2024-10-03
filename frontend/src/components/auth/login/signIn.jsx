@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { doSignInWithEmailAndPassword } from '../../../firebase/auth';
 import { useAuth } from '../../../context/authContext/authContext';
 import bgImage from '../../../assets/logo.jpg';
+import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
 
 const SignIn = () => {
   const { userLoggedIn } = useAuth();
@@ -10,6 +11,7 @@ const SignIn = () => {
   const [password, setPassword] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,16 +73,25 @@ const SignIn = () => {
           {/* Password Input */}
           <div>
             <label htmlFor="password" className="block text-white">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 mb-2 focus:outline-none focus:border-blue-400"
-              autoComplete="current-password"
-              required
-            />
+            <div className="relative w-full">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={password}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md py-2 px-3 pr-10 focus:outline-none focus:border-blue-400"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+              >
+                {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
 
           {/* Error Message */}
