@@ -8,6 +8,7 @@ import { useAccessControl } from "../../components/roles/accessControl";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useNavigate } from "react-router-dom";
 import AddPatient from "./AddPatient";
+import EditPatientModal from "./EditPatientModal"; // Import your EditPatientModal
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
@@ -60,6 +61,7 @@ function Patient() {
       unsubscribe();
     };
   }, [patientCollection]);
+  
 
   const handleDeleteConfirmation = (patient) => {
     setCurrentPatient(patient);
@@ -78,21 +80,7 @@ function Patient() {
     toggleEditModal();
   };
 
-  const handleUpdate = async (event) => {
-    event.preventDefault();
-    const { name, birth, age, gender, status, contact, roomType } =
-      event.target.elements;
-
-    const updatedPatient = {
-      name: name.value,
-      birth: birth.value,
-      age: age.value,
-      gender: gender.value,
-      status: status.value,
-      contact: contact.value,
-      roomType: roomType.value,
-    };
-
+  const handleUpdate = async (updatedPatient) => {
     await update(ref(database, `patient/${currentPatient.id}`), updatedPatient);
     toggleEditModal();
   };
@@ -208,144 +196,12 @@ function Patient() {
         onConfirm={handleDelete}
       />
 
-      {editModal && currentPatient && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
-            <form onSubmit={handleUpdate}>
-              <h2 className="text-2xl font-bold mb-6 text-center">
-                Edit Patient
-              </h2>
-
-              <div className="mb-4">
-                <label htmlFor="name" className="block text-gray-700 mb-2">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentPatient.name}
-                />
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="birth" className="block text-gray-700 mb-2">
-                  Date of Birth
-                </label>
-                <input
-                  type="date"
-                  id="birth"
-                  name="birth"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentPatient.birth}
-                />
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="age" className="block text-gray-700 mb-2">
-                  Age
-                </label>
-                <input
-                  type="number"
-                  id="age"
-                  name="age"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentPatient.age}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="gender" className="block text-gray-700 mb-2">
-                  Gender
-                </label>
-                <select
-                  id="gender"
-                  name="gender"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentPatient.gender}
-                >
-                  <option value="" disabled>
-                    Select Gender
-                  </option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-              <br></br>
-
-              <div className="mb-4">
-                <label htmlFor="contact" className="block text-gray-700 mb-2">
-                  Contact Number
-                </label>
-                <input
-                  type="number"
-                  id="contact"
-                  name="contact"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentPatient.contact}
-                />
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="status" className="block text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentPatient.status}
-                >
-                  <option value="" disabled>
-                    Select Status
-                  </option>
-                  <option value="Inpatient">Inpatient</option>
-                  <option value="Outpatient">Outpatient</option>
-                </select>
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="roomType" className="block text-gray-700 mb-2">
-                  Type of Room
-                </label>
-                <select
-                  id="roomType"
-                  name="roomType"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  defaultValue={currentPatient.roomType}
-                >
-                  <option value="" disabled>
-                    Select Room
-                  </option>
-                  <option value="Private">Private</option>
-                  <option value="Public">Public</option>
-                </select>
-              </div>
-              <div className="flex justify-between space-x-4">
-                <div className="w-full">
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-                  >
-                    Update
-                  </button>
-                </div>
-
-                <div className="w-full">
-                  <button
-                    type="button"
-                    onClick={toggleEditModal}
-                    className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditPatientModal
+        isOpen={editModal}
+        toggleModal={toggleEditModal}
+        currentPatient={currentPatient}
+        handleUpdate={handleUpdate} // Pass the update handler
+      />
     </div>
   );
 }

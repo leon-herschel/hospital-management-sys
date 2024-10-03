@@ -100,7 +100,6 @@ const RolesTable = () => {
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold mb-4 text-center">Role Management</h2>
       <div className="mb-4 flex justify-between items-center">
         <input
           type="text"

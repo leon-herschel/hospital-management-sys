@@ -15,7 +15,7 @@ const AccessDenied = () => {
       </p>
       <button
         onClick={handleRedirect}
-        className="mt-6 inline-block px-6 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 transition duration-200"
+        className="mt-6 inline-block px-6 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition duration-200"
       >
         Return to Homepage
       </button>

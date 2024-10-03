@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import { BellIcon, BellAlertIcon } from '@heroicons/react/16/solid';
 
 const Modal = ({ isOpen, onClose, notifications }) => {
   if (!isOpen) return null;
@@ -118,17 +119,22 @@ function Notification() {
     };
   }, []);
   return (
-    <div className="notification-container">
+    <div className="notification-container relative">
       <button
-        className="notification-bell"
+        className="notification-bell relative"
         onClick={toggleModal}
         aria-label="View notifications"
       >
-        <span role="img" aria-label="bell">
-          🔔
-        </span>
+        {notifications.length > 0 ? (
+          <BellAlertIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
+        ) : (
+          <BellIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
+        )}
+        
         {notifications.length > 0 && (
-          <span className="notification-count">{notifications.length}</span>
+          <span className="notification-count absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {notifications.length}
+          </span>
         )}
       </button>
 

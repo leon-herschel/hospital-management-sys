@@ -4,7 +4,7 @@ import Patients from "./pages/Patients/patients";
 import Inventory from "./pages/Inventory/inventory";
 import Analytics from "./pages/Analytics/analytics";
 import Billing from "./pages/Billing/billing";
-import InventoryHistory from "./pages/Inventory/InventoryHistory";
+import InventoryHistory from "./pages/History/InventoryHistory";
 import ViewBill from "./pages/Billing/ViewBill";
 import { AuthProvider } from "./context/authContext/authContext";
 import { useRoutes } from "react-router-dom";
@@ -14,7 +14,14 @@ import UsersTable from "./pages/Settings/Users/UsersTable";
 import RolesTable from "./pages/Settings/Roles/RolesTable";
 import Settings from "./pages/Settings/settings";
 import AccessDenied from "./pages/ErrorPages/AccessDenied";
-import ViewPatient from "./pages/Patients/ViewPatient";  
+import ViewPatient from "./pages/Patients/ViewPatient";
+import StockTransfer from "./pages/CSR POV/stockTransfer";
+import Transfer from "./pages/CSR POV/Transfer";
+import Request from "./pages/CSR POV/ViewRequest";
+import RequestStock from "./pages/ICU POV/requestStock";
+import RequestS from "./pages/ICU POV/requestS";
+import InventoryStock from "./pages/ICU POV/inventoryStock";
+import ViewRequest from "./pages/CSR POV/ViewRequest";
 
 function App() {
   const routesArray = [
@@ -32,7 +39,7 @@ function App() {
       children: [
         { path: "dashboard", element: <Dashboard /> },
         { path: "patients", element: <Patients /> },
-        { path: "patients/:id", element: <ViewPatient /> },  
+        { path: "patients/:id", element: <ViewPatient /> },
         { path: "inventory", element: <Inventory /> },
         { path: "analytics", element: <Analytics /> },
         { path: "settings", element: <Settings /> },
@@ -41,7 +48,14 @@ function App() {
         { path: "billing", element: <Billing /> },
         { path: "ViewBill", element: <ViewBill /> },
         { path: "access-denied", element: <AccessDenied /> },
-        { path: "InventoryHistory", element: <InventoryHistory /> },
+        { path: "inventory-history", element: <InventoryHistory /> },
+        { path: "stockTransfer", element: <StockTransfer /> },
+        { path: "Transfer", element: <Transfer /> },
+        { path: "Request", element: <Request /> },
+        { path: "requestS", element: <RequestS /> },
+        { path: "inventoryStock", element: <InventoryStock /> },
+        { path: "ViewRequest", element: <ViewRequest /> },
+        { path: "requestStock", element: <RequestStock /> },
       ],
     },
     {

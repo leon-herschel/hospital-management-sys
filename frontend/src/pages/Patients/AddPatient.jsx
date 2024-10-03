@@ -137,6 +137,7 @@ function AddPatient({ isOpen, toggleModal }) {
       roomType,
       dateTime,
       qrData: uniqueKey,
+      dateTime: dateTime,
     };
 
     set(newPatientRef, patientInfo)
@@ -352,7 +353,6 @@ function AddPatient({ isOpen, toggleModal }) {
             <p className="text-red-500 mt-1">Date and time is required</p>
           )}
         </div>
-
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handleSubmit}

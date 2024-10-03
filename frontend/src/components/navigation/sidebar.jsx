@@ -12,6 +12,8 @@ import {
   Cog8ToothIcon,
   UserGroupIcon,
   CreditCardIcon,
+  ArchiveBoxIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -19,10 +21,20 @@ import { useAuth } from "../../context/authContext/authContext";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false); // State for inventory dropdown
+  const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false); // State for departments dropdown
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAuth();
   const roleData = useAccessControl();
+
+  const toggleInventoryDropdown = () => {
+    setInventoryDropdownOpen(!inventoryDropdownOpen);
+  };
+
+  const toggleDepartmentsDropdown = () => {
+    setDepartmentsDropdownOpen(!departmentsDropdownOpen);
+  };
 
   // Titles based on route paths
   const titles = {
@@ -32,11 +44,12 @@ const Sidebar = () => {
     "/settings": "Settings",
     "/analytics": "Analytics",
     "/billing": "Billing List",
-    "/history": "History Management",
+    "/inventory-history": "Inventory History",
+    "/stockTransfer": "CSR Department",
+    "/requestStock": "ICU Department",
   };
 
-  // Handle dynamic routes like '/patients/:id' by checking if the pathname starts with '/patients'
-  let currentTitle = "Overview"; // Default
+  let currentTitle = "Overview";
 
   if (location.pathname.startsWith("/patients")) {
     currentTitle = "Patient Management System";
@@ -63,7 +76,11 @@ const Sidebar = () => {
         } lg:translate-x-0 lg:static lg:inset-0`}
       >
         <div className="flex items-center justify-center">
-          <img src={logoSidebar} alt="Logo" className="w-auto h-24" />
+          <img
+            src={logoSidebar}
+            alt="Southwestern University Medical Center"
+            className="p-3 pb-1 text-white text-center text-lg"
+          />
         </div>
 
         {/* Navigation */}
@@ -81,17 +98,50 @@ const Sidebar = () => {
           </Link>
 
           {roleData?.accessInventory && (
-            <Link
-              to="/inventory"
-              className={`flex items-center px-4 py-2 mt-2 ${
-                isActive("/inventory")
-                  ? "bg-slate-800 text-white shadow-sm"
-                  : "text-white"
-              } hover:bg-slate-800`}
-            >
-              <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
-              Inventory
-            </Link>
+            <>
+              <div
+                className="flex items-center px-4 py-2 mt-2 text-white cursor-pointer hover:bg-slate-800"
+                onClick={toggleInventoryDropdown}
+              >
+                <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
+                <span>Inventory</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 ml-auto transform ${
+                    inventoryDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+
+              {inventoryDropdownOpen && (
+                <div className="ml-8">
+                  <Link
+                    to="/inventory"
+                    className={`flex items-center px-4 py-2 mt-1 ${
+                      isActive("/inventory")
+                        ? "bg-slate-800 text-white shadow-sm"
+                        : "text-white"
+                    } hover:bg-slate-800`}
+                  >
+                    <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                    Inventory
+                  </Link>
+
+                  {roleData?.accessInventoryHistory && (
+                    <Link
+                      to="/inventory-history"
+                      className={`flex items-center px-4 py-2 mt-1 ${
+                        isActive("/inventory-history")
+                          ? "bg-slate-800 text-white shadow-sm"
+                          : "text-white"
+                      } hover:bg-slate-800`}
+                    >
+                      <ArchiveBoxIcon className="w-5 h-5 mr-3" />
+                      History
+                    </Link>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           {roleData?.accessPatients && (
@@ -119,6 +169,46 @@ const Sidebar = () => {
             <CreditCardIcon className="w-6 h-6 mr-3" />
             Billing
           </Link>
+
+          {/* Departments Dropdown */}
+          <div
+            className="flex items-center px-4 py-2 mt-2 text-white cursor-pointer hover:bg-slate-800"
+            onClick={toggleDepartmentsDropdown}
+          >
+            <CreditCardIcon className="w-6 h-6 mr-3" />
+            <span>Departments</span>
+            <ChevronDownIcon
+              className={`w-5 h-5 ml-auto transform ${
+                departmentsDropdownOpen ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+
+          {departmentsDropdownOpen && (
+            <div className="ml-8">
+              <Link
+                to="/stockTransfer"
+                className={`flex items-center px-4 py-2 mt-1 ${
+                  isActive("/stockTransfer")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                } hover:bg-slate-800`}
+              >
+                CSR POV
+              </Link>
+
+              <Link
+                to="/requestStock"
+                className={`flex items-center px-4 py-2 mt-1 ${
+                  isActive("/requestStock")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                } hover:bg-slate-800`}
+              >
+                ICU POV
+              </Link>
+            </div>
+          )}
 
           <Link
             to="/analytics"
