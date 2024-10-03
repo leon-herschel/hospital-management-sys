@@ -63,7 +63,7 @@ const Sidebar = () => {
         } lg:translate-x-0 lg:static lg:inset-0`}
       >
         <div className="flex items-center justify-center">
-          <img src={logoSidebar} alt="Logo" className="w-auto h-24" />
+          <img src={logoSidebar} alt="Southwestern University Medical Center" className="p-3 pb-1 text-white text-center text-lg" />
         </div>
 
         {/* Navigation */}
