@@ -41,6 +41,8 @@ const Sidebar = () => {
     "/billing": "Billing List",
     "/inventory-history": "Inventory History",
     "/stockTransfer": "Stock Transfer",
+    "/requestStock": "Request Stock",
+
   };
 
   let currentTitle = "Overview";
@@ -170,6 +172,18 @@ const Sidebar = () => {
           >
             <CreditCardIcon className="w-6 h-6 mr-3" />
             Stock Transfer
+          </Link>
+
+          <Link
+            to="/requestStock"
+            className={`flex items-center px-4 py-2 mt-2 ${
+              isActive("/requestStock")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+            } hover:bg-slate-800`}
+          >
+            <CreditCardIcon className="w-6 h-6 mr-3" />
+            Request Stock
           </Link>
 
           <Link
