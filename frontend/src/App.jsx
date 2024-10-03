@@ -15,13 +15,13 @@ import RolesTable from "./pages/Settings/Roles/RolesTable";
 import Settings from "./pages/Settings/settings";
 import AccessDenied from "./pages/ErrorPages/AccessDenied";
 import ViewPatient from "./pages/Patients/ViewPatient";  
-import StockTransfer from "./pages/Transfer Stocks/stockTransfer";
-import Transfer from "./pages/Transfer Stocks/Transfer";
-import Request from "./pages/Transfer Stocks/Request";
-import RequestStock from "./pages/Request Stocks/requestStock";
-import RequestS from "./pages/Request Stocks/requestS";
-import InventoryStock from "./pages/Request Stocks/inventoryStock";
-import ViewRequest from "./pages/Transfer Stocks/ViewRequest";
+import StockTransfer from "./pages/CSR POV/stockTransfer";
+import Transfer from "./pages/CSR POV/Transfer";
+import Request from "./pages/CSR POV/ViewRequest";
+import RequestStock from "./pages/ICU POV/requestStock";
+import RequestS from "./pages/ICU POV/requestS";
+import InventoryStock from "./pages/ICU POV/inventoryStock";
+import ViewRequest from "./pages/CSR POV/ViewRequest";
 
 function App() {
   const routesArray = [

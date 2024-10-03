@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, update, onValue } from 'firebase/database'; // Add onValue for real-time updates
-import { database } from '../../firebase/firebase'; // Firebase configuration
-import { getAuth } from 'firebase/auth'; // Firebase Auth
+import { ref, get, set, push, update, onValue } from 'firebase/database';
+import { database } from '../../firebase/firebase';
+import { getAuth } from 'firebase/auth';
 
 const Transfer = () => {
   const [activeTab, setActiveTab] = useState('General');
@@ -10,16 +10,14 @@ const Transfer = () => {
     department: 'Pharmacy',
     status: 'Draft',
     reason: '',
-    timestamp: ''
+    timestamp: new Date().toLocaleString(),
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // Will be updated in real-time
+  const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-
-  const searchRef = useRef(''); // Ref to store search term without triggering re-renders
-  const departmentRef = useRef(); // Ref to store Firebase reference for departments
-
+  const searchRef = useRef('');
+  const departmentRef = useRef();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
@@ -35,7 +33,6 @@ const Transfer = () => {
     }
   }, []);
 
-  // Store Firebase ref for departments using useRef
   useEffect(() => {
     departmentRef.current = ref(database, 'departments');
     get(departmentRef.current)
@@ -49,27 +46,21 @@ const Transfer = () => {
       .catch(error => console.error('Error fetching departments:', error));
   }, []);
 
-  // Real-time update of supplies using onValue
   useEffect(() => {
     const suppliesRef = ref(database, 'supplies');
-
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
       if (snapshot.exists()) {
         const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
           ...value,
-          itemKey: key, // Add the key (itemKey) to each item
+          itemKey: key,
         }));
-        setItems(supplies); // Update items in real-time
+        setItems(supplies);
       }
     });
-
-    // Cleanup listener when the component unmounts
     return () => unsubscribe();
   }, []);
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
+  const handleTabChange = (tab) => setActiveTab(tab);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,7 +68,7 @@ const Transfer = () => {
   };
 
   const handleSearchChange = (e) => {
-    searchRef.current = e.target.value; // Store the search term in useRef without causing a re-render
+    searchRef.current = e.target.value;
     const filtered = items.filter(item =>
       item.itemName.toLowerCase().includes(searchRef.current.toLowerCase())
     );
@@ -87,7 +78,7 @@ const Transfer = () => {
   const addItem = (itemToAdd) => {
     if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
       setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
-      searchRef.current = ''; // Clear search input after adding
+      searchRef.current = '';
       setFilteredItems([]);
     }
   };
@@ -97,7 +88,6 @@ const Transfer = () => {
   };
 
   const handleQuantityChange = (item, value) => {
-    // Fetch the correct item from the database to ensure its quantity
     const mainInventoryItem = items.find(i => i.itemKey === item.itemKey);
     const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
 
@@ -106,7 +96,6 @@ const Transfer = () => {
       return;
     }
 
-    // Proceed to update the selected item's quantity if it's valid
     const updatedItems = selectedItems.map(selectedItem =>
       selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: value } : selectedItem
     );
@@ -143,14 +132,36 @@ const Transfer = () => {
     };
 
     for (const item of selectedItems) {
-      // Transfer entire item data to the department's local supplies
       const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
-      await set(ref(database, departmentPath), {
-        ...item, // Transfer entire item data
-        ...transferData, // Include the transfer data (name, reason, timestamp)
+      const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
+
+      // Step 1: Fetch current quantity in `supplies`
+      const mainSnapshot = await get(mainInventoryRef);
+      if (!mainSnapshot.exists()) {
+        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        continue;
+      }
+
+      const mainInventoryData = mainSnapshot.val();
+      const mainInventoryQuantity = mainInventoryData.quantity;
+
+      // Step 2: Fetch current quantity in `localSupplies` for the department
+      const localSuppliesRef = ref(database, `departments/${formData.department}/localSupplies/${item.itemKey}`);
+      const localSnapshot = await get(localSuppliesRef);
+      const localSuppliesData = localSnapshot.exists() ? localSnapshot.val() : {};
+      const localSuppliesQuantity = localSuppliesData.quantity || 0;
+
+      // Step 3: Calculate the updated quantities
+      const updatedMainQuantity = Math.max(mainInventoryQuantity - item.quantity, 0); // Deduct from main inventory
+      const updatedLocalQuantity = localSuppliesQuantity + item.quantity; // Add to local supplies
+
+      // Step 4: Update the department's local supplies and main inventory
+      await set(localSuppliesRef, {
+        ...item,
+        ...transferData,
+        quantity: updatedLocalQuantity, // Update local supplies with the new quantity
       });
 
-      // Log the transfer in department inventory history
       const historyPath = `departments/${formData.department}/inventoryHistory`;
       const newHistoryRef = push(ref(database, historyPath));
       await set(newHistoryRef, {
@@ -160,16 +171,8 @@ const Transfer = () => {
         sender: formData.name,
       });
 
-      // Deduct the transferred quantity from the main inventory node
-      const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
-      const snapshot = await get(mainInventoryRef);
-      if (snapshot.exists()) {
-        const currentData = snapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0); // Ensure quantity does not go below 0
-        await update(mainInventoryRef, { quantity: updatedQuantity });
-      } else {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
-      }
+      // Step 5: Update the main inventory
+      await update(mainInventoryRef, { quantity: updatedMainQuantity });
     }
 
     alert('Transfer successful!');
@@ -230,7 +233,6 @@ const Transfer = () => {
       {activeTab === 'General' && (
         <div className="mb-4">
           <div className="grid grid-cols-2 gap-4">
-            {/* To Department */}
             <div>
               <label className="block font-semibold mb-1">To Department</label>
               <select
@@ -248,7 +250,6 @@ const Transfer = () => {
               {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
             </div>
 
-            {/* Status */}
             <div>
               <label className="block font-semibold mb-1">Status</label>
               <select
@@ -264,7 +265,6 @@ const Transfer = () => {
             </div>
           </div>
 
-          {/* Reason Input */}
           <div className="mb-4">
             <label className="block font-semibold mb-1">Reason:</label>
             <textarea
@@ -294,7 +294,6 @@ const Transfer = () => {
             </div>
           </div>
 
-          {/* Show Filtered Items */}
           {searchRef.current && (
             <div className="max-h-40 overflow-y-auto border border-gray-300 rounded mb-4">
               {filteredItems.length > 0 ? (
@@ -312,7 +311,6 @@ const Transfer = () => {
             </div>
           )}
 
-          {/* Selected Items Display in Table Format */}
           <table className="min-w-full border-collapse border border-gray-300 mt-4">
             <thead>
               <tr>
