@@ -19,52 +19,45 @@ const ViewBill = ({ billing, patients, onClose }) => {
       setPaymentMethod(billing.paymentMethod || '');
       setPaymentDate(billing.paymentDate || '');
 
-      const fetchInventoryHistory = async () => {
-        const inventoryHistoryRef = ref(database, 'inventoryHistory');
-        const snapshot = await get(inventoryHistoryRef);
+      // Fetch item history for both medicines and supplies
+      const fetchItemHistory = async () => {
+        const itemHistoryRef = ref(database, 'itemHistory');
+        const snapshot = await get(itemHistoryRef);
         if (snapshot.exists()) {
-          const inventoryList = [];
+          const itemHistoryList = [];
           snapshot.forEach((childSnapshot) => {
-            inventoryList.push({ id: childSnapshot.key, ...childSnapshot.val() });
+            itemHistoryList.push({ id: childSnapshot.key, ...childSnapshot.val() });
           });
-          setInventoryHistory(inventoryList);
+
+          // Fetch retail prices from medicines
+          const medicineHistoryRef = ref(database, 'medicine');
+          const medicineSnapshot = await get(medicineHistoryRef);
+          const updatedMedicineList = itemHistoryList.map((item) => {
+            const medicineItem = medicineSnapshot.child(item.id).val();
+            return {
+              ...item,
+              retailPrice: medicineItem ? medicineItem.retailPrice : 0, // Fetch price from medicine node
+            };
+          });
+          setMedicineList(updatedMedicineList);
+
+          // Fetch retail prices from supplies
+          const suppliesHistoryRef = ref(database, 'supplies');
+          const suppliesSnapshot = await get(suppliesHistoryRef);
+          const updatedSupplyList = itemHistoryList.map((item) => {
+            const supplyItem = suppliesSnapshot.child(item.id).val();
+            return {
+              ...item,
+              retailPrice: supplyItem ? supplyItem.retailPrice : 0, // Fetch price from supplies node
+            };
+          });
+          setSupplyList(updatedSupplyList);
         }
       };
 
-      fetchInventoryHistory();
+      fetchItemHistory();
     }
   }, [billing]);
-
-  useEffect(() => {
-    const fetchSuppliesHistory = async () => {
-      const suppliesHistoryRef = ref(database, 'supplies');
-      const snapshot = await get(suppliesHistoryRef);
-      if (snapshot.exists()) {
-        const suppliesList = [];
-        snapshot.forEach((childSnapshot) => {
-          suppliesList.push({ id: childSnapshot.key, ...childSnapshot.val() });
-        });
-        setSupplyList(suppliesList);
-      }
-    };
-
-    const fetchMedicineHistory = async () => {
-      const medicineHistoryRef = ref(database, 'medicine');
-      const snapshot = await get(medicineHistoryRef);
-      if (snapshot.exists()) {
-        const medicineList = [];
-        snapshot.forEach((childSnapshot) => {
-          medicineList.push({ id: childSnapshot.key, ...childSnapshot.val() });
-        });
-        setMedicineList(medicineList);
-      }
-    };
-
-    if (inventoryHistory.length > 0) {
-      fetchSuppliesHistory();
-      fetchMedicineHistory();
-    }
-  }, [inventoryHistory]);
 
   useEffect(() => {
     // Calculate subtotal for medicines
