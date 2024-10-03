@@ -1,43 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { ref, get } from 'firebase/database'; // Import Firebase functions
+import { ref, onValue } from 'firebase/database'; // Use onValue for real-time updates
 import { database } from '../../firebase/firebase'; // Import Firebase configuration
 
 const Request = () => {
   const [requests, setRequests] = useState([]); // Store fetched requests
   const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
 
-  // Fetch data from Firebase
+  // Fetch data from Firebase in real-time
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const csrRequestRef = ref(database, 'departments/CSR/Request');
-        const pharmacyRequestRef = ref(database, 'departments/Pharmacy/Request');
+    const csrRequestRef = ref(database, 'departments/CSR/Request');
+    const pharmacyRequestRef = ref(database, 'departments/Pharmacy/Request');
 
-        const [csrSnapshot, pharmacySnapshot] = await Promise.all([get(csrRequestRef), get(pharmacyRequestRef)]);
+    const handleRequestUpdates = (snapshot, department) => {
+      if (snapshot.exists()) {
+        const requestsData = Object.values(snapshot.val()).map(request => ({
+          ...request,
+          department,
+        }));
+        return requestsData;
+      }
+      return [];
+    };
 
-        const csrRequests = csrSnapshot.exists() ? Object.values(csrSnapshot.val()) : [];
-        const pharmacyRequests = pharmacySnapshot.exists() ? Object.values(pharmacySnapshot.val()) : [];
+    // Listen for updates in CSR requests
+    const csrListener = onValue(csrRequestRef, (snapshot) => {
+      const csrRequests = handleRequestUpdates(snapshot, 'CSR');
+
+      // Listen for updates in Pharmacy requests
+      const pharmacyListener = onValue(pharmacyRequestRef, (pharmacySnapshot) => {
+        const pharmacyRequests = handleRequestUpdates(pharmacySnapshot, 'Pharmacy');
 
         // Combine CSR and Pharmacy requests into one array
-        const combinedRequests = [
-          ...csrRequests.map(request => ({ ...request, department: 'CSR' })),
-          ...pharmacyRequests.map(request => ({ ...request, department: 'Pharmacy' }))
-        ];
+        const combinedRequests = [...csrRequests, ...pharmacyRequests];
 
         // Sort the combined requests by timestamp (ascending order)
         combinedRequests.sort((a, b) => {
           const timestampA = new Date(a.timestamp).getTime();
           const timestampB = new Date(b.timestamp).getTime();
-          return timestampA - timestampB; // Sort in ascending order
+          return timestampA - timestampB;
         });
 
+        // Set the requests state with real-time updates
         setRequests(combinedRequests);
-      } catch (error) {
-        console.error('Error fetching requests:', error);
-      }
-    };
+      });
 
-    fetchRequests();
+      // Cleanup listener when component unmounts
+      return () => {
+        csrListener();
+        pharmacyListener();
+      };
+    });
   }, []);
 
   // Toggle details for a specific request
