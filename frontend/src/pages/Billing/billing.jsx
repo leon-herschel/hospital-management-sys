@@ -144,8 +144,8 @@ const Billing = () => {
                 <td className="border-b px-4 py-2">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
                 <td className="border-b px-4 py-2">{billing.status}</td>
                 <td className="border-b px-4 py-2">
-                  <button onClick={() => handleViewBilling(billing)} className="text-blue-600 hover:underline">View</button>
-                  <button onClick={() => openDeleteModal(billing)} className="text-red-600 hover:underline ml-2">Delete</button>
+                  <button onClick={() => handleViewBilling(billing)} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md">View</button>
+                  <button onClick={() => openDeleteModal(billing)} className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md">Delete</button>
                 </td>
               </tr>
             ))
