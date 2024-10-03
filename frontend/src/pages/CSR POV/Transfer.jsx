@@ -13,7 +13,7 @@ const Transfer = () => {
     timestamp: ''
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // Will be updated in real-time
+  const [items, setItems] = useState([]); // Will be updated in real-time with only supplies
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
 
@@ -27,6 +27,7 @@ const Transfer = () => {
     reasonError: false,
   });
 
+  // Fetch authenticated user data
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -35,7 +36,7 @@ const Transfer = () => {
     }
   }, []);
 
-  // Store Firebase ref for departments using useRef
+  // Fetch department data from Firebase
   useEffect(() => {
     departmentRef.current = ref(database, 'departments');
     get(departmentRef.current)
@@ -49,17 +50,18 @@ const Transfer = () => {
       .catch(error => console.error('Error fetching departments:', error));
   }, []);
 
-  // Real-time update of supplies using onValue
+  // Real-time update of supplies using onValue (filter out medicines)
   useEffect(() => {
-    const suppliesRef = ref(database, 'supplies');
+    const suppliesRef = ref(database, 'supplies'); // Listen to the 'supplies' node
 
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
       if (snapshot.exists()) {
-        const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
-          ...value,
-          itemKey: key, // Add the key (itemKey) to each item
-        }));
-        setItems(supplies); // Update items in real-time
+        const supplies = Object.entries(snapshot.val())
+          .map(([key, value]) => ({
+            ...value,
+            itemKey: key, // Add the key (itemKey) to each item
+          }));
+        setItems(supplies); // Only supplies will be shown
       }
     });
 
