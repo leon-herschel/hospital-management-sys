@@ -61,6 +61,7 @@ function Patient() {
       unsubscribe();
     };
   }, [patientCollection]);
+  
 
   const handleDeleteConfirmation = (patient) => {
     setCurrentPatient(patient);
