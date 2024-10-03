@@ -1,81 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { ref, get, set, push } from 'firebase/database'; // Import Firebase functions
+import React, { useState, useEffect, useRef } from 'react';
+import { ref, get, set, push, update, onValue } from 'firebase/database'; // Add onValue for real-time updates
 import { database } from '../../firebase/firebase'; // Firebase configuration
-import { getAuth } from 'firebase/auth'; // Import Firebase Auth
+import { getAuth } from 'firebase/auth'; // Firebase Auth
 
 const Transfer = () => {
-  const [activeTab, setActiveTab] = useState('General'); // Tab state
+  const [activeTab, setActiveTab] = useState('General');
   const [formData, setFormData] = useState({
-    name: '', // Default name
-    department: 'Pharmacy', // Default department
+    name: '',
+    department: 'Pharmacy',
     status: 'Draft',
     reason: '',
-    timestamp: '', // Timestamp to track transfer creation
+    timestamp: ''
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // To store medicines data
-  const [selectedItems, setSelectedItems] = useState([]); // To store selected items
-  const [searchTerm, setSearchTerm] = useState(''); // Search term state
-  const [filteredItems, setFilteredItems] = useState([]); // Filtered items based on search
+  const [items, setItems] = useState([]); // Will be updated in real-time
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
 
-  // Error states
-  const [departmentError, setDepartmentError] = useState(false);
-  const [statusError, setStatusError] = useState(false);
-  const [reasonError, setReasonError] = useState(false);
-  const [submitting, setSubmitting] = useState(false); // For submission state
+  const searchRef = useRef(''); // Ref to store search term without triggering re-renders
+  const departmentRef = useRef(); // Ref to store Firebase reference for departments
 
-  // Fetch user name from Firebase Auth
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessages, setErrorMessages] = useState({
+    departmentError: false,
+    statusError: false,
+    reasonError: false,
+  });
+
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      setFormData((prevData) => ({ ...prevData, name: user.displayName || user.email })); // Use displayName or email as fallback
+      setFormData(prevData => ({ ...prevData, name: user.displayName || user.email }));
     }
   }, []);
 
-  // Fetch departments from Firebase
+  // Store Firebase ref for departments using useRef
   useEffect(() => {
-    const departmentRef = ref(database, 'departments');
-    get(departmentRef)
-      .then((snapshot) => {
+    departmentRef.current = ref(database, 'departments');
+    get(departmentRef.current)
+      .then(snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const departmentNames = Object.keys(data); // Extract department names
+          const departmentNames = Object.keys(data);
           setDepartments(departmentNames);
-        } else {
-          console.log('No data available');
         }
       })
-      .catch((error) => {
-        console.error('Error fetching departments:', error);
-      });
+      .catch(error => console.error('Error fetching departments:', error));
   }, []);
 
-  // Fetch medicines from Firebase
+  // Real-time update of supplies using onValue
   useEffect(() => {
-    const medicineRef = ref(database, 'medicine');
-    get(medicineRef)
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const itemsList = Object.values(data); // Extract the items from the medicine node
-          setItems(itemsList); // Set the items state
-        } else {
-          console.log('No data available');
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching items:', error);
-      });
-  }, []);
+    const suppliesRef = ref(database, 'supplies');
 
-  // Set the timestamp when the component is mounted
-  useEffect(() => {
-    const currentTimestamp = new Date().toLocaleString();
-    setFormData((prevData) => ({
-      ...prevData,
-      timestamp: currentTimestamp,
-    }));
+    const unsubscribe = onValue(suppliesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
+          ...value,
+          itemKey: key, // Add the key (itemKey) to each item
+        }));
+        setItems(supplies); // Update items in real-time
+      }
+    });
+
+    // Cleanup listener when the component unmounts
+    return () => unsubscribe();
   }, []);
 
   const handleTabChange = (tab) => {
@@ -88,21 +77,18 @@ const Transfer = () => {
   };
 
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-
-    // Filter items based on search term
+    searchRef.current = e.target.value; // Store the search term in useRef without causing a re-render
     const filtered = items.filter(item =>
-      item.itemName.toLowerCase().includes(value.toLowerCase())
+      item.itemName.toLowerCase().includes(searchRef.current.toLowerCase())
     );
     setFilteredItems(filtered);
   };
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]); // Default quantity is set to 1
-      setSearchTerm(''); // Clear search term after adding
-      setFilteredItems([]); // Clear filtered items
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
+      searchRef.current = ''; // Clear search input after adding
+      setFilteredItems([]);
     }
   };
 
@@ -111,102 +97,86 @@ const Transfer = () => {
   };
 
   const handleQuantityChange = (item, value) => {
-    if (value > item.maxQuantity) {
-      alert(`Cannot exceed Max Quantity of ${item.maxQuantity}`);
-      return; // Stop execution if quantity exceeds
+    // Fetch the correct item from the database to ensure its quantity
+    const mainInventoryItem = items.find(i => i.itemKey === item.itemKey);
+    const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
+
+    if (value > maxAvailableQuantity) {
+      alert(`Cannot exceed available quantity of ${maxAvailableQuantity}`);
+      return;
     }
 
-    const newQuantity = Math.min(Math.max(value, 1), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
+    // Proceed to update the selected item's quantity if it's valid
     const updatedItems = selectedItems.map(selectedItem =>
-      selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: newQuantity } : selectedItem
+      selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: value } : selectedItem
     );
     setSelectedItems(updatedItems);
   };
 
-  // Validate inputs before submission
   const validateInputs = () => {
-    setDepartmentError(!formData.department);
-    setStatusError(!formData.status);
-    setReasonError(!formData.reason);
-
-    return formData.department && formData.status && formData.reason;
+    const { department, status, reason } = formData;
+    setErrorMessages({
+      departmentError: !department,
+      statusError: !status,
+      reasonError: !reason,
+    });
+    return department && status && reason;
   };
 
-  // Handle the transfer of data
   const handleTransfer = async () => {
     if (!validateInputs()) {
-        alert('Please fill in all required fields.');
-        return; // Stop execution if validation fails
+      alert('Please fill in all required fields.');
+      return;
     }
-  
     if (selectedItems.length === 0) {
-        alert('Please select items to transfer.');
-        return; // Stop execution if no items are selected
+      alert('Please select items to transfer.');
+      return;
     }
-  
-    setSubmitting(true); // Disable the button and show loading
-  
+
+    setSubmitting(true);
+
     const transferData = {
-        name: formData.name,
-        status: formData.status,
-        reason: formData.reason,
-        timestamp: formData.timestamp,
+      name: formData.name,
+      status: formData.status,
+      reason: formData.reason,
+      timestamp: formData.timestamp,
     };
-  
-    // Define the path for the selected department's localSupplies
-    const departmentPath = `departments/${formData.department}/localSupplies`;
-    const historyPath = `departments/${formData.department}/inventoryHistory`;
-    const mainInventoryPath = `medicine`; // Path to the main inventory
-  
-    // Loop through each selected item
+
     for (const item of selectedItems) {
-        // Push the item to the localSupplies
-        const newTransferRef = push(ref(database, departmentPath));
-        await set(newTransferRef, {
-            ...item, // Include the item data
-            ...transferData, // Include transfer data (reason, timestamp, etc.)
-        });
-  
-        // Prepare the transfer history data
-        const transferDataHistory = {
-            itemName: item.itemName,
-            quantity: item.quantity,
-            timestamp: formData.timestamp,
-            sender: formData.name, // The one who processed the transfer
-        };
-  
-        // Push the transfer history to the inventoryHistory
-        const newHistoryRef = push(ref(database, historyPath));
-        await set(newHistoryRef, transferDataHistory);
-  
-        // Update the main inventory quantity
-        const mainInventoryRef = ref(database, `${mainInventoryPath}/${item.itemName}`); // Reference to the item in the main inventory
-        const snapshot = await get(mainInventoryRef); // Get current item data
-  
-        if (snapshot.exists()) {
-            const currentData = snapshot.val();
-            const currentQuantity = currentData.quantity || 0; // Get the current quantity, default to 0 if not found
-            
-            const updatedQuantity = Math.max(currentQuantity - item.quantity, 0); // Deduct transferred quantity
-            
-            // Update the main inventory with the new quantity
-            await set(mainInventoryRef, {
-                ...currentData,
-                quantity: updatedQuantity // Set new quantity
-            });
-        } else {
-            console.error(`Item ${item.itemName} does not exist in the main inventory.`);
-        }
+      // Transfer entire item data to the department's local supplies
+      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
+      await set(ref(database, departmentPath), {
+        ...item, // Transfer entire item data
+        ...transferData, // Include the transfer data (name, reason, timestamp)
+      });
+
+      // Log the transfer in department inventory history
+      const historyPath = `departments/${formData.department}/inventoryHistory`;
+      const newHistoryRef = push(ref(database, historyPath));
+      await set(newHistoryRef, {
+        itemName: item.itemName,
+        quantity: item.quantity,
+        timestamp: formData.timestamp,
+        sender: formData.name,
+      });
+
+      // Deduct the transferred quantity from the main inventory node
+      const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
+      const snapshot = await get(mainInventoryRef);
+      if (snapshot.exists()) {
+        const currentData = snapshot.val();
+        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0); // Ensure quantity does not go below 0
+        await update(mainInventoryRef, { quantity: updatedQuantity });
+      } else {
+        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+      }
     }
-  
-    // After the transfer, reset form and state
+
     alert('Transfer successful!');
     setFormData({ ...formData, reason: '', status: 'Draft' });
     setSelectedItems([]);
     setSubmitting(false);
-};
-
-  
+  };
 
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
@@ -215,7 +185,7 @@ const Transfer = () => {
         <button
           className="bg-green-500 text-white px-2 py-1 rounded"
           onClick={handleTransfer}
-          disabled={submitting} // Disable while submitting
+          disabled={submitting}
         >
           {submitting ? 'Transferring...' : 'Transfer'}
         </button>
@@ -228,7 +198,7 @@ const Transfer = () => {
           type="text"
           name="name"
           value={formData.name}
-          readOnly // Make it read-only to prevent manual edits
+          readOnly
           className="border p-2 w-full rounded"
         />
         <p className="text-gray-500 text-sm">The one who processes.</p>
@@ -267,7 +237,7 @@ const Transfer = () => {
                 name="department"
                 value={formData.department}
                 onChange={handleInputChange}
-                className={`border p-2 w-full rounded ${departmentError ? 'border-red-500' : ''}`} // Show error styling
+                className={`border p-2 w-full rounded ${errorMessages.departmentError ? 'border-red-500' : ''}`}
               >
                 {departments.map((dept, index) => (
                   <option key={index} value={dept}>
@@ -275,7 +245,7 @@ const Transfer = () => {
                   </option>
                 ))}
               </select>
-              {departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
+              {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
             </div>
 
             {/* Status */}
@@ -285,12 +255,12 @@ const Transfer = () => {
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className={`border p-2 w-full rounded ${statusError ? 'border-red-500' : ''}`} // Show error styling
+                className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
               >
                 <option value="Draft">Draft</option>
                 <option value="Final">Final</option>
               </select>
-              {statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
+              {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
             </div>
           </div>
 
@@ -301,15 +271,15 @@ const Transfer = () => {
               name="reason"
               value={formData.reason}
               onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${reasonError ? 'border-red-500' : ''}`} // Show error styling
+              className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
             ></textarea>
-            {reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
+            {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
           </div>
         </div>
       )}
 
-     {/* Items Tab Content */}
-     {activeTab === 'Items' && (
+      {/* Items Tab Content */}
+      {activeTab === 'Items' && (
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-semibold text-lg">Items</h2>
@@ -317,15 +287,15 @@ const Transfer = () => {
               <input
                 type="text"
                 placeholder="Search Item"
-                value={searchTerm}
+                value={searchRef.current}
                 onChange={handleSearchChange}
                 className="border p-2 rounded w-1/2"
               />
             </div>
           </div>
 
-          {/* Show Filtered Items Only if Search Term Exists */}
-          {searchTerm && (
+          {/* Show Filtered Items */}
+          {searchRef.current && (
             <div className="max-h-40 overflow-y-auto border border-gray-300 rounded mb-4">
               {filteredItems.length > 0 ? (
                 filteredItems.map((item, index) => (
@@ -333,7 +303,7 @@ const Transfer = () => {
                     onClick={() => addItem(item)}
                   >
                     <span>{item.itemName}</span>
-                    <span className="text-gray-500">{item.maxQuantity}</span>
+                    <span className="text-gray-500">{item.quantity}</span>
                   </div>
                 ))
               ) : (
@@ -359,7 +329,7 @@ const Transfer = () => {
                     <input
                       type="number"
                       min="1"
-                      max={item.maxQuantity}
+                      max={item.quantity}
                       value={item.quantity}
                       onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
                       className="border rounded w-16 text-center"
