@@ -73,20 +73,24 @@ function ViewPatient() {
     if (!dosage) newErrors.dosage = "Dosage is required.";
     if (!instruction) newErrors.instruction = "Instruction is required.";
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+      <div className="mb-4">
+        <strong>Prescriptions:</strong>
+        {renderPrescriptions()}
+      </div>
 
     setLoading(true);
     const prescriptionRef = ref(database, `patient/${id}/prescriptions`);
 
-    const patientPrescription = {
-      prescriptionName,
-      dosage,
-      instruction,
-      createdAt: new Date().toISOString(),
-    };
+          <div className="mb-2">
+            <label className="block mb-1">Dosage:</label>
+            <input
+              type="text"
+              className={`w-full border ${errors.dosage ? "border-red-500" : "border-gray-300"} p-2 rounded`}
+              value={dosage}
+              onChange={(e) => setDosage(e.target.value)}
+            />
+            {errors.dosage && <span className="text-red-500 text-sm">{errors.dosage}</span>}
+          </div>
 
     try {
       if (editingId) {
