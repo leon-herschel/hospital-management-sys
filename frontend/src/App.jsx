@@ -15,6 +15,9 @@ import RolesTable from "./pages/Settings/Roles/RolesTable";
 import Settings from "./pages/Settings/settings";
 import AccessDenied from "./pages/ErrorPages/AccessDenied";
 import ViewPatient from "./pages/Patients/ViewPatient";  
+import StockTransfer from "./pages/Request/stockTransfer";
+import Transfer from "./pages/Request/Transfer";
+import Request from "./pages/Request/Request";
 
 function App() {
   const routesArray = [
@@ -42,6 +45,12 @@ function App() {
         { path: "ViewBill", element: <ViewBill /> },
         { path: "access-denied", element: <AccessDenied /> },
         { path: "inventory-history", element: <InventoryHistory /> },
+        { path: "stockTransfer", element: <StockTransfer /> },
+        { path: "Transfer", element: <Transfer /> },
+        { path: "Request", element: <Request /> },
+
+
+
       ],
     },
     {
