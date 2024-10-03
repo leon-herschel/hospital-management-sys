@@ -12,6 +12,7 @@ import {
   Cog8ToothIcon,
   UserGroupIcon,
   CreditCardIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -32,11 +33,10 @@ const Sidebar = () => {
     "/settings": "Settings",
     "/analytics": "Analytics",
     "/billing": "Billing List",
-    "/history": "History Management",
+    "/inventory-history": "Inventory History",
   };
 
-  // Handle dynamic routes like '/patients/:id' by checking if the pathname starts with '/patients'
-  let currentTitle = "Overview"; // Default
+  let currentTitle = "Overview";
 
   if (location.pathname.startsWith("/patients")) {
     currentTitle = "Patient Management System";
@@ -94,6 +94,20 @@ const Sidebar = () => {
             </Link>
           )}
 
+          {roleData?.accessInventoryHistory && (
+            <Link
+              to="/inventory-history"
+              className={`flex items-center px-4 py-2 mt-2 ${
+                isActive("/inventory-history")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
+            >
+              <ArchiveBoxIcon className="w-6 h-6 mr-3" />
+              History
+            </Link>
+          )}
+
           {roleData?.accessPatients && (
             <Link
               to="/patients"
@@ -144,17 +158,6 @@ const Sidebar = () => {
             Settings
           </Link>
 
-          <Link
-            to="/InventoryHistory"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/InventoryHistory")
-                ? "bg-red-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-red-800`}
-          >
-            <ChartBarIcon className="w-6 h-6 mr-3" />
-            History
-          </Link>
           <a
             onClick={() => {
               doSignOut().then(() => {

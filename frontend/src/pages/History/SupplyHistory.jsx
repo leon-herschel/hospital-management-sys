@@ -24,9 +24,9 @@ function SupplyHistory() {
   }, []);
 
   return (
-    <div className="relative overflow-x-auto shadow-sm">
-      <table className="w-full text-md text-gray-800 text-center border border-stone-200">
-        <thead className="text-sm uppercase bg-stone-200">
+    <div className="relative overflow-x-auto rounded-md shadow-sm">
+      <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+        <thead className="text-md bg-slate-200">
           <tr>
             <th className="px-6 py-3">Supply Name</th>
             <th className="px-6 py-3">Quantity</th>
