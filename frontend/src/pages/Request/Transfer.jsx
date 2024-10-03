@@ -69,8 +69,8 @@ const Transfer = () => {
       });
   }, []);
 
+  // Set the timestamp when the component is mounted
   useEffect(() => {
-    // Set the timestamp when the component is mounted
     const currentTimestamp = new Date().toLocaleString();
     setFormData((prevData) => ({
       ...prevData,
@@ -133,46 +133,80 @@ const Transfer = () => {
   };
 
   // Handle the transfer of data
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (!validateInputs()) {
-      alert('Please fill in all required fields.');
-      return; // Stop execution if validation fails
+        alert('Please fill in all required fields.');
+        return; // Stop execution if validation fails
     }
-
+  
     if (selectedItems.length === 0) {
-      alert('Please select items to transfer.');
-      return; // Stop execution if no items are selected
+        alert('Please select items to transfer.');
+        return; // Stop execution if no items are selected
     }
-
+  
     setSubmitting(true); // Disable the button and show loading
-
+  
     const transferData = {
-      name: formData.name,
-      status: formData.status,
-      reason: formData.reason,
-      items: selectedItems,
-      timestamp: formData.timestamp,
+        name: formData.name,
+        status: formData.status,
+        reason: formData.reason,
+        timestamp: formData.timestamp,
     };
-
+  
     // Define the path for the selected department's localSupplies
     const departmentPath = `departments/${formData.department}/localSupplies`;
+    const historyPath = `departments/${formData.department}/inventoryHistory`;
+    const mainInventoryPath = `medicine`; // Path to the main inventory
+  
+    // Loop through each selected item
+    for (const item of selectedItems) {
+        // Push the item to the localSupplies
+        const newTransferRef = push(ref(database, departmentPath));
+        await set(newTransferRef, {
+            ...item, // Include the item data
+            ...transferData, // Include transfer data (reason, timestamp, etc.)
+        });
+  
+        // Prepare the transfer history data
+        const transferDataHistory = {
+            itemName: item.itemName,
+            quantity: item.quantity,
+            timestamp: formData.timestamp,
+            sender: formData.name, // The one who processed the transfer
+        };
+  
+        // Push the transfer history to the inventoryHistory
+        const newHistoryRef = push(ref(database, historyPath));
+        await set(newHistoryRef, transferDataHistory);
+  
+        // Update the main inventory quantity
+        const mainInventoryRef = ref(database, `${mainInventoryPath}/${item.itemName}`); // Reference to the item in the main inventory
+        const snapshot = await get(mainInventoryRef); // Get current item data
+  
+        if (snapshot.exists()) {
+            const currentData = snapshot.val();
+            const currentQuantity = currentData.quantity || 0; // Get the current quantity, default to 0 if not found
+            
+            const updatedQuantity = Math.max(currentQuantity - item.quantity, 0); // Deduct transferred quantity
+            
+            // Update the main inventory with the new quantity
+            await set(mainInventoryRef, {
+                ...currentData,
+                quantity: updatedQuantity // Set new quantity
+            });
+        } else {
+            console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        }
+    }
+  
+    // After the transfer, reset form and state
+    alert('Transfer successful!');
+    setFormData({ ...formData, reason: '', status: 'Draft' });
+    setSelectedItems([]);
+    setSubmitting(false);
+};
 
-    // Store the transfer data in Firebase
-    const newTransferRef = push(ref(database, departmentPath));
-    set(newTransferRef, transferData)
-      .then(() => {
-        alert('Transfer successful!');
-        // Optionally, reset formData and selectedItems here
-        setFormData({ ...formData, reason: '', status: 'Draft' }); // Reset formData
-        setSelectedItems([]); // Clear selected items
-        setSubmitting(false); // Re-enable the button
-      })
-      .catch((error) => {
-        console.error('Error transferring data:', error);
-        alert('Error transferring data. Please try again.');
-        setSubmitting(false); // Re-enable the button
-      });
-  };
+  
 
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
@@ -350,4 +384,3 @@ const Transfer = () => {
 };
 
 export default Transfer;
-
