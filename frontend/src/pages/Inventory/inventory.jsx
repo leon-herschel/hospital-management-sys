@@ -218,9 +218,9 @@ function Inventory() {
                       key={item.id}
                       className="bg-white border-b hover:bg-slate-100"
                     >
-                      <td className="px-6 py-4">{item.itemName}</td>
-                      <td className="px-6 py-4">{item.quantity}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">{item.itemName}</td>
+                      <td className="px-6 py-3">{item.quantity}</td>
+                      <td className="px-6 py-3">
                         {(item.costPrice !== undefined
                           ? item.costPrice
                           : 0
@@ -232,8 +232,8 @@ function Inventory() {
                           : 0
                         ).toFixed(2)}{" "}
                       </td>
-                      <td className="px-6 py-4">{item.status}</td>
-                      <td className="px-6 py-4 flex justify-center items-center">
+                      <td className="px-6 py-3">{item.status}</td>
+                      <td className="px-6 py-3 flex justify-center items-center">
                         <QRCode size={50} value={item.id} />
                       </td>
                       <td className="px-6 py-3">
@@ -254,8 +254,8 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="px-6 py-4">
-                      No items in inventory
+                    <td colSpan="8" className="px-6 py-3">
+                      No items in inventory.
                     </td>
                   </tr>
                 )}
@@ -267,7 +267,7 @@ function Inventory() {
       )}
 
       {selectedTab === "supplies" && (
-        <>
+        <div>
           <div className="flex justify-between items-center">
             <div className="my-4">
               <input
@@ -285,70 +285,72 @@ function Inventory() {
               Add Supply Item
             </button>
           </div>
-          <table className="w-full text-md text-gray-900 text-center border border-slate-200">
-            <thead className="text-md bg-slate-200">
-              <tr>
-                <th className="px-6 py-3">Supply Name</th>
-                <th className="px-6 py-3">Quantity</th>
-                <th className="px-6 py-3">Cost Price (₱)</th>
-                <th className="px-6 py-3">Retail Price (₱)</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">QR Code</th>
-                <th className="px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredList.length > 0 ? (
-                filteredList.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="bg-white border-b hover:bg-slate-100"
-                  >
-                    <td className="px-6 py-3">{item.itemName}</td>
-                    <td className="px-6 py-3">{item.quantity}</td>
-                    <td className="px-6 py-3">
-                      {(item.costPrice !== undefined
-                        ? item.costPrice
-                        : 0
-                      ).toFixed(2)}{" "}
-                    </td>
-                    <td className="px-6 py-3">
-                      {(item.retailPrice !== undefined
-                        ? item.retailPrice
-                        : 0
-                      ).toFixed(2)}{" "}
-                    </td>
-                    <td className="px-6 py-3">{item.status}</td>
-                    <td className="px-6 py-4 flex justify-center items-center">
-                      <QRCode size={50} value={item.id} />
-                    </td>
-                    <td className="px-6 py-3">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => confirmDelete(item)} // Ask for delete confirmation
-                        className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
-                      >
-                        Delete
-                      </button>
+          <div className="relative overflow-x-auto rounded-md shadow-sm">
+            <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+              <thead className="text-md bg-slate-200">
+                <tr>
+                  <th className="px-6 py-3">Supply Name</th>
+                  <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Cost Price (₱)</th>
+                  <th className="px-6 py-3">Retail Price (₱)</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">QR Code</th>
+                  <th className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredList.length > 0 ? (
+                  filteredList.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-slate-100"
+                    >
+                      <td className="px-6 py-3">{item.itemName}</td>
+                      <td className="px-6 py-3">{item.quantity}</td>
+                      <td className="px-6 py-3">
+                        {(item.costPrice !== undefined
+                          ? item.costPrice
+                          : 0
+                        ).toFixed(2)}{" "}
+                      </td>
+                      <td className="px-6 py-3">
+                        {(item.retailPrice !== undefined
+                          ? item.retailPrice
+                          : 0
+                        ).toFixed(2)}{" "}
+                      </td>
+                      <td className="px-6 py-3">{item.status}</td>
+                      <td className="px-6 py-4 flex justify-center items-center">
+                        <QRCode size={50} value={item.id} />
+                      </td>
+                      <td className="px-6 py-3">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(item)} // Ask for delete confirmation
+                          className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-3">
+                      No supplies in inventory.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="px-6 py-3">
-                    No supplies in inventory
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
           <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
-        </>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}
