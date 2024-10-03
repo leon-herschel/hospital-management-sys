@@ -119,19 +119,22 @@ function Notification() {
     };
   }, []);
   return (
-    <div className="notification-container">
+    <div className="notification-container relative">
       <button
-        className="notification-bell"
+        className="notification-bell relative"
         onClick={toggleModal}
         aria-label="View notifications"
       >
         {notifications.length > 0 ? (
-          <BellAlertIcon className="h-6 w-6 text-red-600 hover:text-red-700" /> 
+          <BellAlertIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
         ) : (
           <BellIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
         )}
+        
         {notifications.length > 0 && (
-          <span className="notification-count">{notifications.length}</span>
+          <span className="notification-count absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {notifications.length}
+          </span>
         )}
       </button>
 
