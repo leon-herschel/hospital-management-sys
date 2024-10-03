@@ -110,7 +110,7 @@ function Inventory() {
           ...data[key],
           id: key,
         }));
-        inventoryData.sort((a, b) => a.name.localeCompare(b.name));
+        inventoryData.sort((a, b) => a.itemName.localeCompare(b.itemName));
         setInventoryList(inventoryData);
       } else {
         setInventoryList([]);
@@ -124,7 +124,7 @@ function Inventory() {
           ...data[key],
           id: key,
         }));
-        suppliesData.sort((a, b) => a.name.localeCompare(b.name));
+        suppliesData.sort((a, b) => a.itemName.localeCompare(b.itemName));
         setSuppliesList(suppliesData);
       } else {
         setSuppliesList([]);
