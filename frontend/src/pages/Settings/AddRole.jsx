@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
-import { db } from '../../firebase/firebase';
-import { ref, set } from 'firebase/database';
+import React, { useState } from "react";
+import { db } from "../../firebase/firebase";
+import { ref, set } from "firebase/database";
 
 const AddRoleModal = ({ isOpen, onClose }) => {
-  const [rolename, setRolename] = useState('');
-  const [description, setDescription] = useState('');
+  const [rolename, setRolename] = useState("");
+  const [description, setDescription] = useState("");
 
   const handleAddRole = async (e) => {
     e.preventDefault();
     try {
       // Create a reference for the new role using rolename as the key
-      const roleRef = ref(db, 'roles/' + rolename);
-      
+      const roleRef = ref(db, "roles/" + rolename);
+
       // Add the new role to the Realtime Database
       await set(roleRef, {
         rolename,
         description,
       });
 
-      alert('Role added successfully');
+      alert("Role added successfully");
 
       // Clear input fields
-      setRolename('');
-      setDescription('');
-      
+      setRolename("");
+      setDescription("");
+
       // Close the modal after adding the role
       onClose();
     } catch (error) {
-      alert('Error adding role: ' + error.message);
+      alert("Error adding role: " + error.message);
     }
   };
 
@@ -59,10 +59,17 @@ const AddRoleModal = ({ isOpen, onClose }) => {
             />
           </div>
           <div className="flex justify-end space-x-4">
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
               Add Role
             </button>
-            <button type="button" className="bg-gray-500 text-white px-4 py-2 rounded" onClick={onClose}>
+            <button
+              type="button"
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+              onClick={onClose}
+            >
               Cancel
             </button>
           </div>
@@ -85,7 +92,10 @@ const Role = () => {
 
   return (
     <div>
-      <button onClick={openModal} className="bg-blue-500 text-white px-4 py-2 rounded">
+      <button
+        onClick={openModal}
+        className="bg-blue-500 text-white px-4 py-2 rounded"
+      >
         Add Role
       </button>
 

@@ -1,29 +1,29 @@
-import { useState, useEffect } from 'react';
-import { ref, get, set } from 'firebase/database';
+import { useState, useEffect } from "react";
+import { ref, get, set } from "firebase/database";
 import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import { database } from '../../../firebase/firebase';
+import { database } from "../../../firebase/firebase";
 
 const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
-  const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [roles, setRoles] = useState([]);
 
   useEffect(() => {
-    const rolesRef = ref(database, 'roles');
+    const rolesRef = ref(database, "roles");
     get(rolesRef).then((snapshot) => {
       if (snapshot.exists()) {
         setRoles(Object.keys(snapshot.val()));
       }
     });
 
-    const departmentsRef = ref(database, 'departments');
+    const departmentsRef = ref(database, "departments");
     get(departmentsRef).then((snapshot) => {
       if (snapshot.exists()) {
         setDepartments(Object.keys(snapshot.val()));
@@ -51,29 +51,28 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
     setIsLoading(true);
 
     try {
-        const userRef = ref(database, `users/${userId}`);
-        await set(userRef, {
-            department: selectedDepartment,
-            firstName,
-            lastName,
-            email,
-            role: selectedRole
-        });
+      const userRef = ref(database, `users/${userId}`);
+      await set(userRef, {
+        department: selectedDepartment,
+        firstName,
+        lastName,
+        email,
+        role: selectedRole,
+      });
 
-        setSuccess(true); 
-        setError('');
+      setSuccess(true);
+      setError("");
     } catch (error) {
-        setError(error.message);
+      setError(error.message);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
-
+  };
 
   const closeSuccessModal = () => {
     setSuccess(false);
-    setShowModal(false); 
-    };
+    setShowModal(false);
+  };
 
   if (!showModal) return null;
 
@@ -131,18 +130,26 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
               </div>
 
               <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-4">Role & Department</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  Role & Department
+                </h3>
                 <div className="mb-4">
-                  <label className="block text-gray-700">Select Department</label>
+                  <label className="block text-gray-700">
+                    Select Department
+                  </label>
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
                     className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
                     required
                   >
-                    <option value="" disabled>Select a department</option>
+                    <option value="" disabled>
+                      Select a department
+                    </option>
                     {departments.map((dept) => (
-                      <option key={dept} value={dept}>{dept}</option>
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -155,23 +162,29 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
                     className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
                     required
                   >
-                    <option value="" disabled>Select a role</option>
+                    <option value="" disabled>
+                      Select a role
+                    </option>
                     {roles.map((role) => (
-                      <option key={role} value={role}>{role}</option>
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
+              {error && (
+                <div className="mb-4 text-red-500 text-sm">{error}</div>
+              )}
 
               <div className="flex justify-center">
                 <button
                   type="submit"
-                  className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Updating Account...' : 'Update Account'}
+                  {isLoading ? "Updating Account..." : "Update Account"}
                 </button>
               </div>
             </form>
@@ -183,8 +196,12 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
       {success && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
-            <h2 className="text-xl font-bold mb-4">Account Updated Successfully!</h2>
-            <p className="text-gray-700 mb-6">The user account has been updated.</p>
+            <h2 className="text-xl font-bold mb-4">
+              Account Updated Successfully!
+            </h2>
+            <p className="text-gray-700 mb-6">
+              The user account has been updated.
+            </p>
             <button
               onClick={closeSuccessModal}
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"

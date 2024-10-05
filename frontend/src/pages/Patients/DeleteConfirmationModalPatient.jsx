@@ -1,6 +1,11 @@
-import React from 'react';
+import React from "react";
 
-function DeleteConfirmationModal({ isOpen, toggleModal, onConfirm, message = "Are you sure you want to delete this item?" }) {
+function DeleteConfirmationModal({
+  isOpen,
+  toggleModal,
+  onConfirm,
+  message = "Are you sure you want to delete this item?",
+}) {
   if (!isOpen) return null; // If modal is not open, don't render anything
 
   return (

@@ -69,10 +69,10 @@ function Inventory() {
       costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
     };
-    
+
     await update(
       ref(database, `${selectedTab}/${currentItem.id}`),
-      updatedInventory
+      updatedInventory,
     );
     toggleEditModal();
   };
@@ -97,7 +97,7 @@ function Inventory() {
 
     await update(
       ref(database, `${selectedTab}/${currentItem.id}`),
-      updatedSupply
+      updatedSupply,
     );
     toggleEditModal();
   };
@@ -147,9 +147,8 @@ function Inventory() {
     toggleDeleteModal(); // Close the delete confirmation modal after deleting
   };
 
-  const filteredList = (
-    selectedTab === "medicine" ? inventoryList : suppliesList
-  )
+  const filteredList =
+    selectedTab === "medicine" ? inventoryList : suppliesList;
 
   return (
     <div className="w-full">
@@ -451,4 +450,4 @@ function Inventory() {
   );
 }
 
-export default Inventory; 
+export default Inventory;

@@ -1,27 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { database } from '../../firebase/firebase';
-import { ref, set, update, remove, onValue } from 'firebase/database';
+import React, { useState, useEffect } from "react";
+import { database } from "../../firebase/firebase";
+import { ref, set, update, remove, onValue } from "firebase/database";
 import editImage from "../../assets/editImage.jpg";
-import deleteImage from '../../assets/deleteImage.jpg';
-import addImage from '../../assets/add.jpg';
-import roleImage from '../../assets/role.jpg';
-import { useNavigate } from 'react-router-dom';
+import deleteImage from "../../assets/deleteImage.jpg";
+import addImage from "../../assets/add.jpg";
+import roleImage from "../../assets/role.jpg";
+import { useNavigate } from "react-router-dom";
 
 const Roles = () => {
   const [roles, setRoles] = useState([]);
   const navigate = useNavigate();
   const [editRole, setEditRole] = useState(null);
-  const [editedData, setEditedData] = useState({ rolename: '', description: '' });
+  const [editedData, setEditedData] = useState({
+    rolename: "",
+    description: "",
+  });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [newRoleData, setNewRoleData] = useState({ rolename: '', description: '' });
-  const [searchTerm, setSearchTerm] = useState('');
-
+  const [newRoleData, setNewRoleData] = useState({
+    rolename: "",
+    description: "",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch roles from Firebase Realtime Database
   useEffect(() => {
-    const rolesRef = ref(database, 'roles');
-    
+    const rolesRef = ref(database, "roles");
+
     // Listen for changes in the roles data
     onValue(rolesRef, (snapshot) => {
       const data = snapshot.val();
@@ -37,8 +42,8 @@ const Roles = () => {
     });
   }, []);
 
-  const filteredroles = roles.filter(roles =>
-    roles.rolename.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredroles = roles.filter((roles) =>
+    roles.rolename.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleDeleteRole = async (role) => {
@@ -47,7 +52,7 @@ const Roles = () => {
       await remove(roleRef);
       setRoles(roles.filter((r) => r.id !== role.id));
     } catch (error) {
-      alert('Error deleting role: ' + error.message);
+      alert("Error deleting role: " + error.message);
     }
   };
 
@@ -61,11 +66,13 @@ const Roles = () => {
     try {
       const roleRef = ref(database, `roles/${roleId}`);
       await update(roleRef, editedData);
-      setRoles(roles.map((r) => (r.id === roleId ? { ...r, ...editedData } : r)));
+      setRoles(
+        roles.map((r) => (r.id === roleId ? { ...r, ...editedData } : r)),
+      );
       setIsEditModalOpen(false);
       setEditRole(null);
     } catch (error) {
-      alert('Error updating role: ' + error.message);
+      alert("Error updating role: " + error.message);
     }
   };
 
@@ -76,9 +83,9 @@ const Roles = () => {
       await set(newRoleRef, newRoleData);
       setRoles([...roles, { id: newRoleData.rolename, ...newRoleData }]);
       setIsAddModalOpen(false);
-      setNewRoleData({ rolename: '', description: '' });
+      setNewRoleData({ rolename: "", description: "" });
     } catch (error) {
-      alert('Error adding role: ' + error.message);
+      alert("Error adding role: " + error.message);
     }
   };
 
@@ -103,9 +110,13 @@ const Roles = () => {
           </button>
           <button
             className="px-4 py-2 rounded"
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate("/settings")}
           >
-            <img src={roleImage} alt="Settings" className="inline-table w-8 h-8" />
+            <img
+              src={roleImage}
+              alt="Settings"
+              className="inline-table w-8 h-8"
+            />
           </button>
         </div>
       </div>
@@ -122,20 +133,32 @@ const Roles = () => {
         <tbody>
           {filteredroles.map((role) => (
             <tr key={role.id}>
-              <td className="py-2 text-center border-b border-r">{role.rolename}</td>
-              <td className="py-2 text-center border-b border-r">{role.description}</td>
+              <td className="py-2 text-center border-b border-r">
+                {role.rolename}
+              </td>
+              <td className="py-2 text-center border-b border-r">
+                {role.description}
+              </td>
               <td className="border-b py-2 px-20 text-center">
                 <button
                   className="text-blue-500 p-2 border-r-2 border-gray-300"
                   onClick={() => handleEditClick(role)}
                 >
-                  <img src={editImage} alt="Edit" className="inline-block w-6 h-6" />
+                  <img
+                    src={editImage}
+                    alt="Edit"
+                    className="inline-block w-6 h-6"
+                  />
                 </button>
                 <button
                   className="text-red p-2"
                   onClick={() => handleDeleteRole(role)}
                 >
-                  <img src={deleteImage} alt="Delete" className="inline-block w-6 h-6" />
+                  <img
+                    src={deleteImage}
+                    alt="Delete"
+                    className="inline-block w-6 h-6"
+                  />
                 </button>
               </td>
             </tr>
@@ -154,7 +177,9 @@ const Roles = () => {
                 <input
                   type="text"
                   value={newRoleData.rolename}
-                  onChange={(e) => setNewRoleData({ ...newRoleData, rolename: e.target.value })}
+                  onChange={(e) =>
+                    setNewRoleData({ ...newRoleData, rolename: e.target.value })
+                  }
                   className="border rounded w-full py-2 px-3"
                 />
               </div>
@@ -163,7 +188,12 @@ const Roles = () => {
                 <input
                   type="text"
                   value={newRoleData.description}
-                  onChange={(e) => setNewRoleData({ ...newRoleData, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewRoleData({
+                      ...newRoleData,
+                      description: e.target.value,
+                    })
+                  }
                   className="border rounded w-full py-2 px-3"
                 />
               </div>
@@ -175,7 +205,10 @@ const Roles = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                >
                   Save
                 </button>
               </div>
@@ -195,7 +228,9 @@ const Roles = () => {
                 <input
                   type="text"
                   value={editedData.rolename}
-                  onChange={(e) => setEditedData({ ...editedData, rolename: e.target.value })}
+                  onChange={(e) =>
+                    setEditedData({ ...editedData, rolename: e.target.value })
+                  }
                   className="border rounded w-full py-2 px-3"
                 />
               </div>
@@ -204,7 +239,12 @@ const Roles = () => {
                 <input
                   type="text"
                   value={editedData.description}
-                  onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditedData({
+                      ...editedData,
+                      description: e.target.value,
+                    })
+                  }
                   className="border rounded w-full py-2 px-3"
                 />
               </div>
@@ -216,7 +256,10 @@ const Roles = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                >
                   Save
                 </button>
               </div>

@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
-import { ref, push, set } from 'firebase/database';
-import { database } from '../../firebase/firebase';
+import React, { useState } from "react";
+import { ref, push, set } from "firebase/database";
+import { database } from "../../firebase/firebase";
 
 const AddBillingModal = ({ isOpen, onClose }) => {
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false); // Add submitting state
 
   const handleAddBilling = async (e) => {
     e.preventDefault();
     if (!amount) {
-      alert('Please fill in the amount field');
+      alert("Please fill in the amount field");
       return;
     }
 
     setSubmitting(true); // Disable the button and show loading
 
     try {
-      const billingRef = ref(database, 'billing');
+      const billingRef = ref(database, "billing");
       const newBillingRef = push(billingRef);
 
       await set(newBillingRef, {
         amount,
       });
 
-      alert('Amount added successfully');
-      setAmount(''); // Clear input field
+      alert("Amount added successfully");
+      setAmount(""); // Clear input field
       onClose(); // Close the modal after adding the amount
     } catch (error) {
-      alert('Error adding amount: ' + error.message);
+      alert("Error adding amount: " + error.message);
     } finally {
       setSubmitting(false); // Re-enable the button after the operation completes
     }
@@ -41,7 +41,9 @@ const AddBillingModal = ({ isOpen, onClose }) => {
         <h2 className="text-2xl font-bold mb-4">Add Billing</h2>
         <form onSubmit={handleAddBilling}>
           <div className="mb-4">
-            <label htmlFor="amount" className="block text-gray-700 mb-2">Amount</label>
+            <label htmlFor="amount" className="block text-gray-700 mb-2">
+              Amount
+            </label>
             <input
               type="text"
               id="amount"
@@ -57,7 +59,8 @@ const AddBillingModal = ({ isOpen, onClose }) => {
               className="bg-blue-500 text-white px-4 py-2 rounded"
               disabled={submitting} // Disable the button when submitting
             >
-              {submitting ? 'Submitting...' : 'Add Billing'} {/* Show loading text */}
+              {submitting ? "Submitting..." : "Add Billing"}{" "}
+              {/* Show loading text */}
             </button>
             <button
               type="button"

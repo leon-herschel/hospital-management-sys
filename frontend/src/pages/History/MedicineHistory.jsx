@@ -21,7 +21,7 @@ function MedicineHistory() {
         } else {
           setMedicineHistory([]);
         }
-      }
+      },
     );
     return () => unsubscribeMedicineHistory();
   }, []);

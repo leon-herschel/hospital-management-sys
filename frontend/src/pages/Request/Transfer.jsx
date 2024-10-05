@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, update, onValue } from 'firebase/database';
-import { database } from '../../firebase/firebase';
-import { getAuth } from 'firebase/auth';
+import React, { useState, useEffect, useRef } from "react";
+import { ref, get, set, push, update, onValue } from "firebase/database";
+import { database } from "../../firebase/firebase";
+import { getAuth } from "firebase/auth";
 
 const Transfer = () => {
-  const [activeTab, setActiveTab] = useState('General');
+  const [activeTab, setActiveTab] = useState("General");
   const [formData, setFormData] = useState({
-    name: '',
-    department: 'Pharmacy',
-    status: 'Draft',
-    reason: '',
+    name: "",
+    department: "Pharmacy",
+    status: "Draft",
+    reason: "",
     timestamp: new Date().toLocaleString(),
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  const searchRef = useRef('');
+  const searchRef = useRef("");
   const departmentRef = useRef();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
@@ -29,25 +29,28 @@ const Transfer = () => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      setFormData(prevData => ({ ...prevData, name: user.displayName || user.email }));
+      setFormData((prevData) => ({
+        ...prevData,
+        name: user.displayName || user.email,
+      }));
     }
   }, []);
 
   useEffect(() => {
-    departmentRef.current = ref(database, 'departments');
+    departmentRef.current = ref(database, "departments");
     get(departmentRef.current)
-      .then(snapshot => {
+      .then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           const departmentNames = Object.keys(data);
           setDepartments(departmentNames);
         }
       })
-      .catch(error => console.error('Error fetching departments:', error));
+      .catch((error) => console.error("Error fetching departments:", error));
   }, []);
 
   useEffect(() => {
-    const suppliesRef = ref(database, 'supplies');
+    const suppliesRef = ref(database, "supplies");
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
       if (snapshot.exists()) {
         const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
@@ -69,26 +72,28 @@ const Transfer = () => {
 
   const handleSearchChange = (e) => {
     searchRef.current = e.target.value;
-    const filtered = items.filter(item =>
-      item.itemName.toLowerCase().includes(searchRef.current.toLowerCase())
+    const filtered = items.filter((item) =>
+      item.itemName.toLowerCase().includes(searchRef.current.toLowerCase()),
     );
     setFilteredItems(filtered);
   };
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
+    if (!selectedItems.find((item) => item.itemName === itemToAdd.itemName)) {
       setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
-      searchRef.current = '';
+      searchRef.current = "";
       setFilteredItems([]);
     }
   };
 
   const removeItem = (itemToRemove) => {
-    setSelectedItems(selectedItems.filter(item => item.itemName !== itemToRemove.itemName));
+    setSelectedItems(
+      selectedItems.filter((item) => item.itemName !== itemToRemove.itemName),
+    );
   };
 
   const handleQuantityChange = (item, value) => {
-    const mainInventoryItem = items.find(i => i.itemKey === item.itemKey);
+    const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
     const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
 
     if (value > maxAvailableQuantity) {
@@ -96,8 +101,10 @@ const Transfer = () => {
       return;
     }
 
-    const updatedItems = selectedItems.map(selectedItem =>
-      selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: value } : selectedItem
+    const updatedItems = selectedItems.map((selectedItem) =>
+      selectedItem.itemName === item.itemName
+        ? { ...selectedItem, quantity: value }
+        : selectedItem,
     );
     setSelectedItems(updatedItems);
   };
@@ -114,11 +121,11 @@ const Transfer = () => {
 
   const handleTransfer = async () => {
     if (!validateInputs()) {
-      alert('Please fill in all required fields.');
+      alert("Please fill in all required fields.");
       return;
     }
     if (selectedItems.length === 0) {
-      alert('Please select items to transfer.');
+      alert("Please select items to transfer.");
       return;
     }
 
@@ -138,7 +145,9 @@ const Transfer = () => {
       // Step 1: Fetch current quantity in `supplies`
       const mainSnapshot = await get(mainInventoryRef);
       if (!mainSnapshot.exists()) {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        console.error(
+          `Item ${item.itemName} does not exist in the main inventory.`,
+        );
         continue;
       }
 
@@ -146,13 +155,21 @@ const Transfer = () => {
       const mainInventoryQuantity = mainInventoryData.quantity;
 
       // Step 2: Fetch current quantity in `localSupplies` for the department
-      const localSuppliesRef = ref(database, `departments/${formData.department}/localSupplies/${item.itemKey}`);
+      const localSuppliesRef = ref(
+        database,
+        `departments/${formData.department}/localSupplies/${item.itemKey}`,
+      );
       const localSnapshot = await get(localSuppliesRef);
-      const localSuppliesData = localSnapshot.exists() ? localSnapshot.val() : {};
+      const localSuppliesData = localSnapshot.exists()
+        ? localSnapshot.val()
+        : {};
       const localSuppliesQuantity = localSuppliesData.quantity || 0;
 
       // Step 3: Calculate the updated quantities
-      const updatedMainQuantity = Math.max(mainInventoryQuantity - item.quantity, 0); // Deduct from main inventory
+      const updatedMainQuantity = Math.max(
+        mainInventoryQuantity - item.quantity,
+        0,
+      ); // Deduct from main inventory
       const updatedLocalQuantity = localSuppliesQuantity + item.quantity; // Add to local supplies
 
       // Step 4: Update the department's local supplies and main inventory
@@ -175,8 +192,8 @@ const Transfer = () => {
       await update(mainInventoryRef, { quantity: updatedMainQuantity });
     }
 
-    alert('Transfer successful!');
-    setFormData({ ...formData, reason: '', status: 'Draft' });
+    alert("Transfer successful!");
+    setFormData({ ...formData, reason: "", status: "Draft" });
     setSelectedItems([]);
     setSubmitting(false);
   };
@@ -190,7 +207,7 @@ const Transfer = () => {
           onClick={handleTransfer}
           disabled={submitting}
         >
-          {submitting ? 'Transferring...' : 'Transfer'}
+          {submitting ? "Transferring..." : "Transfer"}
         </button>
       </div>
 
@@ -216,21 +233,21 @@ const Transfer = () => {
       {/* Tab Navigation */}
       <div className="flex mb-4 border-b">
         <button
-          onClick={() => handleTabChange('General')}
-          className={`px-4 py-2 ${activeTab === 'General' ? 'bg-maroon text-white' : 'bg-gray-100'}`}
+          onClick={() => handleTabChange("General")}
+          className={`px-4 py-2 ${activeTab === "General" ? "bg-maroon text-white" : "bg-gray-100"}`}
         >
           General
         </button>
         <button
-          onClick={() => handleTabChange('Items')}
-          className={`px-4 py-2 ${activeTab === 'Items' ? 'bg-maroon text-white' : 'bg-gray-100'}`}
+          onClick={() => handleTabChange("Items")}
+          className={`px-4 py-2 ${activeTab === "Items" ? "bg-maroon text-white" : "bg-gray-100"}`}
         >
           Items
         </button>
       </div>
 
       {/* General Tab Content */}
-      {activeTab === 'General' && (
+      {activeTab === "General" && (
         <div className="mb-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -239,7 +256,7 @@ const Transfer = () => {
                 name="department"
                 value={formData.department}
                 onChange={handleInputChange}
-                className={`border p-2 w-full rounded ${errorMessages.departmentError ? 'border-red-500' : ''}`}
+                className={`border p-2 w-full rounded ${errorMessages.departmentError ? "border-red-500" : ""}`}
               >
                 {departments.map((dept, index) => (
                   <option key={index} value={dept}>
@@ -247,7 +264,11 @@ const Transfer = () => {
                   </option>
                 ))}
               </select>
-              {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
+              {errorMessages.departmentError && (
+                <p className="text-red-500 text-sm">
+                  Please select a department.
+                </p>
+              )}
             </div>
 
             <div>
@@ -256,12 +277,14 @@ const Transfer = () => {
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
+                className={`border p-2 w-full rounded ${errorMessages.statusError ? "border-red-500" : ""}`}
               >
                 <option value="Draft">Draft</option>
                 <option value="Final">Final</option>
               </select>
-              {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
+              {errorMessages.statusError && (
+                <p className="text-red-500 text-sm">Please select a status.</p>
+              )}
             </div>
           </div>
 
@@ -271,15 +294,17 @@ const Transfer = () => {
               name="reason"
               value={formData.reason}
               onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
+              className={`border p-2 w-full rounded ${errorMessages.reasonError ? "border-red-500" : ""}`}
             ></textarea>
-            {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
+            {errorMessages.reasonError && (
+              <p className="text-red-500 text-sm">Reason is required.</p>
+            )}
           </div>
         </div>
       )}
 
       {/* Items Tab Content */}
-      {activeTab === 'Items' && (
+      {activeTab === "Items" && (
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
             <h2 className="font-semibold text-lg">Items</h2>
@@ -298,7 +323,9 @@ const Transfer = () => {
             <div className="max-h-40 overflow-y-auto border border-gray-300 rounded mb-4">
               {filteredItems.length > 0 ? (
                 filteredItems.map((item, index) => (
-                  <div key={index} className="flex justify-between p-2 border-b hover:bg-gray-100 cursor-pointer"
+                  <div
+                    key={index}
+                    className="flex justify-between p-2 border-b hover:bg-gray-100 cursor-pointer"
                     onClick={() => addItem(item)}
                   >
                     <span>{item.itemName}</span>
@@ -322,14 +349,18 @@ const Transfer = () => {
             <tbody>
               {selectedItems.map((item, index) => (
                 <tr key={index}>
-                  <td className="border border-gray-300 p-2">{item.itemName}</td>
+                  <td className="border border-gray-300 p-2">
+                    {item.itemName}
+                  </td>
                   <td className="border border-gray-300 p-2">
                     <input
                       type="number"
                       min="1"
                       max={item.quantity}
                       value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                      onChange={(e) =>
+                        handleQuantityChange(item, parseInt(e.target.value))
+                      }
                       className="border rounded w-16 text-center"
                     />
                   </td>

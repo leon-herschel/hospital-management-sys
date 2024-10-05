@@ -1,5 +1,5 @@
 // DeleteConfirmationModal.js
-import React from 'react';
+import React from "react";
 
 const DeleteConfirmationModal = ({ isOpen, onConfirm, onCancel }) => {
   if (!isOpen) return null; // If the modal is not open, don't render anything

@@ -1,18 +1,18 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
-  const [role, setRole] = useState(''); 
-  const [description, setDescription] = useState(''); 
-  const [accessInventory, setAccessInventory] = useState(false); 
+  const [role, setRole] = useState("");
+  const [description, setDescription] = useState("");
+  const [accessInventory, setAccessInventory] = useState(false);
   const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
-  const [accessPatients, setAccessPatients] = useState(false); 
+  const [accessPatients, setAccessPatients] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const newRole = {
-      [role]: { 
+      [role]: {
         accessInventory,
         accessInventoryHistory,
         accessPatients,
@@ -77,10 +77,14 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
               <input
                 type="checkbox"
                 checked={accessInventoryHistory}
-                onChange={() => setAccessInventoryHistory(!accessInventoryHistory)}
+                onChange={() =>
+                  setAccessInventoryHistory(!accessInventoryHistory)
+                }
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Inventory History</span>
+              <span className="ml-2 text-gray-700">
+                Access Inventory History
+              </span>
             </label>
             <label className="flex items-center mb-4">
               <input

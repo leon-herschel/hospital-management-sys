@@ -1,15 +1,15 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function StockTransfer() {
   const navigate = useNavigate(); // Hook to navigate programmatically
 
   const handleViewRequest = () => {
-    navigate('/request'); // Redirect to the Request component
+    navigate("/request"); // Redirect to the Request component
   };
 
   const handleViewTransfer = () => {
-    navigate('/transfer'); // Redirect to the Transfer component
+    navigate("/transfer"); // Redirect to the Transfer component
   };
 
   return (

@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { ref, push, set } from 'firebase/database';
-import { database } from '../../firebase/firebase';
+import React, { useState } from "react";
+import { ref, push, set } from "firebase/database";
+import { database } from "../../firebase/firebase";
 
 const AddUserModal = ({ isOpen, onClose }) => {
-  const [username, setUsername] = useState('');
-  const [role, setRole] = useState('');
-  const [status, setStatus] = useState('');
+  const [username, setUsername] = useState("");
+  const [role, setRole] = useState("");
+  const [status, setStatus] = useState("");
 
   const handleAddUser = async (e) => {
     e.preventDefault();
     if (!username || !role || !status) {
-      alert('Please fill in all the required fields');
+      alert("Please fill in all the required fields");
       return;
     }
 
     try {
-      const usersRef = ref(database, 'users');
+      const usersRef = ref(database, "users");
       const newUserRef = push(usersRef);
 
       await set(newUserRef, {
@@ -24,14 +24,14 @@ const AddUserModal = ({ isOpen, onClose }) => {
         status,
       });
 
-      alert('User added successfully');
+      alert("User added successfully");
       // Clear input fields
-      setUsername('');
-      setRole('');
-      setStatus('');
+      setUsername("");
+      setRole("");
+      setStatus("");
       onClose(); // Close the modal after adding the user
     } catch (error) {
-      alert('Error adding user: ' + error.message);
+      alert("Error adding user: " + error.message);
     }
   };
 
@@ -77,10 +77,17 @@ const AddUserModal = ({ isOpen, onClose }) => {
             </select>
           </div>
           <div className="flex justify-end space-x-4">
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
               Add User
             </button>
-            <button type="button" className="bg-gray-500 text-white px-4 py-2 rounded" onClick={onClose}>
+            <button
+              type="button"
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+              onClick={onClose}
+            >
               Cancel
             </button>
           </div>

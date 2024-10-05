@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { ref, push, set, get, remove } from 'firebase/database';
-import { database } from '../../firebase/firebase';
-import ViewBill from './ViewBill';
-import DeleteConfirmationModal from './DeleteConfirmationModalBilling'; // Import the confirmation modal
+import React, { useState, useEffect } from "react";
+import { ref, push, set, get, remove } from "firebase/database";
+import { database } from "../../firebase/firebase";
+import ViewBill from "./ViewBill";
+import DeleteConfirmationModal from "./DeleteConfirmationModalBilling"; // Import the confirmation modal
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newBillingData, setNewBillingData] = useState({ amount: '', patientId: '', status: '' });
-  const [searchTerm, setSearchTerm] = useState('');
+  const [newBillingData, setNewBillingData] = useState({
+    amount: "",
+    patientId: "",
+    status: "",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
   const [patients, setPatients] = useState({});
   const [viewBilling, setViewBilling] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -19,7 +23,7 @@ const Billing = () => {
   // Fetch billings from Firebase
   useEffect(() => {
     const fetchBillings = async () => {
-      const billingsRef = ref(database, 'billing');
+      const billingsRef = ref(database, "billing");
       const snapshot = await get(billingsRef);
       if (snapshot.exists()) {
         const billingList = [];
@@ -36,7 +40,7 @@ const Billing = () => {
   // Fetch patient names
   useEffect(() => {
     const fetchPatientNames = async () => {
-      const patientRef = ref(database, 'patient');
+      const patientRef = ref(database, "patient");
       const snapshot = await get(patientRef);
       if (snapshot.exists()) {
         const patientNames = {};
@@ -51,8 +55,10 @@ const Billing = () => {
   }, []);
 
   // Filter billings based on search term
-  const filteredBillings = billings.filter(billing =>
-    patients[billing.patientId]?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBillings = billings.filter((billing) =>
+    patients[billing.patientId]
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase()),
   );
 
   const handleDeleteBilling = async () => {
@@ -64,7 +70,7 @@ const Billing = () => {
         setIsDeleteModalOpen(false); // Close the delete modal after deleting
         setBillingToDelete(null); // Clear the billing to delete
       } catch (error) {
-        alert('Error deleting billing: ' + error.message);
+        alert("Error deleting billing: " + error.message);
       }
     }
   };
@@ -78,21 +84,21 @@ const Billing = () => {
     e.preventDefault();
 
     if (!newBillingData.patientId || !newBillingData.status) {
-      alert('Please fill out all fields');
+      alert("Please fill out all fields");
       return;
     }
 
     try {
-      const billingRef = ref(database, 'billing');
+      const billingRef = ref(database, "billing");
       const newBillingRef = push(billingRef);
-      
+
       // Store the billing data with a default amount
       await set(newBillingRef, { ...newBillingData });
       setBillings([...billings, { id: newBillingRef.key, ...newBillingData }]);
       setIsAddModalOpen(false);
-      setNewBillingData({ amount: '', patientId: '', status: '' });
+      setNewBillingData({ amount: "", patientId: "", status: "" });
     } catch (error) {
-      alert('Error adding billing: ' + error.message);
+      alert("Error adding billing: " + error.message);
     }
   };
 
@@ -122,7 +128,8 @@ const Billing = () => {
         />
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg"
+        >
           Add New Billing
         </button>
       </div>
@@ -138,27 +145,50 @@ const Billing = () => {
         </thead>
         <tbody>
           {filteredBillings.length > 0 ? (
-            filteredBillings.map(billing => (
+            filteredBillings.map((billing) => (
               <tr key={billing.id} className="hover:bg-gray-100">
-                <td className="border-b px-4 py-2">{patients[billing.patientId]}</td>
-                <td className="border-b px-4 py-2">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
+                <td className="border-b px-4 py-2">
+                  {patients[billing.patientId]}
+                </td>
+                <td className="border-b px-4 py-2">
+                  ₱{" "}
+                  {new Intl.NumberFormat("en-PH", {
+                    minimumFractionDigits: 2,
+                  }).format(billing.amount)}
+                </td>
                 <td className="border-b px-4 py-2">{billing.status}</td>
                 <td className="border-b px-4 py-2">
-                  <button onClick={() => handleViewBilling(billing)} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md">View</button>
-                  <button onClick={() => openDeleteModal(billing)} className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md">Delete</button>
+                  <button
+                    onClick={() => handleViewBilling(billing)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(billing)}
+                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="border-b px-4 py-2 text-center">No billings found.</td>
+              <td colSpan="4" className="border-b px-4 py-2 text-center">
+                No billings found.
+              </td>
             </tr>
           )}
         </tbody>
       </table>
 
       {isViewModalOpen && viewBilling && (
-        <ViewBill billing={viewBilling} patients={patients} onClose={handleCloseModal} />
+        <ViewBill
+          billing={viewBilling}
+          patients={patients}
+          onClose={handleCloseModal}
+        />
       )}
 
       {isAddModalOpen && (
@@ -167,25 +197,41 @@ const Billing = () => {
             <h2 className="text-2xl font-bold mb-4">Add New Billing</h2>
             <form onSubmit={handleAddBilling}>
               <div className="mt-4">
-                <label htmlFor="patientId" className="block text-gray-700 mb-2">Patient</label>
+                <label htmlFor="patientId" className="block text-gray-700 mb-2">
+                  Patient
+                </label>
                 <select
                   id="patientId"
                   value={newBillingData.patientId}
-                  onChange={(e) => setNewBillingData({ ...newBillingData, patientId: e.target.value })}
+                  onChange={(e) =>
+                    setNewBillingData({
+                      ...newBillingData,
+                      patientId: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
                 >
                   <option value="">Select Patient</option>
-                  {Object.keys(patients).map(patientId => (
-                    <option key={patientId} value={patientId}>{patients[patientId]}</option>
+                  {Object.keys(patients).map((patientId) => (
+                    <option key={patientId} value={patientId}>
+                      {patients[patientId]}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="mt-4">
-                <label htmlFor="status" className="block text-gray-700 mb-2">Status</label>
+                <label htmlFor="status" className="block text-gray-700 mb-2">
+                  Status
+                </label>
                 <select
                   id="status"
                   value={newBillingData.status}
-                  onChange={(e) => setNewBillingData({ ...newBillingData, status: e.target.value })}
+                  onChange={(e) =>
+                    setNewBillingData({
+                      ...newBillingData,
+                      status: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
                 >
                   <option value="">Select Status</option>
@@ -197,8 +243,16 @@ const Billing = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="mr-2 bg-slate-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
-                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg">Add Billing</button>
+                  className="mr-2 bg-slate-300 text-gray-700 px-4 py-2 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+                >
+                  Add Billing
+                </button>
               </div>
             </form>
           </div>

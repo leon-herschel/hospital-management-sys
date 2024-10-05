@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { ref, get, set, remove } from 'firebase/database';
-import { database } from '../../../firebase/firebase';
-import AddRoleModal from './AddRoleModal';
-import EditRoleModal from './EditRoleModal';
+import { useState, useEffect } from "react";
+import { ref, get, set, remove } from "firebase/database";
+import { database } from "../../../firebase/firebase";
+import AddRoleModal from "./AddRoleModal";
+import EditRoleModal from "./EditRoleModal";
 
 const RolesTable = () => {
   const [roles, setRoles] = useState([]);
@@ -12,11 +12,11 @@ const RolesTable = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchRoles = async () => {
-      const rolesRef = ref(database, 'roles');
+      const rolesRef = ref(database, "roles");
       const snapshot = await get(rolesRef);
       if (snapshot.exists()) {
         const rolesList = [];
@@ -24,7 +24,7 @@ const RolesTable = () => {
           rolesList.push({ id: childSnapshot.key, ...childSnapshot.val() });
         });
         setRoles(rolesList);
-        setFilteredRoles(rolesList); 
+        setFilteredRoles(rolesList);
       }
     };
 
@@ -33,10 +33,11 @@ const RolesTable = () => {
 
   useEffect(() => {
     setFilteredRoles(
-      roles.filter(role =>
-        role.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      roles.filter(
+        (role) =>
+          role.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          role.description.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
     );
   }, [searchTerm, roles]);
 
@@ -57,7 +58,7 @@ const RolesTable = () => {
         setShowAddRoleModal(false);
       })
       .catch((error) => {
-        console.error('Error adding role:', error);
+        console.error("Error adding role:", error);
       });
   };
 
@@ -67,14 +68,18 @@ const RolesTable = () => {
     set(roleRef, updatedRole)
       .then(() => {
         setRoles((prevRoles) =>
-          prevRoles.map((role) => (role.id === roleId ? { id: roleId, ...updatedRole } : role))
+          prevRoles.map((role) =>
+            role.id === roleId ? { id: roleId, ...updatedRole } : role,
+          ),
         );
         setFilteredRoles((prevFiltered) =>
-          prevFiltered.map((role) => (role.id === roleId ? { id: roleId, ...updatedRole } : role))
+          prevFiltered.map((role) =>
+            role.id === roleId ? { id: roleId, ...updatedRole } : role,
+          ),
         );
       })
       .catch((error) => {
-        console.error('Error updating role:', error);
+        console.error("Error updating role:", error);
       });
   };
 
@@ -83,12 +88,16 @@ const RolesTable = () => {
       try {
         const roleRef = ref(database, `roles/${roleToDelete.id}`);
         await remove(roleRef);
-        setRoles((prevRoles) => prevRoles.filter(role => role.id !== roleToDelete.id));
-        setFilteredRoles((prevFiltered) => prevFiltered.filter(role => role.id !== roleToDelete.id));
+        setRoles((prevRoles) =>
+          prevRoles.filter((role) => role.id !== roleToDelete.id),
+        );
+        setFilteredRoles((prevFiltered) =>
+          prevFiltered.filter((role) => role.id !== roleToDelete.id),
+        );
         setRoleToDelete(null);
         setShowDeleteConfirm(false);
       } catch (error) {
-        console.error('Error deleting role:', error.message);
+        console.error("Error deleting role:", error.message);
       }
     }
   };
@@ -119,34 +128,66 @@ const RolesTable = () => {
         <table className="w-full text-md text-gray-900 text-center border border-slate-200">
           <thead className="text-md bg-slate-200">
             <tr>
-              <th scope="col" className="px-6 py-3">Role</th>
-              <th scope="col" className="px-6 py-3">Description</th>
-              <th scope="col" className="px-6 py-3">Access Inventory</th>
-              <th scope="col" className="px-6 py-3">Access Inventory History</th>
-              <th scope="col" className="px-6 py-3">Access Patients</th>
-              <th scope="col" className="px-6 py-3">Actions</th>
+              <th scope="col" className="px-6 py-3">
+                Role
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Description
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Access Inventory
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Access Inventory History
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Access Patients
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredRoles.map((role) => (
-              <tr key={role.id} className="bg-white border-b hover:bg-slate-100">
-                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+              <tr
+                key={role.id}
+                className="bg-white border-b hover:bg-slate-100"
+              >
+                <th
+                  scope="row"
+                  className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
+                >
                   {role.id}
                 </th>
                 <td className="px-6 py-4">{role.description}</td>
                 <td className="px-6 py-4">
-                  <span className={role.accessInventory ? 'text-green-600' : 'text-red-600'}>
-                    {role.accessInventory ? 'Yes' : 'No'}
+                  <span
+                    className={
+                      role.accessInventory ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    {role.accessInventory ? "Yes" : "No"}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={role.accessInventoryHistory ? 'text-green-600' : 'text-red-600'}>
-                    {role.accessInventoryHistory ? 'Yes' : 'No'}
+                  <span
+                    className={
+                      role.accessInventoryHistory
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }
+                  >
+                    {role.accessInventoryHistory ? "Yes" : "No"}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={role.accessPatients ? 'text-green-600' : 'text-red-600'}>
-                    {role.accessPatients ? 'Yes' : 'No'}
+                  <span
+                    className={
+                      role.accessPatients ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    {role.accessPatients ? "Yes" : "No"}
                   </span>
                 </td>
                 <td className="px-6 py-4 flex justify-center space-x-4">
@@ -176,7 +217,7 @@ const RolesTable = () => {
           setShowModal={setShowAddRoleModal}
           onAddRole={handleAddRole}
         />
-        
+
         <EditRoleModal
           showModal={showEditRoleModal}
           setShowModal={setShowEditRoleModal}
@@ -188,7 +229,9 @@ const RolesTable = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
               <h2 className="text-xl font-bold mb-4">Delete Role</h2>
-              <p>Are you sure you want to delete the role "{roleToDelete?.id}"?</p>
+              <p>
+                Are you sure you want to delete the role "{roleToDelete?.id}"?
+              </p>
               <div className="flex justify-center space-x-4 mt-4">
                 <button
                   onClick={handleDeleteRole}

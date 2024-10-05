@@ -36,7 +36,6 @@ function InventoryHistory() {
 
       {selectedHistory === "medicine" && <MedicineHistory />}
       {selectedHistory === "supply" && <SupplyHistory />}
-      
     </div>
   );
 }

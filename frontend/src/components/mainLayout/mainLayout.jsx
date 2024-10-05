@@ -1,4 +1,4 @@
-import Sidebar from '../navigation/sidebar';
+import Sidebar from "../navigation/sidebar";
 
 const MainLayout = () => {
   return (

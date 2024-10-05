@@ -1,21 +1,25 @@
-import { useState, useEffect } from 'react';
-import { ref, onValue, remove } from 'firebase/database';
-import { database } from '../../../firebase/firebase';
-import EditUserModal from './EditUserModal';
-import AddUserModal from './AddUserModal';
+import { useState, useEffect } from "react";
+import { ref, onValue, remove } from "firebase/database";
+import { database } from "../../../firebase/firebase";
+import EditUserModal from "./EditUserModal";
+import AddUserModal from "./AddUserModal";
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
-  const [editedData, setEditedData] = useState({ email: '', department: '', role: '' });
+  const [editedData, setEditedData] = useState({
+    email: "",
+    department: "",
+    role: "",
+  });
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
-    const usersRef = ref(database, 'users');
+    const usersRef = ref(database, "users");
     const unsubscribe = onValue(usersRef, (snapshot) => {
       const usersList = [];
       snapshot.forEach((childSnapshot) => {
@@ -27,8 +31,8 @@ const UsersTable = () => {
     return () => unsubscribe();
   }, []);
 
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter((user) =>
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleDeleteUser = async () => {
@@ -36,10 +40,10 @@ const UsersTable = () => {
       try {
         const userRef = ref(database, `users/${userToDelete.id}`);
         await remove(userRef);
-        setUserToDelete(null); 
-        setShowDeleteConfirm(false); 
+        setUserToDelete(null);
+        setShowDeleteConfirm(false);
       } catch (error) {
-        console.error('Error deleting user: ', error.message);
+        console.error("Error deleting user: ", error.message);
       }
     }
   };
@@ -79,16 +83,29 @@ const UsersTable = () => {
         <table className="w-full text-md text-gray-900 text-center border border-slate-200">
           <thead className="text-md bg-slate-200">
             <tr>
-              <th scope="col" className="px-6 py-3">Name</th>
-              <th scope="col" className="px-6 py-3">Email</th>
-              <th scope="col" className="px-6 py-3">Department</th>
-              <th scope="col" className="px-6 py-3">Role</th>
-              <th scope="col" className="px-6 py-3">Actions</th>
+              <th scope="col" className="px-6 py-3">
+                Name
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Email
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Department
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Role
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user) => (
-              <tr key={user.id} className="bg-white border-b hover:bg-slate-100">
+              <tr
+                key={user.id}
+                className="bg-white border-b hover:bg-slate-100"
+              >
                 <td className="px-6 py-4">{`${user.firstName} ${user.lastName}`}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">{user.department}</td>
@@ -114,10 +131,10 @@ const UsersTable = () => {
       </div>
 
       {/* Edit User Modal */}
-      <EditUserModal 
-        showModal={showEditModal} 
-        setShowModal={setShowEditModal} 
-        userId={selectedUserId} 
+      <EditUserModal
+        showModal={showEditModal}
+        setShowModal={setShowEditModal}
+        userId={selectedUserId}
         onClose={() => setShowEditModal(false)}
       />
 
@@ -126,7 +143,9 @@ const UsersTable = () => {
         <AddUserModal
           showModal={showAddUserModal}
           setShowModal={setShowAddUserModal}
-          onUserAdded={() => {/* leave blank sa*/}}
+          onUserAdded={() => {
+            /* leave blank sa*/
+          }}
         />
       )}
 
@@ -135,7 +154,11 @@ const UsersTable = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
             <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
-            <p className="text-gray-700 mb-6">Are you sure you want to delete this user? Note: Delete function is not complete yet and will not delete a user from Firebase Authentication.</p>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this user? Note: Delete function
+              is not complete yet and will not delete a user from Firebase
+              Authentication.
+            </p>
             <div className="flex justify-center space-x-4">
               <button
                 onClick={handleDeleteUser}

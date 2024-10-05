@@ -23,8 +23,8 @@ import LogoutConfirmationModal from "./LogoutConfirmationModal";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false); 
-  const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false); 
+  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
+  const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAuth();
@@ -93,7 +93,11 @@ const Sidebar = () => {
         } lg:translate-x-0 lg:static lg:inset-0`}
       >
         <div className="flex items-center justify-center">
-          <img src={logoSidebar} alt="Southwestern University Medical Center" className="p-3 pb-1 text-white text-center text-lg" />
+          <img
+            src={logoSidebar}
+            alt="Southwestern University Medical Center"
+            className="p-3 pb-1 text-white text-center text-lg"
+          />
         </div>
 
         {/* Navigation */}
@@ -112,25 +116,27 @@ const Sidebar = () => {
 
           {roleData?.accessInventory && (
             <>
-            {/* Inventory Dropdown */}
+              {/* Inventory Dropdown */}
               <div
                 className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
                 onClick={toggleInventoryDropdown}
               >
-              <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
-              <span>Inventory</span>
-              <ChevronDownIcon
-                className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
-                  inventoryDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </div>
+                <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
+                <span>Inventory</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
+                    inventoryDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
 
-            <div
-              className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${
-                inventoryDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
+              <div
+                className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${
+                  inventoryDropdownOpen
+                    ? "max-h-40 opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
                 <Link
                   to="/inventory"
                   className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
@@ -158,7 +164,7 @@ const Sidebar = () => {
                 )}
               </div>
             </>
-            )}
+          )}
 
           {roleData?.accessPatients && (
             <Link
@@ -188,46 +194,47 @@ const Sidebar = () => {
 
           {/* Departments Dropdown */}
           <div
-              className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
-              onClick={toggleDepartmentsDropdown}
-            >
-              <BuildingOffice2Icon className="w-6 h-6 mr-3" />
-              <span>Departments</span>
-              <ChevronDownIcon
-                className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
-                  departmentsDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </div>
-
-            <div
-              className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${
-                departmentsDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+            className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
+            onClick={toggleDepartmentsDropdown}
+          >
+            <BuildingOffice2Icon className="w-6 h-6 mr-3" />
+            <span>Departments</span>
+            <ChevronDownIcon
+              className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
+                departmentsDropdownOpen ? "rotate-180" : ""
               }`}
+            />
+          </div>
+
+          <div
+            className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${
+              departmentsDropdownOpen
+                ? "max-h-40 opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <Link
+              to="/stockTransfer"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                isActive("/stockTransfer")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
             >
-              <Link
-                to="/stockTransfer"
-                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                  isActive("/stockTransfer")
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-white"
-                } hover:bg-slate-800`}
-              >
-                CSR POV
-              </Link>
+              CSR POV
+            </Link>
 
-              <Link
-                to="/requestStock"
-                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                  isActive("/requestStock")
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-white"
-                } hover:bg-slate-800`}
-              >
-                ICU POV
-              </Link>
-            </div>
-
+            <Link
+              to="/requestStock"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                isActive("/requestStock")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
+            >
+              ICU POV
+            </Link>
+          </div>
 
           <Link
             to="/analytics"
@@ -254,13 +261,13 @@ const Sidebar = () => {
           </Link>
 
           <a
-          onClick={handleLogout}
-          className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white hover:bg-slate-800 cursor-pointer"
-        >
-          <PowerIcon className="w-6 h-6 mr-3" />
-          Logout
-        </a>
-      </nav>
+            onClick={handleLogout}
+            className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white hover:bg-slate-800 cursor-pointer"
+          >
+            <PowerIcon className="w-6 h-6 mr-3" />
+            Logout
+          </a>
+        </nav>
       </div>
 
       {/* Right Content */}

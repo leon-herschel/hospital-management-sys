@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const AccessDenied = () => {
   const navigate = useNavigate();
 
   const handleRedirect = () => {
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (
