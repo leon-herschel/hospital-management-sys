@@ -2,8 +2,6 @@ name: Lint Check
 
 on:
   push:
-    paths:
-      - "frontend/**"
   pull_request:
     branches:
       - "main"
