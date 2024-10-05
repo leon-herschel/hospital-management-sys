@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 
-function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate }) {
+function EditPatientModal({
+  isOpen,
+  toggleModal,
+  currentPatient,
+  handleUpdate,
+}) {
   // Set form state with current patient data or fallback values
   const [formData, setFormData] = useState({
     name: "",
@@ -114,7 +119,10 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
       age--;
     }
     return age;
@@ -147,7 +155,9 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               }`}
               disabled={submitting}
             />
-            {errors.name && <p className="text-red-500 mt-1">Name is required</p>}
+            {errors.name && (
+              <p className="text-red-500 mt-1">Name is required</p>
+            )}
           </div>
 
           <div className="mb-4">
@@ -165,7 +175,9 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               }`}
               disabled={submitting}
             />
-            {errors.birth && <p className="text-red-500 mt-1">Date of birth is required</p>}
+            {errors.birth && (
+              <p className="text-red-500 mt-1">Date of birth is required</p>
+            )}
           </div>
 
           <div className="mb-4">
@@ -196,11 +208,15 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               }`}
               disabled={submitting}
             >
-              <option value="" disabled>Select Gender</option>
+              <option value="" disabled>
+                Select Gender
+              </option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
-            {errors.gender && <p className="text-red-500 mt-1">Gender is required</p>}
+            {errors.gender && (
+              <p className="text-red-500 mt-1">Gender is required</p>
+            )}
           </div>
 
           <div className="mb-4">
@@ -218,7 +234,9 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               }`}
               disabled={submitting}
             />
-            {errors.contact && <p className="text-red-500 mt-1">Contact must be 11 digits</p>}
+            {errors.contact && (
+              <p className="text-red-500 mt-1">Contact must be 11 digits</p>
+            )}
           </div>
 
           <div className="mb-4">
@@ -235,11 +253,15 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
               }`}
               disabled={submitting}
             >
-              <option value="" disabled>Select Status</option>
+              <option value="" disabled>
+                Select Status
+              </option>
               <option value="Inpatient">Inpatient</option>
               <option value="Outpatient">Outpatient</option>
             </select>
-            {errors.status && <p className="text-red-500 mt-1">Status is required</p>}
+            {errors.status && (
+              <p className="text-red-500 mt-1">Status is required</p>
+            )}
           </div>
 
           {/* Conditionally display "Type of Room" only if status is "Inpatient" */}
@@ -258,12 +280,16 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
                 }`}
                 disabled={submitting}
               >
-                <option value="" disabled>Select Room</option>
+                <option value="" disabled>
+                  Select Room
+                </option>
                 <option value="Private">Private</option>
                 <option value="Public">Public</option>
               </select>
               {errors.roomType && (
-                <p className="text-red-500 mt-1">Room type is required for inpatients</p>
+                <p className="text-red-500 mt-1">
+                  Room type is required for inpatients
+                </p>
               )}
             </div>
           )}

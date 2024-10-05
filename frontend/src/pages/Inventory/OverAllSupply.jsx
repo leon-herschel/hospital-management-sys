@@ -28,7 +28,7 @@ const OverAllSupply = () => {
       (error) => {
         setError(error); // Set error if fetching fails
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribeOverAll();
@@ -56,7 +56,10 @@ const OverAllSupply = () => {
         <tbody className="block md:table-row-group">
           {overAll.length > 0 ? (
             overAll.map((supply) => (
-              <tr key={supply.id} className="bg-gray-100 border border-gray-300 md:border-none block md:table-row">
+              <tr
+                key={supply.id}
+                className="bg-gray-100 border border-gray-300 md:border-none block md:table-row"
+              >
                 <td className="block md:table-cell p-2">{supply.itemName}</td>
                 <td className="block md:table-cell p-2">{supply.quantity}</td>
                 <td className="block md:table-cell p-2">{supply.status}</td>

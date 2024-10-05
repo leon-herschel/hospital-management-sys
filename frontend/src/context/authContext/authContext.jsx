@@ -1,8 +1,8 @@
 import React, { useContext, useState, useEffect } from "react";
-import PropTypes from "prop-types"; 
-import { auth, database } from "../../firebase/firebase"; 
+import PropTypes from "prop-types";
+import { auth, database } from "../../firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { ref, get } from "firebase/database"; 
+import { ref, get } from "firebase/database";
 
 const AuthContext = React.createContext();
 
@@ -15,8 +15,8 @@ export function AuthProvider({ children }) {
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [isEmailUser, setIsEmailUser] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState(null);  
-  const [department, setDepartment] = useState(null);  
+  const [role, setRole] = useState(null);
+  const [department, setDepartment] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, initializeUser);
@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
       setCurrentUser({ ...user });
 
       const isEmail = user.providerData.some(
-        (provider) => provider.providerId === "password"
+        (provider) => provider.providerId === "password",
       );
       setIsEmailUser(isEmail);
 
@@ -38,16 +38,16 @@ export function AuthProvider({ children }) {
       const snapshot = await get(userRef);
       if (snapshot.exists()) {
         const userData = snapshot.val();
-        setRole(userData.role);  
-        setDepartment(userData.department);  
+        setRole(userData.role);
+        setDepartment(userData.department);
       } else {
         console.log("No user data found in Realtime Database");
       }
     } else {
       setCurrentUser(null);
       setUserLoggedIn(false);
-      setRole(null);  
-      setDepartment(null);  
+      setRole(null);
+      setDepartment(null);
     }
 
     setLoading(false);
@@ -57,9 +57,9 @@ export function AuthProvider({ children }) {
     userLoggedIn,
     isEmailUser,
     currentUser,
-    role,  
-    department,  
-    setCurrentUser
+    role,
+    department,
+    setCurrentUser,
   };
 
   return (
@@ -70,5 +70,5 @@ export function AuthProvider({ children }) {
 }
 
 AuthProvider.propTypes = {
-  children: PropTypes.node.isRequired, 
+  children: PropTypes.node.isRequired,
 };

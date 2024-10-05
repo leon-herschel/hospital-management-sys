@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { ref, get, onValue } from 'firebase/database';
-import { database } from '../../firebase/firebase';
+import React, { useEffect, useState } from "react";
+import { ref, get, onValue } from "firebase/database";
+import { database } from "../../firebase/firebase";
 
 const OverallInventory = () => {
   const [overallInventory, setOverallInventory] = useState({});
 
   useEffect(() => {
     const fetchOverallInventory = async () => {
-      const suppliesRef = ref(database, 'supplies');
-      const departmentsRef = ref(database, 'departments');
+      const suppliesRef = ref(database, "supplies");
+      const departmentsRef = ref(database, "departments");
 
       // Fetch supplies quantities
       const suppliesSnapshot = await get(suppliesRef);
-      const suppliesData = suppliesSnapshot.exists() ? suppliesSnapshot.val() : {};
+      const suppliesData = suppliesSnapshot.exists()
+        ? suppliesSnapshot.val()
+        : {};
 
       // Fetch local supplies quantities from each department
       const departmentsSnapshot = await get(departmentsRef);
-      const departmentsData = departmentsSnapshot.exists() ? departmentsSnapshot.val() : {};
+      const departmentsData = departmentsSnapshot.exists()
+        ? departmentsSnapshot.val()
+        : {};
 
       const totalInventory = {};
 
@@ -29,20 +33,22 @@ const OverallInventory = () => {
       });
 
       // Process each department's local supplies
-      Object.entries(departmentsData).forEach(([departmentKey, departmentValue]) => {
-        const localSupplies = departmentValue.localSupplies || {};
-        
-        Object.entries(localSupplies).forEach(([key, value]) => {
-          if (totalInventory[key]) {
-            totalInventory[key].totalQuantity += value.quantity || 0;
-          } else {
-            totalInventory[key] = {
-              itemName: value.itemName,
-              totalQuantity: value.quantity || 0,
-            };
-          }
-        });
-      });
+      Object.entries(departmentsData).forEach(
+        ([departmentKey, departmentValue]) => {
+          const localSupplies = departmentValue.localSupplies || {};
+
+          Object.entries(localSupplies).forEach(([key, value]) => {
+            if (totalInventory[key]) {
+              totalInventory[key].totalQuantity += value.quantity || 0;
+            } else {
+              totalInventory[key] = {
+                itemName: value.itemName,
+                totalQuantity: value.quantity || 0,
+              };
+            }
+          });
+        },
+      );
 
       setOverallInventory(totalInventory);
     };
@@ -50,9 +56,15 @@ const OverallInventory = () => {
     fetchOverallInventory();
 
     // Optionally listen for changes in the supplies and departments
-    const unsubscribeSupplies = onValue(ref(database, 'supplies'), fetchOverallInventory);
-    const unsubscribeDepartments = onValue(ref(database, 'departments'), fetchOverallInventory);
-    
+    const unsubscribeSupplies = onValue(
+      ref(database, "supplies"),
+      fetchOverallInventory,
+    );
+    const unsubscribeDepartments = onValue(
+      ref(database, "departments"),
+      fetchOverallInventory,
+    );
+
     return () => {
       unsubscribeSupplies();
       unsubscribeDepartments();
@@ -73,7 +85,9 @@ const OverallInventory = () => {
           {Object.entries(overallInventory).map(([key, item]) => (
             <tr key={key}>
               <td className="border border-gray-300 p-2">{item.itemName}</td>
-              <td className="border border-gray-300 p-2">{item.totalQuantity}</td>
+              <td className="border border-gray-300 p-2">
+                {item.totalQuantity}
+              </td>
             </tr>
           ))}
         </tbody>

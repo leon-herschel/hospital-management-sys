@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import { BellIcon, BellAlertIcon } from '@heroicons/react/16/solid';
+import { BellIcon, BellAlertIcon } from "@heroicons/react/16/solid";
 
 const Modal = ({ isOpen, onClose, notifications }) => {
   if (!isOpen) return null;
@@ -58,7 +58,7 @@ function Notification() {
 
         if (item.status === "Very Low" && !updatedItemsTracked[key]) {
           console.log(
-            `Notifying about low stock: ${item.itemName}, Status: ${item.status}`
+            `Notifying about low stock: ${item.itemName}, Status: ${item.status}`,
           );
           newNotifications.push({
             id: key,
@@ -71,13 +71,13 @@ function Notification() {
           item.status !== "Very Low"
         ) {
           console.log(
-            `Status improved for: ${item.itemName}, Status: ${item.status}`
+            `Status improved for: ${item.itemName}, Status: ${item.status}`,
           );
 
           delete updatedItemsTracked[key];
 
           setNotifications((prevNotifications) =>
-            prevNotifications.filter((notif) => notif.id !== key)
+            prevNotifications.filter((notif) => notif.id !== key),
           );
         }
       }
@@ -86,8 +86,8 @@ function Notification() {
       return newNotifications.filter(
         (newNotif) =>
           !notifications.some(
-            (existingNotif) => existingNotif.id === newNotif.id
-          )
+            (existingNotif) => existingNotif.id === newNotif.id,
+          ),
       );
     };
 
@@ -126,11 +126,11 @@ function Notification() {
         aria-label="View notifications"
       >
         {notifications.length > 0 ? (
-          <BellAlertIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
+          <BellAlertIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" />
         ) : (
-          <BellIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" /> 
+          <BellIcon className="h-6 w-6 text-slate-800 hover:text-slate-900" />
         )}
-        
+
         {notifications.length > 0 && (
           <span className="notification-count absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {notifications.length}

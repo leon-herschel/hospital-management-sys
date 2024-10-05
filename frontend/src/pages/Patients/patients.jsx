@@ -61,7 +61,6 @@ function Patient() {
       unsubscribe();
     };
   }, [patientCollection]);
-  
 
   const handleDeleteConfirmation = (patient) => {
     setCurrentPatient(patient);
@@ -91,7 +90,7 @@ function Patient() {
   };
 
   const filteredPatients = patientList.filter((patient) =>
-    patient.name.toLowerCase().includes(searchQuery.toLowerCase())
+    patient.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (!roleData?.accessPatients) {

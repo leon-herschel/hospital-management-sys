@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { getDatabase, ref, onValue } from "firebase/database";
 import { useAuth } from "../../context/authContext/authContext";
 
 export const useAccessControl = () => {
@@ -10,13 +10,13 @@ export const useAccessControl = () => {
     if (role) {
       const db = getDatabase();
       const roleRef = ref(db, `roles/${role}`);
-      
+
       onValue(roleRef, (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setRoleData(data);
         } else {
-          console.error('No role data available');
+          console.error("No role data available");
         }
       });
     }

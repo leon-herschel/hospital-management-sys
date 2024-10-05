@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 const EditRoleModal = ({ showModal, setShowModal, role, onEditRole }) => {
   const [roleData, setRoleData] = useState({
-    description: '',
+    description: "",
     accessInventory: false,
     accessInventoryHistory: false,
     accessPatients: false,
@@ -19,7 +19,7 @@ const EditRoleModal = ({ showModal, setShowModal, role, onEditRole }) => {
     const { name, type, checked, value } = e.target;
     setRoleData({
       ...roleData,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -77,7 +77,9 @@ const EditRoleModal = ({ showModal, setShowModal, role, onEditRole }) => {
                 onChange={handleChange}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Inventory History</span>
+              <span className="ml-2 text-gray-700">
+                Access Inventory History
+              </span>
             </label>
             <label className="flex items-center mb-4">
               <input
