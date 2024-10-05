@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { ref, push, set } from "firebase/database";
-import jsPDF from "jspdf";
-import QRCode from "qrcode";
 import { database } from "../../firebase/firebase";
 import "../../App.css";
+import { generatePDF } from "./GeneratePDF";  
+
 
 function AddPatient({ isOpen, toggleModal }) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("")
   const [birth, setBirth] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
@@ -16,7 +17,8 @@ function AddPatient({ isOpen, toggleModal }) {
   const [dateTime, setDateTime] = useState("");
   const [submitting, setSubmitting] = useState(false); // Add submitting state
 
-  const [nameError, setNameError] = useState(false);
+  const [firstNameError, setFirstNameError] = useState(false);
+  const [lastNameError, setLastNameError] = useState(false);
   const [birthError, setBirthError] = useState(false);
   const [ageError, setAgeError] = useState(false);
   const [genderError, setGenderError] = useState(false);
@@ -58,22 +60,9 @@ function AddPatient({ isOpen, toggleModal }) {
     return age;
   };
 
-  const generatePDF = async (patientInfo) => {
-    const doc = new jsPDF();
-    doc.text(`Name: ${patientInfo.name}`, 90, 20);
-    doc.text(`Birth Date: ${patientInfo.birth}`, 90, 30);
-    doc.text(`Age: ${patientInfo.age}`, 90, 40);
-    doc.text(`Gender: ${patientInfo.gender}`, 90, 50);
-    doc.text(`Room Type: ${patientInfo.roomType}`, 90, 60);
-    const qrCodeDataUrl = await QRCode.toDataURL(patientInfo.qrData, {
-      width: 100,
-    });
-    doc.addImage(qrCodeDataUrl, "PNG", 10, 0, 80, 80);
-    doc.output("dataurlnewwindow");
-  };
-
   const handleSubmit = () => {
-    setNameError(false);
+    setFirstNameError(false);
+    setLastNameError(false);
     setBirthError(false);
     setAgeError(false);
     setGenderError(false);
@@ -84,8 +73,12 @@ function AddPatient({ isOpen, toggleModal }) {
 
     let hasError = false;
 
-    if (!name) {
-      setNameError(true);
+    if (!firstName) {
+      setFirstNameError(true);
+      hasError = true;
+    }
+    if (!lastName) {
+      setLastNameError(true);
       hasError = true;
     }
     if (!birth) {
@@ -128,7 +121,8 @@ function AddPatient({ isOpen, toggleModal }) {
     const uniqueKey = newPatientRef.key;
 
     const patientInfo = {
-      name,
+      firstName,
+      lastName,
       birth,
       age,
       gender,
@@ -156,7 +150,8 @@ function AddPatient({ isOpen, toggleModal }) {
   };
 
   const resetForm = () => {
-    setName("");
+    setFirstName("");
+    setLastName("");
     setBirth("");
     setAge("");
     setGender("");
@@ -181,21 +176,39 @@ function AddPatient({ isOpen, toggleModal }) {
         <h2 className="text-2xl font-bold mb-6">Add New Patient</h2>
 
         <div className="mb-4">
-          <label htmlFor="name" className="block text-gray-700 mb-2">
-            Name
+          <label htmlFor="firstname" className="block text-gray-700 mb-2">
+            First Name
           </label>
           <input
             type="text"
-            id="name"
-            name="name"
+            id="firstname"
+            name="firstname"
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              nameError ? "border-red-500" : "border-gray-300"
+              firstNameError ? "border-red-500" : "border-gray-300"
             }`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
-          {nameError && <p className="text-red-500 mt-1">Name is required</p>}
+          {firstNameError && <p className="text-red-500 mt-1">First Name is required</p>}
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="lastname" className="block text-gray-700 mb-2">
+            Last Name
+          </label>
+          <input
+            type="text"
+            id="lastname"
+            name="lastname"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              lastNameError ? "border-red-500" : "border-gray-300"
+            }`}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            disabled={submitting} // Disable input when submitting
+          />
+          {lastNameError && <p className="text-red-500 mt-1">Last Name is required</p>}
         </div>
 
         <div className="mb-4">
