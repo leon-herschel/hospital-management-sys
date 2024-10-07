@@ -22,7 +22,7 @@ import RequestStock from "./pages/ICU POV/requestStock";
 import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
-
+import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
 function App() {
   const routesArray = [
     {
@@ -56,6 +56,9 @@ function App() {
         { path: "inventoryStock", element: <InventoryStock /> },
         { path: "ViewRequest", element: <ViewRequest /> },
         { path: "requestStock", element: <RequestStock /> },
+        { path: "icuLocalInventory", element: <IcuLocalInventory/> },
+
+
       ],
     },
     {
