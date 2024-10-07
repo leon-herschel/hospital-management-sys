@@ -138,12 +138,12 @@ useEffect(() => {
       status: formData.status,
       reason: formData.reason,
       timestamp: formData.timestamp,
-      recipientDepartment: formData.department, // Ensure recipientDepartment is included
+      recipientDepartment: formData.department,
     };
   
     for (const item of selectedItems) {
       const departmentPath = `departments/${formData.department}/localMeds/${item.itemKey}`;
-      
+  
       // Fetch the existing quantity in the local supplies
       const localSupplySnapshot = await get(ref(database, departmentPath));
       let newQuantity = item.quantity;
@@ -154,11 +154,12 @@ useEffect(() => {
         newQuantity += existingData.quantity;
       }
   
-      // Update the local supplies with the new quantity
+      // Update the local supplies with the new quantity without including recipientDepartment and reason
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        ...transferData, // Pass recipientDepartment in transferData
+        status: formData.status, // You can keep other fields like status if needed
+        timestamp: formData.timestamp, // Timestamp remains here
       });
   
       // Ensure each transfer is added as a new entry in InventoryTransferHistory
@@ -191,7 +192,7 @@ useEffect(() => {
     setSelectedItems([]);
     setSubmitting(false);
   };
-
+  
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
