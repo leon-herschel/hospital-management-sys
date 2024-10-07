@@ -64,6 +64,8 @@ const Sidebar = () => {
     "/inventory-history": "Inventory History",
     "/stockTransfer": "CSR Department",
     "/requestStock": "ICU Department",
+    "/med": "PHARMACY Department",
+
   };
 
   let currentTitle = "Overview";
@@ -229,6 +231,17 @@ const Sidebar = () => {
                 } hover:bg-slate-800`}
               >
                 ICU POV
+              </Link>
+              
+              <Link
+                to="/med"
+                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                  isActive("/med")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                } hover:bg-slate-800`}
+              >
+                PHARMACY POV
               </Link>
             </div>
 

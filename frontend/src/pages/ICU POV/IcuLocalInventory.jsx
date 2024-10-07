@@ -3,26 +3,18 @@ import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import QRCode from "react-qr-code";
 
-const calculateStatus = (quantity, maxQuantity) => {
-  const percentage = (quantity / maxQuantity) * 100;
-  if (percentage > 70) {
-    return "Good";
-  } else if (percentage > 50) {
-    return "Low";
-  } else {
-    return "Very Low";
-  }
-};
-
 function IcuLocalInventory() {
   const [localSuppliesList, setLocalSuppliesList] = useState([]);
+  const [localMedsList, setLocalMedsList] = useState([]);
+  const [selectedTab, setSelectedTab] = useState("localSupplies"); // State for selected tab
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Reference to the ICU localSupplies in the database
+  // References to the ICU localSupplies and localMeds in the database
   const localSuppliesCollection = ref(database, "departments/ICU/localSupplies");
+  const localMedsCollection = ref(database, "departments/ICU/localMeds");
 
   const toggleEditModal = () => setEditModal(!editModal);
   const toggleDeleteModal = () => setDeleteModal(!deleteModal);
@@ -36,27 +28,21 @@ function IcuLocalInventory() {
     event.preventDefault();
     const { itemName, quantity, retailPrice, costPrice } = event.target.elements;
 
-    const updatedQuantity = Number(quantity.value);
-    const maxQuantity = currentItem.maxQuantity || updatedQuantity;
-    const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
-
     const updatedSupply = {
       itemName: itemName.value,
-      quantity: updatedQuantity,
-      maxQuantity,
+      quantity: Number(quantity.value),
       retailPrice: Number(retailPrice.value),
       costPrice: Number(costPrice.value),
-      status: updatedStatus,
     };
 
-    // Update the item in the local supplies
-    await update(ref(database, `departments/ICU/localSupplies/${currentItem.itemKey}`), updatedSupply);
+    // Update the item in the local supplies or meds based on the selected tab
+    await update(ref(database, `departments/ICU/${selectedTab}/${currentItem.itemKey}`), updatedSupply);
     toggleEditModal();
   };
 
   useEffect(() => {
     // Fetch the data from "departments/ICU/localSupplies"
-    const unsubscribe = onValue(localSuppliesCollection, (snapshot) => {
+    const unsubscribeSupplies = onValue(localSuppliesCollection, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const suppliesData = Object.keys(data).map((key) => ({
@@ -70,7 +56,25 @@ function IcuLocalInventory() {
       }
     });
 
-    return () => unsubscribe();
+    // Fetch the data from "departments/ICU/localMeds"
+    const unsubscribeMeds = onValue(localMedsCollection, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const medsData = Object.keys(data).map((key) => ({
+          ...data[key],
+          itemKey: key,
+        }));
+        medsData.sort((a, b) => a.itemName.localeCompare(b.itemName));
+        setLocalMedsList(medsData);
+      } else {
+        setLocalMedsList([]);
+      }
+    });
+
+    return () => {
+      unsubscribeSupplies();
+      unsubscribeMeds();
+    };
   }, []);
 
   const confirmDelete = (item) => {
@@ -79,17 +83,44 @@ function IcuLocalInventory() {
   };
 
   const handleDelete = async () => {
-    await remove(ref(database, `departments/ICU/localSupplies/${currentItem.itemKey}`));
+    await remove(ref(database, `departments/ICU/${selectedTab}/${currentItem.itemKey}`));
     toggleDeleteModal();
   };
 
-  const filteredList = localSuppliesList.filter((item) =>
-    item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredList =
+    selectedTab === "localSupplies"
+      ? localSuppliesList.filter((item) =>
+          item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : localMedsList.filter((item) =>
+          item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center">
+        <div className="flex">
+          <button
+            onClick={() => setSelectedTab("localMeds")}
+            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+              selectedTab === "localMeds"
+                ? "bg-slate-900 text-white font-bold"
+                : "bg-slate-200 text-gray-900"
+            }`}
+          >
+            Medicine Inventory
+          </button>
+          <button
+            onClick={() => setSelectedTab("localSupplies")}
+            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+              selectedTab === "localSupplies"
+                ? "bg-slate-900 text-white font-bold"
+                : "bg-slate-200 text-gray-900"
+            }`}
+          >
+            Supplies Inventory
+          </button>
+        </div>
         <div>
           <input
             type="text"
@@ -108,7 +139,6 @@ function IcuLocalInventory() {
               <th className="px-6 py-3">Quantity</th>
               <th className="px-6 py-3">Cost Price (₱)</th>
               <th className="px-6 py-3">Retail Price (₱)</th>
-              <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">QR Code</th>
               <th className="px-6 py-3">Actions</th>
             </tr>
@@ -121,7 +151,6 @@ function IcuLocalInventory() {
                   <td className="px-6 py-3">{item.quantity}</td>
                   <td className="px-6 py-3">{item.costPrice.toFixed(2)}</td>
                   <td className="px-6 py-3">{item.retailPrice.toFixed(2)}</td>
-                  <td className="px-6 py-3">{item.status}</td>
                   <td className="px-6 py-3">
                     <QRCode size={50} value={item.itemKey} />
                   </td>
@@ -143,7 +172,7 @@ function IcuLocalInventory() {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="px-6 py-3">No supplies available.</td>
+                <td colSpan="7" className="px-6 py-3">No items available.</td>
               </tr>
             )}
           </tbody>
@@ -154,7 +183,7 @@ function IcuLocalInventory() {
       {editModal && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
-            <h2 className="text-lg font-bold mb-4">Edit Supply Item</h2>
+            <h2 className="text-lg font-bold mb-4">Edit Item</h2>
             <form onSubmit={handleUpdate}>
               <div className="mb-4">
                 <label className="block mb-2">Item Name</label>
@@ -196,19 +225,19 @@ function IcuLocalInventory() {
                   required
                 />
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end mt-4">
                 <button
                   type="button"
                   onClick={toggleEditModal}
-                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 mr-2"
+                  className="mr-2 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
                 >
-                  Update Item
+                  Save
                 </button>
               </div>
             </form>
@@ -216,24 +245,25 @@ function IcuLocalInventory() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {deleteModal && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
-            <h2 className="text-lg font-bold mb-4">Delete Confirmation</h2>
-            <p>Are you sure you want to delete this item?</p>
+            <h2 className="text-lg font-bold mb-4">Delete Item</h2>
+            <p>Are you sure you want to delete "{currentItem?.itemName}"?</p>
             <div className="flex justify-end mt-4">
               <button
+                type="button"
                 onClick={toggleDeleteModal}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 mr-2"
+                className="mr-2 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
               >
-                Yes, Delete
+                Delete
               </button>
             </div>
           </div>

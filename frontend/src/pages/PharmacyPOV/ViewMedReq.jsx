@@ -2,43 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { ref, onValue } from 'firebase/database'; // Use onValue for real-time updates
 import { database } from '../../firebase/firebase'; // Import Firebase configuration
 
-const Request = () => {
+const ViewMedReq = () => {
   const [requests, setRequests] = useState([]); // Store fetched requests
   const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
 
-  // Fetch data from Firebase in real-time
+  // Fetch Pharmacy data from Firebase in real-time
   useEffect(() => {
-    const csrRequestRef = ref(database, 'departments/CSR/Request');
+    const pharmacyRequestRef = ref(database, 'departments/Pharmacy/Request');
 
-    const handleRequestUpdates = (snapshot, department) => {
+    const handleRequestUpdates = (snapshot) => {
       if (snapshot.exists()) {
         const requestsData = Object.values(snapshot.val()).map(request => ({
           ...request,
-          department,
+          department: 'Pharmacy',
         }));
         return requestsData;
       }
       return [];
     };
 
-    // Listen for updates in CSR requests
-    const csrListener = onValue(csrRequestRef, (snapshot) => {
-      const csrRequests = handleRequestUpdates(snapshot, 'CSR');
+    // Listen for updates in Pharmacy requests
+    const pharmacyListener = onValue(pharmacyRequestRef, (pharmacySnapshot) => {
+      const pharmacyRequests = handleRequestUpdates(pharmacySnapshot);
 
-      // Sort the requests by timestamp (ascending order)
-      csrRequests.sort((a, b) => {
+      // Sort the pharmacy requests by timestamp (ascending order)
+      pharmacyRequests.sort((a, b) => {
         const timestampA = new Date(a.timestamp).getTime();
         const timestampB = new Date(b.timestamp).getTime();
         return timestampA - timestampB;
       });
 
       // Set the requests state with real-time updates
-      setRequests(csrRequests);
+      setRequests(pharmacyRequests);
     });
 
     // Cleanup listener when component unmounts
     return () => {
-      csrListener();
+      pharmacyListener();
     };
   }, []);
 
@@ -101,4 +101,4 @@ const Request = () => {
   );
 };
 
-export default Request;
+export default ViewMedReq;

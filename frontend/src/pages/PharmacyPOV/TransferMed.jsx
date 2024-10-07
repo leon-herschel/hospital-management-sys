@@ -3,7 +3,7 @@ import { ref, get, set, push, update, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
-const Transfer = () => {
+const TransferMed = () => {
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
@@ -50,21 +50,22 @@ const Transfer = () => {
   }, []);
 
   // Real-time update of supplies using onValue
-  useEffect(() => {
-    const suppliesRef = ref(database, 'supplies');
-    const unsubscribe = onValue(suppliesRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const supplies = Object.entries(snapshot.val())
-          .map(([key, value]) => ({
-            ...value,
-            itemKey: key,
-          }));
-        setItems(supplies);
-      }
-    });
+useEffect(() => {
+  const medicineRef = ref(database, 'medicine');
+  const unsubscribe = onValue(medicineRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const medicines = Object.entries(snapshot.val())
+        .map(([key, value]) => ({
+          ...value,
+          itemKey: key,
+        }));
+      setItems(medicines);
+    }
+  });
 
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, []);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -137,7 +138,7 @@ const handleTransfer = async () => {
   };
 
   for (const item of selectedItems) {
-    const departmentPath = `departments/ICU/localSupplies/${item.itemKey}`;
+    const departmentPath = `departments/ICU/localMeds/${item.itemKey}`;
     
     // Fetch the existing quantity in the local supplies
     const localSupplySnapshot = await get(ref(database, departmentPath));
@@ -157,7 +158,7 @@ const handleTransfer = async () => {
     });
 
     // Update the inventory transfer history
-    const historyPath = `departments/CSR/InventoryHistoryTransfer/${item.itemKey}`;
+    const historyPath = `departments/Pharmacy/InventoryTransferHistory/${item.itemKey}`;
     const newHistoryRef = push(ref(database, historyPath));
     await set(newHistoryRef, {
       itemName: item.itemName,
@@ -168,7 +169,7 @@ const handleTransfer = async () => {
     });
 
     // Update the main inventory (deduct quantity)
-    const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
+    const mainInventoryRef = ref(database, `medicine/${item.itemKey}`);
     const mainInventorySnapshot = await get(mainInventoryRef);
 
     if (mainInventorySnapshot.exists()) {
@@ -181,7 +182,7 @@ const handleTransfer = async () => {
   }
 
   alert('Transfer successful!');
-  setFormData({ ...formData, reason: '', status: '' });
+  setFormData({ ...formData, reason: '', status: 'Draft' });
   setSelectedItems([]);
   setSubmitting(false);
 };
@@ -339,4 +340,4 @@ const handleTransfer = async () => {
   );
 };
 
-export default Transfer;
+export default TransferMed;

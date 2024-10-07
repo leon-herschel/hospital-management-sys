@@ -23,6 +23,10 @@ import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
+import TransferMed from "./pages/PharmacyPOV/transferMed";
+import Med from "./pages/PharmacyPOV/med";
+import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
+
 function App() {
   const routesArray = [
     {
@@ -57,6 +61,12 @@ function App() {
         { path: "ViewRequest", element: <ViewRequest /> },
         { path: "requestStock", element: <RequestStock /> },
         { path: "icuLocalInventory", element: <IcuLocalInventory/> },
+        { path: "transferMed", element: <TransferMed/> },
+        { path: "med", element: <Med/> },
+        { path: "ViewMedReq", element: <ViewMedReq/> },
+
+
+
 
 
       ],
