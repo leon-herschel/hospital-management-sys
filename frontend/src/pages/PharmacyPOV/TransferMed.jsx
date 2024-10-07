@@ -138,12 +138,12 @@ useEffect(() => {
       status: formData.status,
       reason: formData.reason,
       timestamp: formData.timestamp,
-      recipientDepartment: formData.department,
+      recipientDepartment: formData.department, // Ensure recipientDepartment is included
     };
   
     for (const item of selectedItems) {
       const departmentPath = `departments/${formData.department}/localMeds/${item.itemKey}`;
-  
+      
       // Fetch the existing quantity in the local supplies
       const localSupplySnapshot = await get(ref(database, departmentPath));
       let newQuantity = item.quantity;
