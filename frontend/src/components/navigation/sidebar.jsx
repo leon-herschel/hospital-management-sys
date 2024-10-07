@@ -93,7 +93,11 @@ const Sidebar = () => {
         } lg:translate-x-0 lg:static lg:inset-0`}
       >
         <div className="flex items-center justify-center">
-          <img src={logoSidebar} alt="Southwestern University Medical Center" className="p-3 pb-1 text-white text-center text-lg" />
+          <img
+            src={logoSidebar}
+            alt="Southwestern University Medical Center"
+            className="p-3 pb-1 text-white text-center text-lg"
+          />
         </div>
 
         {/* Navigation */}
@@ -253,6 +257,17 @@ const Sidebar = () => {
             Settings
           </Link>
 
+          <Link
+            to="/InventoryHistory"
+            className={`flex items-center px-4 py-2 mt-2 ${
+              isActive("/InventoryHistory")
+                ? "bg-red-800 text-white shadow-sm"
+                : "text-white"
+            } hover:bg-red-800`}
+          >
+            <ChartBarIcon className="w-6 h-6 mr-3" />
+            History
+          </Link>
           <a
           onClick={handleLogout}
           className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white hover:bg-slate-800 cursor-pointer"
