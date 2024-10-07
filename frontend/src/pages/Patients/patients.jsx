@@ -51,7 +51,11 @@ function Patient() {
           return patient;
         });
 
-        patientData.sort((a, b) => a.name.localeCompare(b.name));
+        patientData.sort((a, b) => {
+          const nameA = a.firstName ? String(a.firstName).toLowerCase() : '';
+          const nameB = b.firstName ? String(b.firstName).toLowerCase() : '';
+          return nameA.localeCompare(nameB);
+      });
         setPatientList(patientData);
       } else {
         setPatientList([]);
@@ -90,9 +94,11 @@ function Patient() {
     navigate(`/patients/${id}`); // Use /patients/:id to match the route
   };
 
-  const filteredPatients = patientList.filter((patient) =>
-    patient.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPatients = patientList.filter((patient) => {
+    const patientName = patient.name ? patient.name.toLowerCase() : '';
+    return patientName.includes(searchQuery.toLowerCase());
+});
+
 
   if (!roleData?.accessPatients) {
     return <AccessDenied />;
@@ -120,7 +126,8 @@ function Patient() {
         <table className="w-full text-md text-gray-900 text-center border border-slate-200">
           <thead className="text-md bg-slate-200">
             <tr>
-              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">First Name</th>
+              <th className="px-6 py-3">Last Name</th>
               <th className="px-6 py-3">Date of Birth</th>
               <th className="px-6 py-3">Age</th>
               <th className="px-6 py-3">Gender</th>
@@ -139,13 +146,14 @@ function Patient() {
                   key={patient.id}
                   className="bg-white border-b hover:bg-slate-100"
                 >
-                  <td className="px-6 py-3">{patient.name}</td>
+                  <td className="px-6 py-3">{patient.firstName}</td>
+                  <td className="px-6 py-3">{patient.lastName}</td>
                   <td className="px-6 py-3">{patient.birth}</td>
                   <td className="px-6 py-3">{patient.age}</td>
                   <td className="px-6 py-3">{patient.gender}</td>
                   <td className="px-6 py-3">{patient.status}</td>
                   <td className="px-6 py-3">{patient.contact}</td>
-                  <td className="px-6 py-3">{patient.roomType}</td>
+                  <td className="px-6 py-3">{patient.status === "Inpatient" ? patient.roomType : "-"}</td>
                   <td className="px-6 py-3">
                     <QRCode
                       size={50}
