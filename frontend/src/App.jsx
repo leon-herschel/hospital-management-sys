@@ -14,7 +14,7 @@ import UsersTable from "./pages/Settings/Users/UsersTable";
 import RolesTable from "./pages/Settings/Roles/RolesTable";
 import Settings from "./pages/Settings/settings";
 import AccessDenied from "./pages/ErrorPages/AccessDenied";
-import ViewPatient from "./pages/Patients/ViewPatient";  
+import ViewPatient from "./pages/Patients/ViewPatient";
 import StockTransfer from "./pages/CSR POV/stockTransfer";
 import Transfer from "./pages/CSR POV/Transfer";
 import Request from "./pages/CSR POV/ViewRequest";
@@ -22,7 +22,7 @@ import RequestStock from "./pages/ICU POV/requestStock";
 import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
-
+import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
 function App() {
   const routesArray = [
     {
@@ -39,7 +39,7 @@ function App() {
       children: [
         { path: "dashboard", element: <Dashboard /> },
         { path: "patients", element: <Patients /> },
-        { path: "patients/:id", element: <ViewPatient /> },  
+        { path: "patients/:id", element: <ViewPatient /> },
         { path: "inventory", element: <Inventory /> },
         { path: "analytics", element: <Analytics /> },
         { path: "settings", element: <Settings /> },
@@ -56,7 +56,7 @@ function App() {
         { path: "inventoryStock", element: <InventoryStock /> },
         { path: "ViewRequest", element: <ViewRequest /> },
         { path: "requestStock", element: <RequestStock /> },
-
+        { path: "icuLocalInventory", element: <IcuLocalInventory/> },
 
 
       ],
