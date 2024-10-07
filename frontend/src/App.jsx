@@ -26,6 +26,9 @@ import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
 import TransferMed from "./pages/PharmacyPOV/transferMed";
 import Med from "./pages/PharmacyPOV/med";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
+import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
+import OverallInventory from "./pages/Inventory/OverAllInventory";
+import { element } from "prop-types";
 
 function App() {
   const routesArray = [
@@ -60,15 +63,12 @@ function App() {
         { path: "inventoryStock", element: <InventoryStock /> },
         { path: "ViewRequest", element: <ViewRequest /> },
         { path: "requestStock", element: <RequestStock /> },
-        { path: "icuLocalInventory", element: <IcuLocalInventory/> },
-        { path: "transferMed", element: <TransferMed/> },
-        { path: "med", element: <Med/> },
-        { path: "ViewMedReq", element: <ViewMedReq/> },
-
-
-
-
-
+        { path: "icuLocalInventory", element: <IcuLocalInventory /> },
+        { path: "transferMed", element: <TransferMed /> },
+        { path: "med", element: <Med /> },
+        { path: "ViewMedReq", element: <ViewMedReq /> },
+        { path: "ICUViewPatient", element: <ICUViewPatient /> },
+        { path: "OverallInventory", element: <OverallInventory /> },
       ],
     },
     {

@@ -16,6 +16,10 @@ function RequestStock() {
     navigate('/icuLocalInventory'); // Redirect to the IcuLocalInventory component
   };
 
+  const handleViewIcuPatients = () => {
+    navigate('/ICUViewPatient'); // Redirect to the ICU Patients component
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="grid grid-cols-2 gap-4">
@@ -38,6 +42,13 @@ function RequestStock() {
           onClick={handleViewIcuLocalInventory} // Click handler for ICU Local Inventory
         >
           <h2 className="text-xl font-semibold">ICU Local Inventory</h2>
+        </div>
+
+        <div
+          className="bg-white shadow-lg rounded-lg p-6 text-center cursor-pointer"
+          onClick={handleViewIcuPatients} // Click handler for ICU Patients
+        >
+          <h2 className="text-xl font-semibold">ICU Patients</h2>
         </div>
       </div>
     </div>

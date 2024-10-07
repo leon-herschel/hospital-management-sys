@@ -117,76 +117,81 @@ const Transfer = () => {
   };
 
 
-const handleTransfer = async () => {
-  if (!validateInputs()) {
-    alert('Please fill in all required fields.');
-    return;
-  }
-  if (selectedItems.length === 0) {
-    alert('Please select items to transfer.');
-    return;
-  }
-
-  setSubmitting(true);
-
-  const transferData = {
-    name: formData.name,
-    status: formData.status,
-    reason: formData.reason,
-    timestamp: formData.timestamp,
-  };
-
-  for (const item of selectedItems) {
-    const departmentPath = `departments/ICU/localSupplies/${item.itemKey}`;
-    
-    // Fetch the existing quantity in the local supplies
-    const localSupplySnapshot = await get(ref(database, departmentPath));
-    let newQuantity = item.quantity;
-
-    if (localSupplySnapshot.exists()) {
-      // Add to the existing quantity if the item already exists
-      const existingData = localSupplySnapshot.val();
-      newQuantity += existingData.quantity;
+  const handleTransfer = async () => {
+    if (!validateInputs()) {
+      alert('Please fill in all required fields.');
+      return;
     }
-
-    // Update the local supplies with the new quantity
-    await set(ref(database, departmentPath), {
-      ...item,
-      quantity: newQuantity,
-      ...transferData,
-    });
-
-    // Update the inventory transfer history
-    const historyPath = `departments/CSR/InventoryHistoryTransfer/${item.itemKey}`;
-    const newHistoryRef = push(ref(database, historyPath));
-    await set(newHistoryRef, {
-      itemName: item.itemName,
-      quantity: item.quantity,
+    if (selectedItems.length === 0) {
+      alert('Please select items to transfer.');
+      return;
+    }
+  
+    setSubmitting(true);
+  
+    const transferData = {
+      name: formData.name,
+      status: formData.status,
+      reason: formData.reason,
       timestamp: formData.timestamp,
-      sender: formData.name,
+      recipientDepartment: formData.department, // Make sure we are passing the department here
+    };
+  
+    for (const item of selectedItems) {
+      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;  // Uses the selected department
       
-    });
-
-    // Update the main inventory (deduct quantity)
-    const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
-    const mainInventorySnapshot = await get(mainInventoryRef);
-
-    if (mainInventorySnapshot.exists()) {
-      const currentData = mainInventorySnapshot.val();
-      const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
-      await update(mainInventoryRef, { quantity: updatedQuantity });
-    } else {
-      console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+      // Fetch the existing quantity in the local supplies
+      const localSupplySnapshot = await get(ref(database, departmentPath));
+      let newQuantity = item.quantity;
+  
+      if (localSupplySnapshot.exists()) {
+        // Add to the existing quantity if the item already exists
+        const existingData = localSupplySnapshot.val();
+        newQuantity += existingData.quantity;
+      }
+  
+      // Update the local supplies with the new quantity
+      await set(ref(database, departmentPath), {
+        ...item,
+        quantity: newQuantity,
+        status: formData.status, // You can keep other fields like status if needed
+        timestamp: formData.timestamp, // Timestamp remains here
+      });
+  
+      // Push each transfer directly under InventoryHistoryTransfer
+      const historyPath = `departments/CSR/InventoryHistoryTransfer`;
+      const newHistoryRef = push(ref(database, historyPath));  // `push()` will ensure a unique key is generated
+      await set(newHistoryRef, {
+        itemKey: item.itemKey,
+        itemName: item.itemName,
+        quantity: item.quantity,
+        timestamp: formData.timestamp,
+        sender: formData.name,
+        recipientDepartment: formData.department,  // Ensure recipientDepartment is included
+        reason: formData.reason, // Include reason in the history
+      });
+  
+      // Update the main inventory (deduct quantity)
+      const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
+      const mainInventorySnapshot = await get(mainInventoryRef);
+  
+      if (mainInventorySnapshot.exists()) {
+        const currentData = mainInventorySnapshot.val();
+        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
+        await update(mainInventoryRef, { quantity: updatedQuantity });
+      } else {
+        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+      }
     }
-  }
-
-  alert('Transfer successful!');
-  setFormData({ ...formData, reason: '', status: '' });
-  setSelectedItems([]);
-  setSubmitting(false);
-};
-
-
+  
+    alert('Transfer successful!');
+    setFormData({ ...formData, reason: '', status: '' });
+    setSelectedItems([]);
+    setSubmitting(false);
+  };
+  
+  
+  
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
