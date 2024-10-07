@@ -62,10 +62,10 @@ const Sidebar = () => {
     "/analytics": "Analytics",
     "/billing": "Billing List",
     "/inventory-history": "Inventory History",
+    "/OverallInventory": "Overall Inventory",
     "/stockTransfer": "CSR Department",
     "/requestStock": "ICU Department",
     "/med": "PHARMACY Department",
-
   };
 
   let currentTitle = "Overview";
@@ -162,10 +162,24 @@ const Sidebar = () => {
                     History
                   </Link>
                 )}
+
+                {/* Adding Overall Inventory */}
+                <Link
+                  to="/OverallInventory"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/OverallInventory")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                  Overall Inventory
+                </Link>
               </div>
             </>
             )}
 
+          {/* Other Sidebar Links */}
           {roleData?.accessPatients && (
             <Link
               to="/patients"
