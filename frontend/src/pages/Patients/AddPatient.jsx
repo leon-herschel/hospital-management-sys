@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import { ref, push, set } from "firebase/database";
+import { ref, push, set, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import "../../App.css";
 import { generatePDF } from "./GeneratePDF";  
 
-
 function AddPatient({ isOpen, toggleModal }) {
   const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("")
+  const [lastName, setLastName] = useState("");
   const [birth, setBirth] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
@@ -16,6 +15,7 @@ function AddPatient({ isOpen, toggleModal }) {
   const [roomType, setRoomType] = useState("");
   const [dateTime, setDateTime] = useState("");
   const [submitting, setSubmitting] = useState(false); // Add submitting state
+  const [departments, setDepartments] = useState([]); // New state to store department list
 
   const [firstNameError, setFirstNameError] = useState(false);
   const [lastNameError, setLastNameError] = useState(false);
@@ -59,6 +59,20 @@ function AddPatient({ isOpen, toggleModal }) {
     }
     return age;
   };
+
+  // Fetch departments from Firebase
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      const departmentsRef = ref(database, "departments");
+      const snapshot = await get(departmentsRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const departmentList = Object.keys(data);
+        setDepartments(departmentList); // Set department names (ICU, CSR, Pharmacy, etc.)
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   const handleSubmit = () => {
     setFirstNameError(false);
@@ -321,7 +335,7 @@ function AddPatient({ isOpen, toggleModal }) {
         {status === "Inpatient" && (
           <div className="mb-4">
             <label htmlFor="roomType" className="block text-gray-700 mb-2">
-              Room Type
+              Department
             </label>
             <select
               id="roomType"
@@ -334,14 +348,17 @@ function AddPatient({ isOpen, toggleModal }) {
               disabled={submitting} // Disable input when submitting
             >
               <option value="" disabled>
-                Select Room
+                Select Department
               </option>
-              <option value="Private">Private</option>
-              <option value="Public">Public</option>
+              {departments.map((department) => (
+                <option key={department} value={department}>
+                  {department}
+                </option>
+              ))}
             </select>
             {roomTypeError && (
               <p className="text-red-500 mt-1">
-                Room type is required for inpatients
+                Department is required for inpatients
               </p>
             )}
           </div>
