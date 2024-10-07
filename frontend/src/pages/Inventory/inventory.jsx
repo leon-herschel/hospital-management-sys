@@ -69,7 +69,7 @@ function Inventory() {
       costPrice: Number(costPrice.value), // Updated cost price field
       status: updatedStatus,
     };
-    
+
     await update(
       ref(database, `${selectedTab}/${currentItem.id}`),
       updatedInventory
@@ -106,10 +106,17 @@ function Inventory() {
     const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const inventoryData = Object.keys(data).map((key) => ({
-          ...data[key],
-          id: key,
-        }));
+        const inventoryData = Object.keys(data).map((key) => {
+          const item = data[key];
+          const maxQuantity = item.maxQuantity || item.quantity;
+          const updatedStatus = calculateStatus(item.quantity, maxQuantity); // Calculate status
+
+          return {
+            ...item,
+            id: key,
+            status: updatedStatus, // Assign calculated status
+          };
+        });
         inventoryData.sort((a, b) => a.itemName.localeCompare(b.itemName));
         setInventoryList(inventoryData);
       } else {
@@ -120,10 +127,17 @@ function Inventory() {
     const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const suppliesData = Object.keys(data).map((key) => ({
-          ...data[key],
-          id: key,
-        }));
+        const suppliesData = Object.keys(data).map((key) => {
+          const item = data[key];
+          const maxQuantity = item.maxQuantity || item.quantity;
+          const updatedStatus = calculateStatus(item.quantity, maxQuantity); // Calculate status
+
+          return {
+            ...item,
+            id: key,
+            status: updatedStatus, // Assign calculated status
+          };
+        });
         suppliesData.sort((a, b) => a.itemName.localeCompare(b.itemName));
         setSuppliesList(suppliesData);
       } else {
@@ -147,9 +161,8 @@ function Inventory() {
     toggleDeleteModal(); // Close the delete confirmation modal after deleting
   };
 
-  const filteredList = (
-    selectedTab === "medicine" ? inventoryList : suppliesList
-  )
+  const filteredList =
+    selectedTab === "medicine" ? inventoryList : suppliesList;
 
   return (
     <div className="w-full">
@@ -451,4 +464,4 @@ function Inventory() {
   );
 }
 
-export default Inventory; 
+export default Inventory;
