@@ -154,7 +154,8 @@ const Transfer = () => {
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        ...transferData,  // Push transferData including recipientDepartment
+        status: formData.status, // You can keep other fields like status if needed
+        timestamp: formData.timestamp, // Timestamp remains here
       });
   
       // Push each transfer directly under InventoryHistoryTransfer

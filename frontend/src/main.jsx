@@ -8,7 +8,7 @@ import PharmacyTransferHistory from "./pages/History/PharmacyTransferHistory.jsx
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-      <PharmacyTransferHistory />
+      <App />
     </BrowserRouter>
   </StrictMode>
 );
