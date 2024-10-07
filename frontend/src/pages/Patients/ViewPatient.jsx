@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"; // Import useNavigate
 import { ref, onValue, push, set, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import DeleteConfirmationModal from "./DeleteConfirmationModalPrescription"; // Import the modal
-
+import { generatePDF } from "./GeneratePDF";
 function ViewPatient() {
   const { id } = useParams(); // Use 'id' as specified in the route "/patients/:id"
   const navigate = useNavigate(); // Initialize useNavigate for navigation
@@ -27,31 +27,42 @@ function ViewPatient() {
   const [prescriptionToRemove, setPrescriptionToRemove] = useState(null); // State to store the prescription to remove
 
   // Fetch patient data when the component loads
+  const handleGeneratePDF = () => {
+    setTimeout(() => {
+      if (patient) {
+      generatePDF(patient);
+      }
+  }, 100);
+  };
+
+  // Fetch patient data and prescriptions when the component loads
   useEffect(() => {
     if (id) {
       const patientRef = ref(database, `patient/${id}`);
       const unsubscribe = onValue(patientRef, (snapshot) => {
         const data = snapshot.val();
-        setPatient(data || null);
-
-        // Fetch prescriptions
-        if (data && data.prescriptions) {
+        if (data) {
+          setPatient(data);
           setPrescriptionList(
-            Object.keys(data.prescriptions).map((key) => ({
-              id: key,
-              ...data.prescriptions[key],
-            }))
+            data.prescriptions
+              ? Object.keys(data.prescriptions).map((key) => ({
+                  id: key,
+                  ...data.prescriptions[key],
+                }))
+              : []
           );
+        } else {
+          setPatient(null); // If no patient data, handle it
         }
-
-        setLoading(false); // Set loading to false after data is fetched
+        setLoading(false); // Update loading state after fetching data
       });
 
       return () => {
-        unsubscribe(); // Clean up the listener when the component unmounts
+        unsubscribe(); // Clean up the listener
       };
     }
   }, [id]);
+
 
   const handleAddPrescriptionClick = () => {
     setAddPrescription(true);
@@ -259,8 +270,12 @@ const renderSuppliesUsed = () => {
         <strong>Status:</strong> {patient.status}
       </div>
       <div className="mb-4">
-        <strong>Room Type:</strong> {patient.roomType}
-      </div>
+  {patient.status === "Inpatient" ? (
+    <>
+      <strong>Room Type:</strong> {patient.roomType}
+    </>
+  ) : null}
+</div>
 
       {/* Render supplies used */}
       <div className="mb-4">
@@ -346,6 +361,7 @@ const renderSuppliesUsed = () => {
         )
       )}
 
+      <button className="bg-gray-500 text-white py-2 px-4 rounded" onClick={handleGeneratePDF}> Generate PDF</button>
       {/* Confirmation Modal for Removing Prescriptions */}
       <DeleteConfirmationModal
         isOpen={removeModalOpen}

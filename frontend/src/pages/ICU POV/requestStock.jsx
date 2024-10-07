@@ -12,6 +12,10 @@ function RequestStock() {
     navigate('/inventoryStock'); // Redirect to the Inventory component
   };
 
+  const handleViewIcuLocalInventory = () => {
+    navigate('/icuLocalInventory'); // Redirect to the IcuLocalInventory component
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="grid grid-cols-2 gap-4">
@@ -27,6 +31,13 @@ function RequestStock() {
           onClick={handleViewInventoryStock} // Click handler for Inventory
         >
           <h2 className="text-xl font-semibold">Inventory</h2>
+        </div>
+
+        <div
+          className="bg-white shadow-lg rounded-lg p-6 text-center cursor-pointer"
+          onClick={handleViewIcuLocalInventory} // Click handler for ICU Local Inventory
+        >
+          <h2 className="text-xl font-semibold">ICU Local Inventory</h2>
         </div>
       </div>
     </div>
