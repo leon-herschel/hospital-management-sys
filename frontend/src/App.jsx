@@ -28,6 +28,8 @@ import Med from "./pages/PharmacyPOV/med";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
+import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
+import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory"
 import { element } from "prop-types";
 
 function App() {
