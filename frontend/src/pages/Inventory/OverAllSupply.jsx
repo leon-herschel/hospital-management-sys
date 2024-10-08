@@ -1,74 +1,120 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { ref, get, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import { ref, onValue } from "firebase/database";
 
 const OverAllSupply = () => {
-  const [overAll, setOverAll] = useState([]);
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState(null); // Error state
+  const [overallInventory, setOverallInventory] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const overAllRef = ref(database, "overAllInventory/supplies");
+    const suppliesRef = ref(database, "supplies");
+    const departmentsRef = ref(database, "departments");
 
-    const unsubscribeOverAll = onValue(
-      overAllRef,
-      (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const overAllData = Object.keys(data).map((key) => ({
-            ...data[key],
-            id: key,
-          }));
-          setOverAll(overAllData);
-        } else {
-          setOverAll([]);
-        }
-        setLoading(false); // Set loading to false when data is fetched
-      },
-      (error) => {
-        setError(error); // Set error if fetching fails
-        setLoading(false);
+    const fetchSupplies = async () => {
+      try {
+        const suppliesSnapshot = await get(suppliesRef);
+        return suppliesSnapshot.exists() ? suppliesSnapshot.val() : {};
+      } catch (error) {
+        console.error("Error fetching supplies:", error);
+        return {};
       }
+    };
+
+    const fetchDepartments = async () => {
+      try {
+        const departmentsSnapshot = await get(departmentsRef);
+        return departmentsSnapshot.exists() ? departmentsSnapshot.val() : {};
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+        return {};
+      }
+    };
+
+    const fetchOverallInventory = async () => {
+      const [suppliesData, departmentsData] = await Promise.all([
+        fetchSupplies(),
+        fetchDepartments(),
+      ]);
+
+      const totalInventory = {};
+
+      // Process main supplies
+      Object.entries(suppliesData).forEach(([key, value]) => {
+        totalInventory[key] = {
+          itemName: value.itemName,
+          totalQuantity: value.quantity || 0, // Main node quantity
+        };
+      });
+
+      // Process each department's supplies under the 'localSupplies' node
+      Object.entries(departmentsData).forEach(
+        ([departmentKey, departmentValue]) => {
+          const departmentSupplies = departmentValue.localSupplies || {}; // Ensure you're targeting the correct supplies node within departments
+
+          Object.entries(departmentSupplies).forEach(([key, value]) => {
+            if (totalInventory[key]) {
+              // If the item exists in the main supplies, add the department's quantity
+              totalInventory[key].totalQuantity += value.quantity || 0;
+            } else {
+              // If the item is not in the main supplies, create a new entry
+              totalInventory[key] = {
+                itemName: value.itemName,
+                totalQuantity: value.quantity || 0, // Only department's quantity
+              };
+            }
+          });
+        }
+      );
+
+      setOverallInventory(totalInventory);
+    };
+
+    fetchOverallInventory();
+
+    const unsubscribeSupplies = onValue(suppliesRef, fetchOverallInventory);
+    const unsubscribeDepartments = onValue(
+      departmentsRef,
+      fetchOverallInventory
     );
 
-    return () => unsubscribeOverAll();
+    return () => {
+      unsubscribeSupplies();
+      unsubscribeDepartments();
+    };
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>; // Loading indicator
-  }
-
-  if (error) {
-    return <div>Error fetching data: {error.message}</div>; // Error message
-  }
+  // Filter the inventory based on the search term
+  const filteredInventory = Object.entries(overallInventory).filter(
+    ([key, item]) =>
+      item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div>
-      <h1>Overall Supply Inventory</h1>
-      <table className="min-w-full border-collapse block md:table">
-        <thead className="block md:table-header-group">
-          <tr className="border border-gray-300 md:table-row absolute -top-full md:top-auto -left-full md:left-auto md:relative ">
-            <th className="block md:table-cell p-2">Item Name</th>
-            <th className="block md:table-cell p-2">Quantity</th>
-            <th className="block md:table-cell p-2">Status</th>
+    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
+      <h1 className="text-xl font-bold mb-4">Overall Supplies Inventory</h1>
+      <input
+        type="text"
+        placeholder="Search for items..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="border p-2 mb-4 w-full"
+      />
+      <table className="min-w-full border-collapse border border-gray-300">
+        <thead>
+          <tr>
+            <th className="border border-gray-300 p-2">Item Name</th>
+            <th className="border border-gray-300 p-2">Total Quantity</th>
           </tr>
         </thead>
-        <tbody className="block md:table-row-group">
-          {overAll.length > 0 ? (
-            overAll.map((supply) => (
-              <tr key={supply.id} className="bg-gray-100 border border-gray-300 md:border-none block md:table-row">
-                <td className="block md:table-cell p-2">{supply.itemName}</td>
-                <td className="block md:table-cell p-2">{supply.quantity}</td>
-                <td className="block md:table-cell p-2">{supply.status}</td>
-              </tr>
-            ))
-          ) : (
-            <tr className="block md:table-row">
-              <td colSpan="3" className="block md:table-cell p-2 text-center">
-                No supplies found.
+        <tbody>
+          {filteredInventory.map(([key, item]) => (
+            <tr key={key}>
+              <td className="border border-gray-300 p-2">{item.itemName}</td>
+              <td className="border border-gray-300 p-2">
+                {item.totalQuantity}
               </td>
             </tr>
-          )}
+          ))}
         </tbody>
       </table>
     </div>

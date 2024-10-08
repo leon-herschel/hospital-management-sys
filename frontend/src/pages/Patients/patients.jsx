@@ -95,8 +95,10 @@ function Patient() {
   };
 
   const filteredPatients = patientList.filter((patient) => {
-    const patientName = patient.name ? patient.name.toLowerCase() : '';
-    return patientName.includes(searchQuery.toLowerCase());
+    const firstName = patient.firstName ? patient.firstName.toLowerCase() : '';
+    const lastName = patient.LastName ? patient.LastName.toLowerCase() : '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName.includes(searchQuery.toLowerCase());
 });
 
 
