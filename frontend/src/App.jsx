@@ -28,8 +28,8 @@ import Med from "./pages/PharmacyPOV/med";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
-import PharmacyTransferHistory from "./pages/History/PharmacyTransferHistory";
-import CsrTransferHistory from "./pages/History/CsrTransferHistory";
+import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
+import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory"
 import { element } from "prop-types";
 
 function App() {
@@ -57,7 +57,7 @@ function App() {
         { path: "billing", element: <Billing /> },
         { path: "ViewBill", element: <ViewBill /> },
         { path: "access-denied", element: <AccessDenied /> },
-        { path: "inventory-history", element: <InventoryHistory /> },
+        { path: "InventoryHistory", element: <InventoryHistory /> },
         { path: "stockTransfer", element: <StockTransfer /> },
         { path: "Transfer", element: <Transfer /> },
         { path: "Request", element: <Request /> },
@@ -71,6 +71,8 @@ function App() {
         { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
         { path: "OverallInventory", element: <OverallInventory /> },
+        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
+        { path: "PharmacyTransferHistory", element: <PharmacyTransferHistory /> },
       ],
     },
     {

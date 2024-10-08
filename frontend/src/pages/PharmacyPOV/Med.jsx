@@ -11,6 +11,9 @@ function Med() {
   const handleViewTransfer = () => {
     navigate('/transferMed'); // Redirect to the Transfer component
   };
+  const handleTransferHistory = () => {
+    navigate('/PharmacyTransferHistory');
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -27,6 +30,12 @@ function Med() {
           onClick={handleViewRequest}
         >
           <h2 className="text-xl font-semibold">View Request</h2>
+        </div>
+        <div
+          className="bg-white shadow-lg rounded-lg p-6 text-center cursor-pointer"
+          onClick={handleTransferHistory}
+        >
+          <h2 className="text-xl font-semibold">View Transfer History</h2>
         </div>
       </div>
     </div>

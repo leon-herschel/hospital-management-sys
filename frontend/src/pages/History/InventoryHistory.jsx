@@ -1,6 +1,6 @@
 import { useState } from "react";
-import MedicineHistory from "./MedicineHistory";
-import SupplyHistory from "./SupplyHistory";
+import MedicineHistory from "../PharmacyPOV/MedicineHistory";
+import SupplyHistory from "../CSR POV/SupplyHistory";
 
 function InventoryHistory() {
   const [selectedHistory, setSelectedHistory] = useState("medicine");
