@@ -124,6 +124,7 @@ const RolesTable = () => {
               <th scope="col" className="px-6 py-3">Access Inventory</th>
               <th scope="col" className="px-6 py-3">Access Inventory History</th>
               <th scope="col" className="px-6 py-3">Access Patients</th>
+              <th scope="col" className="px-6 py-3">Access Settings</th>
               <th scope="col" className="px-6 py-3">Actions</th>
             </tr>
           </thead>
@@ -147,6 +148,11 @@ const RolesTable = () => {
                 <td className="px-6 py-4">
                   <span className={role.accessPatients ? 'text-green-600' : 'text-red-600'}>
                     {role.accessPatients ? 'Yes' : 'No'}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={role.accessSettings ? 'text-green-600' : 'text-red-600'}>
+                    {role.accessSettings ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className="px-6 py-4 flex justify-center space-x-4">

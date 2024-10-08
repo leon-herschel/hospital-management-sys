@@ -1,17 +1,24 @@
 import { useState } from 'react';
 import UsersTable from './Users/UsersTable';
 import RolesTable from './Roles/RolesTable';
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAccessControl } from "../../components/roles/accessControl";
 
 const Settings = () => {
   const [tableView, setTableView] = useState('User Management');
+  const roleData = useAccessControl();
 
   const handleClick = (view) => {
     setTableView(view);
   };
 
+  if (!roleData?.accessSettings) {
+    return <AccessDenied />;
+  }
+
   return (
     <div className="w-full">
-      {/* Dropdown */}
+      {/* Tabs */}
       <div className="mb-4 flex justify-start items-center">
       <button
           onClick={() => handleClick("User Management")}

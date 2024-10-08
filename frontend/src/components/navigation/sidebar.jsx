@@ -65,7 +65,7 @@ const Sidebar = () => {
     "/OverallInventory": "Overall Inventory",
     "/stockTransfer": "CSR Department",
     "/requestStock": "ICU Department",
-    "/med": "PHARMACY Department",
+    "/med": "Pharmacy Department",
   };
 
   let currentTitle = "Overview";
@@ -272,6 +272,7 @@ const Sidebar = () => {
             Analytics
           </Link>
 
+          {roleData?.accessSettings && (
           <Link
             to="/settings"
             className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
@@ -283,18 +284,8 @@ const Sidebar = () => {
             <Cog8ToothIcon className="w-6 h-6 mr-3" />
             Settings
           </Link>
-
-          <Link
-            to="/InventoryHistory"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/InventoryHistory")
-                ? "bg-red-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-red-800`}
-          >
-            <ChartBarIcon className="w-6 h-6 mr-3" />
-            History
-          </Link>
+          )}
+          
           <a
           onClick={handleLogout}
           className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white hover:bg-slate-800 cursor-pointer"
