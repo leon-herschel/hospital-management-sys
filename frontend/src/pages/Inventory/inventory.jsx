@@ -162,7 +162,10 @@ function Inventory() {
   };
 
   const filteredList =
-    selectedTab === "medicine" ? inventoryList : suppliesList;
+    selectedTab === "medicine" ? inventoryList.filter((medicine) => medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ):
+     suppliesList.filter((supply) => supply.itemName.toLowerCase().includes(searchTerm.toLowerCase()));
+
+
 
   return (
     <div className="w-full">
