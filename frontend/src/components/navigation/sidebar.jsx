@@ -62,7 +62,7 @@ const Sidebar = () => {
     "/analytics": "Analytics",
     "/billing": "Billing List",
     "/inventory-history": "Inventory History",
-    "/OverallInventory": "Overall Inventory",
+    "/OverAllInventory": "Overall Inventory",
     "/stockTransfer": "CSR Department",
     "/requestStock": "ICU Department",
     "/med": "PHARMACY Department",
@@ -167,7 +167,7 @@ const Sidebar = () => {
                 <Link
                   to="/OverallInventory"
                   className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                    isActive("/OverallInventory")
+                    isActive("/OverAllInventory")
                       ? "bg-slate-800 text-white shadow-sm"
                       : "text-white"
                   } hover:bg-slate-800`}
