@@ -285,7 +285,7 @@ const Sidebar = () => {
           </Link>
 
           <Link
-            to="/InventoryHistory"
+            to="/inventory-history"
             className={`flex items-center px-4 py-2 mt-2 ${
               isActive("/InventoryHistory")
                 ? "bg-red-800 text-white shadow-sm"
@@ -295,6 +295,7 @@ const Sidebar = () => {
             <ChartBarIcon className="w-6 h-6 mr-3" />
             History
           </Link>
+
           <a
           onClick={handleLogout}
           className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white hover:bg-slate-800 cursor-pointer"
