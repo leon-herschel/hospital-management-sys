@@ -7,18 +7,8 @@ const OverAllSupply = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const suppliesRef = ref(database, "supplies");
     const departmentsRef = ref(database, "departments");
 
-    const fetchSupplies = async () => {
-      try {
-        const suppliesSnapshot = await get(suppliesRef);
-        return suppliesSnapshot.exists() ? suppliesSnapshot.val() : {};
-      } catch (error) {
-        console.error("Error fetching supplies:", error);
-        return {};
-      }
-    };
 
     const fetchDepartments = async () => {
       try {
@@ -31,20 +21,13 @@ const OverAllSupply = () => {
     };
 
     const fetchOverallInventory = async () => {
-      const [suppliesData, departmentsData] = await Promise.all([
-        fetchSupplies(),
+      const [departmentsData] = await Promise.all([
         fetchDepartments(),
       ]);
 
       const totalInventory = {};
 
-      // Process main supplies
-      Object.entries(suppliesData).forEach(([key, value]) => {
-        totalInventory[key] = {
-          itemName: value.itemName,
-          totalQuantity: value.quantity || 0, // Main node quantity
-        };
-      });
+    
 
       // Process each department's supplies under the 'localSupplies' node
       Object.entries(departmentsData).forEach(
@@ -70,15 +53,13 @@ const OverAllSupply = () => {
     };
 
     fetchOverallInventory();
-
-    const unsubscribeSupplies = onValue(suppliesRef, fetchOverallInventory);
+    
     const unsubscribeDepartments = onValue(
       departmentsRef,
       fetchOverallInventory
     );
 
     return () => {
-      unsubscribeSupplies();
       unsubscribeDepartments();
     };
   }, []);
@@ -86,7 +67,7 @@ const OverAllSupply = () => {
   // Filter the inventory based on the search term
   const filteredInventory = Object.entries(overallInventory).filter(
     ([key, item]) =>
-      item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+      item.itemName && item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

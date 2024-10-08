@@ -51,7 +51,7 @@ const Transfer = () => {
 
   // Real-time update of supplies using onValue
   useEffect(() => {
-    const suppliesRef = ref(database, 'supplies');
+    const suppliesRef = ref(database, 'departments/CSR/localSupplies');
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
       if (snapshot.exists()) {
         const supplies = Object.entries(snapshot.val())
@@ -172,7 +172,7 @@ const Transfer = () => {
       });
   
       // Update the main inventory (deduct quantity)
-      const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
+      const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
       const mainInventorySnapshot = await get(mainInventoryRef);
   
       if (mainInventorySnapshot.exists()) {

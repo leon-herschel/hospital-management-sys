@@ -72,7 +72,7 @@ function Inventory() {
       status: updatedStatus,
     };
 
-    await update(ref(database, `${selectedTab}/${currentItem.id}`), updatedInventory);
+    await update(ref(database, `departments/${department}/localMeds/${currentItem.id}`), updatedInventory);
     toggleEditModal();
   };
 
@@ -94,7 +94,7 @@ function Inventory() {
       status: updatedStatus,
     };
 
-    await update(ref(database, `${selectedTab}/${currentItem.id}`), updatedSupply);
+    await update(ref(database, `departments/${department}/localSupplies/${currentItem.id}`), updatedSupply);
     toggleEditModal();
   };
 
@@ -124,19 +124,25 @@ function Inventory() {
             const item = data[key];
             const maxQuantity = item.maxQuantity || item.quantity;
             const updatedStatus = calculateStatus(item.quantity, maxQuantity);
-
+      
             return {
               ...item,
               id: key,
               status: updatedStatus,
+              itemName: item.itemName || "", // Ensure itemName is defined
             };
           });
-          inventoryData.sort((a, b) => a.itemName.localeCompare(b.itemName));
+          inventoryData.sort((a, b) => {
+            const nameA = a.itemName || "";
+            const nameB = b.itemName || "";
+            return nameA.localeCompare(nameB);
+          });
           setInventoryList(inventoryData);
         } else {
           setInventoryList([]);
         }
       });
+      
 
       const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
         const data = snapshot.val();
@@ -150,9 +156,14 @@ function Inventory() {
               ...item,
               id: key,
               status: updatedStatus,
+              itemName: item.itemName || "",
             };
           });
-          suppliesData.sort((a, b) => a.itemName.localeCompare(b.itemName));
+          suppliesData.sort((a, b) => {
+            const nameA = a.itemName || "";
+            const nameB = b.itemName || "";
+            return nameA.localeCompare(nameB);
+          });
           setSuppliesList(suppliesData);
         } else {
           setSuppliesList([]);
@@ -172,17 +183,20 @@ function Inventory() {
   };
 
   const handleDelete = async () => {
-    await remove(ref(database, `${selectedTab}/${currentItem.id}`));
+    const deletePath = selectedTab === "medicine" ?
+    `departments/${department}/localMeds/${currentItem.id}` :
+    `departments/${department}/localSupplies/${currentItem.id}`
+    await remove(ref(database, deletePath));
     toggleDeleteModal();
   };
 
   const filteredList =
     selectedTab === "medicine"
       ? inventoryList.filter((medicine) =>
-          medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+         medicine.itemName && medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         )
       : suppliesList.filter((supply) =>
-          supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+        supply.itemName &&  supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
   return (
@@ -467,3 +481,4 @@ function Inventory() {
 }
 
 export default Inventory;
+

@@ -3,27 +3,32 @@ import { database } from "../../firebase/firebase";
 import { ref, onValue } from "firebase/database";
 
 const OverAllMedicine = () => {
-  const [overAll, setOverAll] = useState([]);
+  const [medsList, setMedsList] = useState([]);
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const overAllRef = ref(database, "overAllInventory/medicines");
+    // Fetch all departments
+    const departmentsRef = ref(database, "departments");
+    onValue(departmentsRef, (snapshot) => {
+      const departmentsData = snapshot.val();
+      if (departmentsData) {
+        const medsPromises = Object.keys(departmentsData).map(async (departmentId) => {
+          const localMedsRef = ref(database, `departments/${departmentId}/localMeds`);
+          const medsSnapshot = await get(localMedsRef);
+          const localMedsData = medsSnapshot.val();
+          return localMedsData ? Object.entries(localMedsData).map(([key, value]) => ({ id: key, ...value })) : [];
+        });
 
-    const unsubscribeOverAll = onValue(
-      overAllRef,
-      (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const overAllData = Object.keys(data).map((key) => ({
-            ...data[key],
-            id: key,
-          }));
-          setOverAll(overAllData);
-        } else {
-          setOverAll([]);
-        }
+        Promise.all(medsPromises).then((allMedsArrays) => {
+          // Flatten the array of arrays into a single array
+          const allMeds = allMedsArrays.flat();
+          setMedsList(allMeds);
+        });
+      } else {
+        setMedsList([]);
+      }
         setLoading(false); // Set loading to false when data is fetched
       },
       (error) => {
@@ -32,7 +37,7 @@ const OverAllMedicine = () => {
       }
     );
 
-    return () => unsubscribeOverAll();
+
   }, []);
 
   if (loading) {
@@ -43,9 +48,9 @@ const OverAllMedicine = () => {
     return <div>Error fetching data: {error.message}</div>; // Error message
   }
 
-  const filteredInventory = Object.entries(overAll).filter(
+  const filteredInventory = Object.entries(medsList).filter(
     ([key, item]) =>
-      item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+      item.itemName && item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
