@@ -9,7 +9,7 @@ const Transfer = () => {
     department: 'Pharmacy',
     status: 'Draft',
     reason: '',
-    timestamp: new Date().toLocaleString() // Add current timestamp on initial load
+    timestamp: new Date().toISOString() // Add current timestamp on initial load
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // Will be updated in real-time with only supplies
