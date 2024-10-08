@@ -28,6 +28,7 @@ import Med from "./pages/PharmacyPOV/med";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
+import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
 import { element } from "prop-types";
 
 function App() {
@@ -69,6 +70,8 @@ function App() {
         { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
         { path: "OverallInventory", element: <OverallInventory /> },
+        { path: "ConfirmRequest", element: <ConfirmRequest /> },
+
       ],
     },
     {

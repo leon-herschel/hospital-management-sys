@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import OverAllInventory from "./pages/Inventory/OverAllInventory.jsx";
 import PharmacyTransferHistory from "./pages/History/PharmacyTransferHistory.jsx";
+import ConfirmRequest from "./pages/CSR POV/ConfirmRequest.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>

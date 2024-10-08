@@ -3,7 +3,7 @@ import { ref, get, set, push, update, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
-const Transfer = () => {
+const ConfirmRequest = () => {
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
@@ -65,6 +65,21 @@ const Transfer = () => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const requestsRef = ref(database, 'departments/CSR/Request');
+    const unsubscribeRequests = onValue(requestsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const requestsData = Object.entries(snapshot.val()).map(([key, value]) => ({
+          ...value,
+          requestKey: key, // Keep track of the request key if needed
+        }));
+        setRequests(requestsData);
+      }
+    });
+        return () => unsubscribeRequests();
+  }, []);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -342,4 +357,4 @@ const Transfer = () => {
   );
 };
 
-export default Transfer;
+export default ConfirmRequest;
