@@ -55,7 +55,7 @@ function App() {
         { path: "billing", element: <Billing /> },
         { path: "ViewBill", element: <ViewBill /> },
         { path: "access-denied", element: <AccessDenied /> },
-        { path: "inventory-history", element: <InventoryHistory /> },
+        { path: "InventoryHistory", element: <InventoryHistory /> },
         { path: "stockTransfer", element: <StockTransfer /> },
         { path: "Transfer", element: <Transfer /> },
         { path: "Request", element: <Request /> },
@@ -69,6 +69,8 @@ function App() {
         { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
         { path: "OverallInventory", element: <OverallInventory /> },
+        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
+        { path: "PharmacyTransferHistory", element: <PharmacyTransferHistory /> },
       ],
     },
     {
