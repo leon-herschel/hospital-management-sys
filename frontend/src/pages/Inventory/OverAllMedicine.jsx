@@ -6,6 +6,7 @@ const OverAllMedicine = () => {
   const [overAll, setOverAll] = useState([]);
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const overAllRef = ref(database, "overAllInventory/medicines");
@@ -42,9 +43,21 @@ const OverAllMedicine = () => {
     return <div>Error fetching data: {error.message}</div>; // Error message
   }
 
+  const filteredInventory = Object.entries(overAll).filter(
+    ([key, item]) =>
+      item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div>
-      <h1>Overall Medicine Inventory</h1>
+    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
+      <h1 className="text-xl font-bold mb-4">Overall Medicine Inventory</h1>
+      <input
+        type="text"
+        placeholder="Search for items..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="border p-2 mb-4 w-full"
+      />
       <table className="min-w-full border-collapse block md:table">
         <thead className="block md:table-header-group">
           <tr className="border border-gray-300 md:table-row absolute -top-full md:top-auto -left-full md:left-auto md:relative ">
@@ -54,8 +67,8 @@ const OverAllMedicine = () => {
           </tr>
         </thead>
         <tbody className="block md:table-row-group">
-          {overAll.length > 0 ? (
-            overAll.map((medicine) => (
+          {filteredInventory.length > 0 ? (
+            filteredInventory.map((medicine) => (
               <tr key={medicine.id} className="bg-gray-100 border border-gray-300 md:border-none block md:table-row">
                 <td className="block md:table-cell p-2">{medicine.itemName}</td>
                 <td className="block md:table-cell p-2">{medicine.quantity}</td>

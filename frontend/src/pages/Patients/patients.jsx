@@ -1,14 +1,14 @@
-import { ref, onValue, remove, update } from "firebase/database";
 import { useState, useEffect } from "react";
-import QRCode from "react-qr-code";
+import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import QRCode from "react-qr-code";
 import DeleteConfirmationModal from "./DeleteConfirmationModalPatient";
-
 import { useAccessControl } from "../../components/roles/accessControl";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useNavigate } from "react-router-dom";
 import AddPatient from "./AddPatient";
-import EditPatientModal from "./EditPatientModal"; // Import your EditPatientModal
+import EditPatientModal from "./EditPatientModal"; 
+import { getAuth } from 'firebase/auth';
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
@@ -17,10 +17,68 @@ function Patient() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentPatient, setCurrentPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [department, setDepartment] = useState(""); // This will store the user's department
+  const [isAdmin, setIsAdmin] = useState(false); // Check if user is admin
   const roleData = useAccessControl();
   const navigate = useNavigate();
+  
 
-  const patientCollection = ref(database, "patient");
+  // Fetch authenticated user and their department
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      // Fetch user's department from the database
+      const userDepartmentRef = ref(database, `users/${user.uid}/department`);
+      const userRoleRef = ref(database, `users/${user.uid}/role`); // Assuming there is a role field
+
+      onValue(userDepartmentRef, (snapshot) => {
+        const departmentData = snapshot.val();
+        if (departmentData) {
+          setDepartment(departmentData); // Set department based on user
+        }
+      });
+
+      // Fetch user's role
+      onValue(userRoleRef, (snapshot) => {
+        const roleData = snapshot.val();
+        if (roleData && roleData === "admin") {
+          setIsAdmin(true); // Set isAdmin to true if the user is an admin
+        }
+      });
+    }
+  }, []);
+
+  // Fetch patient data based on department or show all if admin
+  useEffect(() => {
+    const patientCollection = ref(database, `patient`); // Fetch all patients
+    const unsubscribe = onValue(patientCollection, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const filteredPatients = Object.keys(data)
+          .map((key) => ({
+            id: key,
+            ...data[key],
+          }))
+          .filter((patient) => isAdmin || patient.roomType === department); // Show all if admin, else filter by room type
+
+        // Sort patients by first name
+        filteredPatients.sort((a, b) => {
+          const nameA = a.firstName ? String(a.firstName).toLowerCase() : '';
+          const nameB = b.firstName ? String(b.firstName).toLowerCase() : '';
+          return nameA.localeCompare(nameB);
+        });
+
+        setPatientList(filteredPatients);
+      } else {
+        setPatientList([]);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [isAdmin, department]);
 
   const toggleModal = () => {
     setModal(!modal);
@@ -34,39 +92,6 @@ function Patient() {
     setDeleteModal(!deleteModal);
   };
 
-  useEffect(() => {
-    const unsubscribe = onValue(patientCollection, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const patientData = Object.keys(data).map((key) => {
-          const patient = {
-            ...data[key],
-            id: key,
-          };
-
-          if (patient.dateTime) {
-            patient.dateTime = new Date(patient.dateTime).toLocaleString();
-          }
-
-          return patient;
-        });
-
-        patientData.sort((a, b) => {
-          const nameA = a.firstName ? String(a.firstName).toLowerCase() : '';
-          const nameB = b.firstName ? String(b.firstName).toLowerCase() : '';
-          return nameA.localeCompare(nameB);
-      });
-        setPatientList(patientData);
-      } else {
-        setPatientList([]);
-      }
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, [patientCollection]);
-  
-
   const handleDeleteConfirmation = (patient) => {
     setCurrentPatient(patient);
     toggleDeleteModal();
@@ -74,7 +99,7 @@ function Patient() {
 
   const handleDelete = async () => {
     if (currentPatient) {
-      await remove(ref(database, `patient/${currentPatient.id}`));
+      await remove(ref(database, `patients/${currentPatient.id}`));
       toggleDeleteModal();
     }
   };
@@ -85,20 +110,20 @@ function Patient() {
   };
 
   const handleUpdate = async (updatedPatient) => {
-    await update(ref(database, `patient/${currentPatient.id}`), updatedPatient);
+    await update(ref(database, `patients/${currentPatient.id}`), updatedPatient);
     toggleEditModal();
   };
 
-  // Ensure the navigate function uses the correct path
   const handleViewClick = (id) => {
-    navigate(`/patients/${id}`); // Use /patients/:id to match the route
+    navigate(`/patients/${id}`); 
   };
 
   const filteredPatients = patientList.filter((patient) => {
-    const patientName = patient.name ? patient.name.toLowerCase() : '';
-    return patientName.includes(searchQuery.toLowerCase());
-});
-
+    const firstName = patient.firstName ? patient.firstName.toLowerCase() : '';
+    const lastName = patient.lastName ? patient.lastName.toLowerCase() : '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName.includes(searchQuery.toLowerCase());
+  });
 
   if (!roleData?.accessPatients) {
     return <AccessDenied />;
@@ -142,10 +167,7 @@ function Patient() {
           <tbody>
             {filteredPatients.length > 0 ? (
               filteredPatients.map((patient) => (
-                <tr
-                  key={patient.id}
-                  className="bg-white border-b hover:bg-slate-100"
-                >
+                <tr key={patient.id} className="bg-white border-b hover:bg-slate-100">
                   <td className="px-6 py-3">{patient.firstName}</td>
                   <td className="px-6 py-3">{patient.lastName}</td>
                   <td className="px-6 py-3">{patient.birth}</td>
@@ -153,19 +175,14 @@ function Patient() {
                   <td className="px-6 py-3">{patient.gender}</td>
                   <td className="px-6 py-3">{patient.status}</td>
                   <td className="px-6 py-3">{patient.contact}</td>
-                  <td className="px-6 py-3">{patient.status === "Inpatient" ? patient.roomType : "-"}</td>
+                  <td className="px-6 py-3">{patient.roomType}</td>
                   <td className="px-6 py-3">
-                    <QRCode
-                      size={50}
-                      bgColor="white"
-                      fgColor="black"
-                      value={patient.id}
-                    />
+                    <QRCode size={50} bgColor="white" fgColor="black" value={patient.id} />
                   </td>
-                  <td className="px-6 py-3">{patient.dateTime}</td>
+                  <td className="px-6 py-3">{new Date(patient.dateTime).toLocaleString()}</td>
                   <td className="flex flex-col px-6 py-3 space-y-2 justify-center">
                     <button
-                      onClick={() => handleViewClick(patient.id)} // Redirect to the view page
+                      onClick={() => handleViewClick(patient.id)}
                       className="ml-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md"
                     >
                       View
@@ -197,18 +214,16 @@ function Patient() {
       </div>
 
       {modal && <AddPatient isOpen={modal} toggleModal={toggleModal} />}
-
       <DeleteConfirmationModal
         isOpen={deleteModal}
         toggleModal={toggleDeleteModal}
         onConfirm={handleDelete}
       />
-
       <EditPatientModal
         isOpen={editModal}
         toggleModal={toggleEditModal}
         currentPatient={currentPatient}
-        handleUpdate={handleUpdate} // Pass the update handler
+        handleUpdate={handleUpdate}
       />
     </div>
   );
