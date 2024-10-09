@@ -23,6 +23,5 @@ export const useAccessControl = () => {
     }
   }, [department]);
 
-  console.log(permissions);
   return permissions; 
 };

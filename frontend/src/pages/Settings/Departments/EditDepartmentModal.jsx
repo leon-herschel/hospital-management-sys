@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepartment }) => {
-const [departmentName, setDepartmentName] = useState('');
-  const [permissions, setPermissions] = useState({
-    accessInventory: false,
-    accessInventoryHistory: false,
-    accessPatients: false,
-    accessSettings: false,
-  });
+    const [departmentName, setDepartmentName] = useState('');
+    const [permissions, setPermissions] = useState({
+        accessInventory: false,
+        accessInventoryHistory: false,
+        accessPatients: false,
+        accessSettings: false,
+    });
 
   useEffect(() => {
     if (department) {
@@ -38,8 +38,6 @@ const [departmentName, setDepartmentName] = useState('');
   };
 
   if (!showModal) return null;
-
-  const isAdmin = department?.id === 'Admin'; 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -73,7 +71,7 @@ const [departmentName, setDepartmentName] = useState('');
                   name={permission}
                   checked={permissions[permission]}
                   onChange={handleChange}
-                  disabled={isAdmin} // Disable checkboxes if it's the Admin department
+                  disabled={department.id === 'Admin'}
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="ml-2 text-gray-700 capitalize">
