@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, update, onValue } from 'firebase/database';
+import { ref, get, set, push, onValue, update } from 'firebase/database'; // Use 'update' for deducting from inventory
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
-const ConfirmRequest = () => {
+const ConfirmRequest = ({ requestToConfirm }) => {
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
     status: 'Draft',
     reason: '',
-    timestamp: new Date().toLocaleString() // Add current timestamp on initial load
+    timestamp: new Date().toLocaleString(),
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // Will be updated in real-time with only supplies
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [items, setItems] = useState([]); // Store all items from 'supplies'
+  const [selectedItems, setSelectedItems] = useState([]); // Selected items by the user
   const [filteredItems, setFilteredItems] = useState([]);
 
-  const searchRef = useRef(''); // Ref to store search term without triggering re-renders
-  const departmentRef = useRef(); // Ref to store Firebase reference for departments
-
+  const searchRef = useRef('');
+  const departmentRef = useRef();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
@@ -59,27 +58,24 @@ const ConfirmRequest = () => {
             ...value,
             itemKey: key,
           }));
-        setItems(supplies);
+        setItems(supplies); // Set items from 'supplies'
       }
     });
 
     return () => unsubscribe();
   }, []);
 
+  // Set form data and selected items based on requestToConfirm prop
   useEffect(() => {
-    const requestsRef = ref(database, 'departments/CSR/Request');
-    const unsubscribeRequests = onValue(requestsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const requestsData = Object.entries(snapshot.val()).map(([key, value]) => ({
-          ...value,
-          requestKey: key, // Keep track of the request key if needed
-        }));
-        setRequests(requestsData);
-      }
-    });
-        return () => unsubscribeRequests();
-  }, []);
-
+    if (requestToConfirm) {
+      setFormData(prevData => ({
+        ...prevData,
+        department: requestToConfirm.department,
+        reason: requestToConfirm.reason,
+      }));
+      setSelectedItems(requestToConfirm.items);
+    }
+  }, [requestToConfirm]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -95,10 +91,20 @@ const ConfirmRequest = () => {
   };
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
+    const existingItem = selectedItems.find(item => item.itemName === itemToAdd.itemName);
+    if (existingItem) {
+      alert('Item already added.');
+      return;
+    }
+
+    // Check available quantity from 'supplies'
+    const mainInventoryItem = items.find(i => i.itemKey === itemToAdd.itemKey);
+    if (mainInventoryItem && mainInventoryItem.quantity > 0) {
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]); // Add with default quantity
       searchRef.current = '';
       setFilteredItems([]);
+    } else {
+      alert('Item is not available in sufficient quantity.');
     }
   };
 
@@ -111,7 +117,7 @@ const ConfirmRequest = () => {
     const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
 
     if (value > maxAvailableQuantity) {
-      alert(`Cannot exceed available quantity of ${maxAvailableQuantity}`);
+      alert(`Cannot be edited`);
       return;
     }
 
@@ -131,90 +137,84 @@ const ConfirmRequest = () => {
     return department && status && reason;
   };
 
-
-  const handleTransfer = async () => {
+  const handleConfirm = async () => {
     if (!validateInputs()) {
       alert('Please fill in all required fields.');
       return;
     }
     if (selectedItems.length === 0) {
-      alert('Please select items to transfer.');
+      alert('Please select items to confirm.');
       return;
     }
-  
+
     setSubmitting(true);
-  
-    const transferData = {
+
+    const confirmationData = {
       name: formData.name,
       status: formData.status,
       reason: formData.reason,
       timestamp: formData.timestamp,
-      recipientDepartment: formData.department, // Make sure we are passing the department here
+      recipientDepartment: formData.department,
     };
-  
+
+    // Push the confirmation data to history
+    const historyPath = `departments/CSR/InventoryHistoryTransfer`; // Update the path for confirmation history
+    const newHistoryRef = push(ref(database, historyPath));
+    await set(newHistoryRef, confirmationData);
+
+    // Iterate over selected items and update local supplies and main inventory
     for (const item of selectedItems) {
-      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;  // Uses the selected department
-      
+      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
+
       // Fetch the existing quantity in the local supplies
       const localSupplySnapshot = await get(ref(database, departmentPath));
       let newQuantity = item.quantity;
-  
+
       if (localSupplySnapshot.exists()) {
-        // Add to the existing quantity if the item already exists
         const existingData = localSupplySnapshot.val();
         newQuantity += existingData.quantity;
       }
-  
+
       // Update the local supplies with the new quantity
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        status: formData.status, // You can keep other fields like status if needed
-        timestamp: formData.timestamp, // Timestamp remains here
-      });
-  
-      // Push each transfer directly under InventoryHistoryTransfer
-      const historyPath = `departments/CSR/InventoryHistoryTransfer`;
-      const newHistoryRef = push(ref(database, historyPath));  // `push()` will ensure a unique key is generated
-      await set(newHistoryRef, {
-        itemKey: item.itemKey,
-        itemName: item.itemName,
-        quantity: item.quantity,
+        status: formData.status,
         timestamp: formData.timestamp,
-        sender: formData.name,
-        recipientDepartment: formData.department,  // Ensure recipientDepartment is included
-        reason: formData.reason, // Include reason in the history
       });
-  
-      // Update the main inventory (deduct quantity)
-      const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
-      const mainInventorySnapshot = await get(mainInventoryRef);
-  
+
+      // Deduct the quantity from main inventory in 'supplies'
+      const mainInventoryPath = `departments/CSR/localSupplies/${item.itemKey}`;
+      const mainInventorySnapshot = await get(ref(database, mainInventoryPath));
+
       if (mainInventorySnapshot.exists()) {
-        const currentData = mainInventorySnapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
-        await update(mainInventoryRef, { quantity: updatedQuantity });
-      } else {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        const mainInventoryData = mainInventorySnapshot.val();
+        const updatedQuantity = mainInventoryData.quantity - item.quantity;
+
+        if (updatedQuantity < 0) {
+          alert('Not enough quantity in main inventory.');
+        } else {
+          await update(ref(database, mainInventoryPath), { quantity: updatedQuantity });
+        }
       }
     }
-  
-    alert('Transfer successful!');
+
+    alert('Confirmation successful!');
     setFormData({ ...formData, reason: '', status: '' });
     setSelectedItems([]);
     setSubmitting(false);
   };
-  
+
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Create a new stock transfer.</h1>
+        <h1 className="text-xl font-bold">Confirm Item Request</h1>
         <button
           className="bg-green-500 text-white px-2 py-1 rounded"
-          onClick={handleTransfer}
+          onClick={handleConfirm}
           disabled={submitting}
         >
-          {submitting ? 'Transferring...' : 'Transfer'}
+          {submitting ? 'Confirming...' : 'Confirm'}
         </button>
       </div>
 
@@ -233,7 +233,7 @@ const ConfirmRequest = () => {
 
       {/* Timestamp Display */}
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Transfer Timestamp:</label>
+        <label className="block font-semibold mb-1">Confirmation Timestamp:</label>
         <p>{formData.timestamp}</p>
       </div>
 
@@ -267,91 +267,55 @@ const ConfirmRequest = () => {
               className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
             >
               <option value="Draft">Draft</option>
-              <option value="Final">Final</option>
+              <option value="Confirmed">Confirmed</option>
             </select>
             {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
           </div>
         </div>
-
-        {/* Reason Input */}
-        <div className="mb-4">
-          <label className="block font-semibold mb-1">Reason:</label>
-          <textarea
-            name="reason"
-            value={formData.reason}
-            onChange={handleInputChange}
-            className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-          ></textarea>
-          {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
-        </div>
       </div>
 
-      {/* Items Section */}
+      {/* Reason Input */}
       <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Items</h2>
-        <div className="flex justify-between items-center mb-2">
-          <input
-            type="text"
-            placeholder="Search Item"
-            value={searchRef.current}
-            onChange={handleSearchChange}
-            className="border p-2 rounded w-1/2"
-          />
-        </div>
+      <label className="block font-semibold mb-1">Reason</label>
+        <textarea
+          name="reason"
+          value={formData.reason}
+          onChange={handleInputChange}
+          className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
+          rows="3"
+          placeholder="Enter the reason for this request..."
+        ></textarea>
+        {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason.</p>}
+      </div>
 
-        {/* Show Filtered Items */}
-        {searchRef.current && (
-          <div className="max-h-40 overflow-y-auto border border-gray-300 rounded mb-4">
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item, index) => (
-                <div key={index} className="flex justify-between p-2 border-b hover:bg-gray-100 cursor-pointer"
-                  onClick={() => addItem(item)}
+
+      {/* Selected Items Display */}
+      <div className="mb-4">
+        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
+        {selectedItems.length > 0 ? (
+          selectedItems.map(item => (
+            <div key={item.itemKey} className="flex justify-between items-center p-2 border rounded mb-2">
+              <span>{item.itemName}</span>
+              <div className="flex items-center">
+                <input
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                  className="border p-1 rounded w-16 mr-2"
+                />
+                <button
+                  onClick={() => removeItem(item)}
+                  className="bg-red-500 text-white px-2 py-1 rounded"
                 >
-                  <span>{item.itemName}</span>
-                  <span className="text-gray-500">{item.quantity}</span>
-                </div>
-              ))
-            ) : (
-              <div className="p-2 text-gray-500">No items found.</div>
-            )}
-          </div>
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p>No items selected.</p>
         )}
-
-        {/* Selected Items Display in Table Format */}
-        <table className="min-w-full border-collapse border border-gray-300 mt-4">
-          <thead>
-            <tr>
-              <th className="border border-gray-300 p-2">Item Name</th>
-              <th className="border border-gray-300 p-2">Quantity</th>
-              <th className="border border-gray-300 p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {selectedItems.map((item, index) => (
-              <tr key={index}>
-                <td className="border border-gray-300 p-2">{item.itemName}</td>
-                <td className="border border-gray-300 p-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max={item.quantity}
-                    value={item.quantity}
-                    onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                    className="border rounded w-16 text-center"
-                  />
-                </td>
-                <td className="border border-gray-300 p-2">
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );

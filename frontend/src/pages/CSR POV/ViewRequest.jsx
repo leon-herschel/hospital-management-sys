@@ -87,8 +87,8 @@ const Request = () => {
             Exit
           </button>
           {/* Show the ConfirmRequest component if a request is confirmed */}
-          <ConfirmRequest requestToTransfer={requestToTransfer} selectedItems={requestToTransfer.items} />
-        </div>
+          <ConfirmRequest requestToConfirm={requestToTransfer} />
+          </div>
       ) : (
         <>
           {requests.length === 0 ? (

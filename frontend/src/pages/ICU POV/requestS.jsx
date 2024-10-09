@@ -54,7 +54,7 @@ const RequestS = () => {
   // Fetch medicines or supplies based on selected department
   useEffect(() => {
     const fetchItems = async () => {
-      const itemRef = ref(database, formData.department === 'Pharmacy' ? 'medicine' : 'supplies');
+      const itemRef = ref(database, formData.department === 'Pharmacy' ? 'medicine' : 'departments/CSR/localSupplies');
       try {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
