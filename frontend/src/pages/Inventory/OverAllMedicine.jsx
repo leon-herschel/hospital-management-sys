@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { database } from "../../firebase/firebase";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, get } from "firebase/database";
 
 const OverAllMedicine = () => {
   const [medsList, setMedsList] = useState([]);
@@ -11,24 +11,32 @@ const OverAllMedicine = () => {
   useEffect(() => {
     // Fetch all departments
     const departmentsRef = ref(database, "departments");
-    onValue(departmentsRef, (snapshot) => {
-      const departmentsData = snapshot.val();
-      if (departmentsData) {
-        const medsPromises = Object.keys(departmentsData).map(async (departmentId) => {
-          const localMedsRef = ref(database, `departments/${departmentId}/localMeds`);
-          const medsSnapshot = await get(localMedsRef);
-          const localMedsData = medsSnapshot.val();
-          return localMedsData ? Object.entries(localMedsData).map(([key, value]) => ({ id: key, ...value })) : [];
-        });
+    onValue(
+      departmentsRef,
+      (snapshot) => {
+        const departmentsData = snapshot.val();
+        if (departmentsData) {
+          const medsPromises = Object.keys(departmentsData).map(async (department) => {
+            const localMedsRef = ref(database, `departments/${department}/localMeds`);
+            const medsSnapshot = await get(localMedsRef);
+            const localMedsData = medsSnapshot.val();
+            return localMedsData
+              ? Object.entries(localMedsData).map(([key, value]) => ({
+                  id: key,
+                  ...value,
+                  department, // Add department info for context
+                }))
+              : [];
+          });
 
-        Promise.all(medsPromises).then((allMedsArrays) => {
-          // Flatten the array of arrays into a single array
-          const allMeds = allMedsArrays.flat();
-          setMedsList(allMeds);
-        });
-      } else {
-        setMedsList([]);
-      }
+          Promise.all(medsPromises).then((allMedsArrays) => {
+            // Flatten the array of arrays into a single array
+            const allMeds = allMedsArrays.flat();
+            setMedsList(allMeds);
+          });
+        } else {
+          setMedsList([]);
+        }
         setLoading(false); // Set loading to false when data is fetched
       },
       (error) => {
@@ -36,8 +44,6 @@ const OverAllMedicine = () => {
         setLoading(false);
       }
     );
-
-
   }, []);
 
   if (loading) {
@@ -48,9 +54,8 @@ const OverAllMedicine = () => {
     return <div>Error fetching data: {error.message}</div>; // Error message
   }
 
-  const filteredInventory = Object.entries(medsList).filter(
-    ([key, item]) =>
-      item.itemName && item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInventory = medsList.filter((item) =>
+    item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -64,24 +69,24 @@ const OverAllMedicine = () => {
         className="border p-2 mb-4 w-full"
       />
       <table className="min-w-full border-collapse block md:table">
-        <thead className="block md:table-header-group">
-          <tr className="border border-gray-300 md:table-row absolute -top-full md:top-auto -left-full md:left-auto md:relative ">
-            <th className="block md:table-cell p-2">Item Name</th>
-            <th className="block md:table-cell p-2">Quantity</th>
-            <th className="block md:table-cell p-2">Status</th>
+        <thead>
+          <tr>
+            <th className="border border-gray-300 p-3">Item Name</th>
+            <th className="border border-gray-300 p-3">Quantity</th>
+            <th className="border border-gray-300 p-3">Status</th>
           </tr>
         </thead>
-        <tbody className="block md:table-row-group">
+        <tbody>
           {filteredInventory.length > 0 ? (
             filteredInventory.map((medicine) => (
-              <tr key={medicine.id} className="bg-gray-100 border border-gray-300 md:border-none block md:table-row">
-                <td className="block md:table-cell p-2">{medicine.itemName}</td>
-                <td className="block md:table-cell p-2">{medicine.quantity}</td>
-                <td className="block md:table-cell p-2">{medicine.status}</td>
+              <tr key={medicine.id}>
+                <td className="border border-gray-300 p-3">{medicine.itemName}</td>
+                <td className="border border-gray-300 p-3">{medicine.quantity}</td>
+                <td className="border border-gray-300 p-3">{medicine.status}</td>
               </tr>
             ))
           ) : (
-            <tr className="block md:table-row">
+            <tr>
               <td colSpan="3" className="block md:table-cell p-2 text-center">
                 No medicines found.
               </td>

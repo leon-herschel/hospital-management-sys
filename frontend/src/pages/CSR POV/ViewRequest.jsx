@@ -1,10 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { ref, onValue } from 'firebase/database'; // Use onValue for real-time updates
-import { database } from '../../firebase/firebase'; // Import Firebase configuration
+import { ref, onValue } from 'firebase/database'; 
+import { database } from '../../firebase/firebase'; 
+import Modal from './transferModal'; // Import your Modal component
+import Transfer from './Transfer'; // Ensure you import the Transfer component
 
-const Request = () => {
-  const [requests, setRequests] = useState([]); // Store fetched requests
-  const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
+const Request = ({ userId }) => {
+  const [requests, setRequests] = useState([]);
+  const [expandedRequests, setExpandedRequests] = useState({});
+  const [currentDepartment, setCurrentDepartment] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [recipientDepartment, setRecipientDepartment] = useState(''); // State for recipient department
+
+  // Fetch user's department
+  useEffect(() => {
+    if (userId) {
+      const userRef = ref(database, `users/${userId}`);
+      const userListener = onValue(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          setCurrentDepartment(userData.department || 'N/A');
+        } else {
+          setCurrentDepartment('N/A');
+        }
+      });
+
+      // Cleanup listener when component unmounts
+      return () => {
+        userListener();
+      };
+    }
+  }, [userId]);
 
   // Fetch data from Firebase in real-time
   useEffect(() => {
@@ -50,6 +76,25 @@ const Request = () => {
     }));
   };
 
+  // Handle proceed action
+  const handleProceed = (request) => {
+    // Set the selected items based on the request
+    const itemsToTransfer = request.items.map(item => ({
+      ...item,
+      quantity: item.quantity || 1 // Set a default quantity if not defined
+    }));
+
+    setSelectedItems(itemsToTransfer);
+    setRecipientDepartment(request.department); // Set the department from request
+    setIsModalOpen(true); // Open the modal when proceeding
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedItems([]); // Clear selected items when closing
+    setRecipientDepartment(''); // Clear recipient department when closing
+  };
+
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg">
       {requests.length === 0 ? (
@@ -78,6 +123,7 @@ const Request = () => {
               <div className="p-4 bg-gray-100">
                 <ul className="list-disc pl-5">
                   <li><strong>Requested by:</strong> {request.name || 'N/A'}</li>
+                  <li><strong>Department:</strong> {request.department || currentDepartment || 'N/A'}</li>
                   {/* Map through items and display each one */}
                   {request.items && request.items.length > 0 ? (
                     request.items.map((item, i) => (
@@ -92,11 +138,22 @@ const Request = () => {
                   <li><strong>Request Date:</strong> {request.timestamp || 'N/A'}</li>
                   <li><strong>Reason for Request:</strong> {request.reason || 'N/A'}</li>
                 </ul>
+                <button onClick={() => handleProceed(request)} className="mt-4 bg-blue-500 text-white rounded px-4 py-2">
+                  Proceed
+                </button>
               </div>
             )}
           </div>
         ))
       )}
+       {/* Modal to display the Transfer component */}
+       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+        <Transfer
+          selectedItems={selectedItems}
+          recipientDepartment={recipientDepartment} // Pass recipient department
+          onClose={handleCloseModal}
+        />
+      </Modal>
     </div>
   );
 };

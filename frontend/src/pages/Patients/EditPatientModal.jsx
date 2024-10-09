@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate }) {
   // Set form state with current patient data or fallback values
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     birth: "",
     age: "",
     gender: "",
@@ -14,7 +15,8 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
 
   // State for error handling
   const [errors, setErrors] = useState({
-    name: false,
+    firstName: false,
+    lastName: false,
     birth: false,
     gender: false,
     contact: false,
@@ -29,7 +31,8 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
   useEffect(() => {
     if (currentPatient) {
       setFormData({
-        name: currentPatient.name || "",
+        firstName: currentPatient.firstName || "",
+        lastName: currentPatient.lastName || "",
         birth: currentPatient.birth || "",
         age: calculateAge(currentPatient.birth) || "",
         gender: currentPatient.gender || "",
@@ -61,7 +64,8 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
 
     // Reset errors
     setErrors({
-      name: false,
+      firstName: false,
+      lastName: false,
       birth: false,
       gender: false,
       contact: false,
@@ -72,8 +76,12 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
     // Validate the fields
     let hasError = false;
 
-    if (!formData.name) {
-      setErrors((prev) => ({ ...prev, name: true }));
+    if (!formData.firstName) {
+      setErrors((prev) => ({ ...prev, firstName: true }));
+      hasError = true;
+    }
+    if (!formData.lastName) {
+      setErrors((prev) => ({ ...prev, lastName: true }));
       hasError = true;
     }
     if (!formData.birth) {
@@ -133,22 +141,39 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
 
           {/* Display the form fields */}
           <div className="mb-4">
-            <label htmlFor="name" className="block text-gray-700 mb-2">
-              Name
+            <label htmlFor="firstName" className="block text-gray-700 mb-2">
+              First Name
             </label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
               onChange={handleChange}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-                errors.name ? "border-red-500" : "border-gray-300"
+                errors.firstName ? "border-red-500" : "border-gray-300"
               }`}
               disabled={submitting}
             />
-            {errors.name && <p className="text-red-500 mt-1">Name is required</p>}
+            {errors.firstName && <p className="text-red-500 mt-1">First Name is required</p>}
           </div>
+
+          <label htmlFor="lastName" className="block text-gray-700 mb-2">
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.lastName ? "border-red-500" : "border-gray-300"
+              }`}
+              disabled={submitting}
+            />
+            {errors.lastName && <p className="text-red-500 mt-1">Last Name is required</p>}
+          
 
           <div className="mb-4">
             <label htmlFor="birth" className="block text-gray-700 mb-2">
@@ -275,6 +300,8 @@ function EditPatientModal({ isOpen, toggleModal, currentPatient, handleUpdate })
                 type="submit"
                 className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
                 disabled={submitting}
+                onClick={handleUpdate}
+              
               >
                 {submitting ? "Submitting..." : "Update"}
               </button>

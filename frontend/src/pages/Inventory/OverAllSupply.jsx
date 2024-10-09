@@ -88,14 +88,23 @@ const OverAllSupply = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredInventory.map(([key, item]) => (
-            <tr key={key}>
-              <td className="border border-gray-300 p-2">{item.itemName}</td>
-              <td className="border border-gray-300 p-2">
-                {item.totalQuantity}
+          {filteredInventory.length > 0 ? (
+             filteredInventory.map(([key, item]) => (
+              <tr key={key}>
+                <td className="border border-gray-300 p-2">{item.itemName}</td>
+                <td className="border border-gray-300 p-2">
+                  {item.totalQuantity}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="2" className="block md:table-cell p-2 text-center">
+                No supplies found.
               </td>
             </tr>
-          ))}
+          )}
+         
         </tbody>
       </table>
     </div>
