@@ -28,7 +28,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAuth();
-  const roleData = useAccessControl();
+  const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const handleLogout = () => {
@@ -116,7 +116,7 @@ const Sidebar = () => {
             Overview
           </Link>
 
-          {roleData?.accessInventory && (
+          {permissions?.accessInventory && (
             <>
             {/* Inventory Dropdown */}
               <div
@@ -149,7 +149,7 @@ const Sidebar = () => {
                   Inventory
                 </Link>
 
-                {roleData?.accessInventoryHistory && (
+                {permissions?.accessInventoryHistory && (
                   <Link
                     to="/inventory-history"
                     className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
@@ -180,7 +180,7 @@ const Sidebar = () => {
             )}
 
           {/* Other Sidebar Links */}
-          {roleData?.accessPatients && (
+          {permissions?.accessPatients && (
             <Link
               to="/patients"
               className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
@@ -272,7 +272,7 @@ const Sidebar = () => {
             Analytics
           </Link>
 
-          {roleData?.accessSettings && (
+          {permissions?.accessSettings && (
           <Link
             to="/settings"
             className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${

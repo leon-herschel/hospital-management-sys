@@ -3,16 +3,17 @@ import UsersTable from './Users/UsersTable';
 import RolesTable from './Roles/RolesTable';
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAccessControl } from "../../components/roles/accessControl";
+import DepartmentsTable from './Departments/DepartmentsTable';
 
 const Settings = () => {
   const [tableView, setTableView] = useState('User Management');
-  const roleData = useAccessControl();
+  const permissions = useAccessControl();
 
   const handleClick = (view) => {
     setTableView(view);
   };
 
-  if (!roleData?.accessSettings) {
+  if (!permissions?.accessSettings) {
     return <AccessDenied />;
   }
 
@@ -40,10 +41,21 @@ const Settings = () => {
         >
           Role Management
         </button>
+        <button
+          onClick={() => handleClick("Department Management")}
+          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+            tableView === "Department Management"
+              ? "bg-slate-900 text-white text-bold"
+              : "bg-slate-200 text-gray-900"
+          }`}
+        >
+          Department Management
+        </button>
       </div>
       
       {tableView === 'User Management' && <UsersTable />}
       {tableView === 'Role Management' && <RolesTable />}
+      {tableView === 'Department Management' && <DepartmentsTable />}
     </div>
   );
 };
