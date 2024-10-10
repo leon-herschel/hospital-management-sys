@@ -66,7 +66,7 @@ function AddInventory({ isOpen, toggleModal }) {
     if (hasError) {
       return;
     }
-    const inventoryRef = ref(database, "medicine");
+    const inventoryRef = ref(database, "departments/Pharmacy/localMeds");
     const newInventoryRef = push(inventoryRef);
 
     const qrKey = generateRandomKey(20);

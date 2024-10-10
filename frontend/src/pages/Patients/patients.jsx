@@ -99,7 +99,7 @@ function Patient() {
 
   const handleDelete = async () => {
     if (currentPatient) {
-      await remove(ref(database, `patients/${currentPatient.id}`));
+      await remove(ref(database, `patient/${currentPatient.id}`));
       toggleDeleteModal();
     }
   };
@@ -110,7 +110,7 @@ function Patient() {
   };
 
   const handleUpdate = async (updatedPatient) => {
-    await update(ref(database, `patients/${currentPatient.id}`), updatedPatient);
+    await update(ref(database, `patient/${currentPatient.id}`), updatedPatient);
     toggleEditModal();
   };
 
