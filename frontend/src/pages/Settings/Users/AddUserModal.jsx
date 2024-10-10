@@ -229,7 +229,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
               <div className="flex justify-center">
                 <button
                   type="submit"
-                  className={`bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   disabled={isLoading}
                 >
                   {isLoading ? 'Creating Account...' : 'Create Account'}
@@ -248,7 +248,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
             <p className="text-gray-700 mb-6">The user account has been created.</p>
             <button
               onClick={closeSuccessModal}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
             >
               OK
             </button>

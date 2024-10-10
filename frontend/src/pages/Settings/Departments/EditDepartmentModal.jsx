@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepartment }) => {
-    const [departmentName, setDepartmentName] = useState('');
-    const [permissions, setPermissions] = useState({
-        accessInventory: false,
-        accessInventoryHistory: false,
-        accessPatients: false,
-        accessSettings: false,
-    });
+  const [departmentName, setDepartmentName] = useState('');
+  const [permissions, setPermissions] = useState({
+    accessInventory: false,
+    accessInventoryHistory: false,
+    accessPatients: false,
+    accessSettings: false,
+  });
+  const [isLoading, setIsLoading] = useState(false); 
 
   useEffect(() => {
     if (department) {
@@ -31,10 +32,18 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onEditDepartment(department.id, { permissions });
-    setShowModal(false);
+    setIsLoading(true); 
+
+    try {
+      await onEditDepartment(department.id, { permissions });
+      setShowModal(false); 
+    } catch (error) {
+      console.error("Failed to update department:", error);
+    } finally {
+      setIsLoading(false); 
+    }
   };
 
   if (!showModal) return null;
@@ -53,15 +62,16 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
 
         <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
           <div className="mb-4">
-            <label className="block text-gray-700">Department Name</label> 
+            <label className="block text-gray-700">Department Name</label>
             <input
               type="text"
-              value={department.id} 
+              value={department.id}
               disabled
               className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
             />
           </div>
 
+          {/* Permissions Card */}
           <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
             <h3 className="text-lg font-semibold mb-4">Access Permissions</h3>
             {Object.keys(permissions).map((permission) => (
@@ -81,19 +91,15 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
             ))}
           </div>
 
-          <div className="flex justify-center space-x-4 mt-4">
+          <div className="flex justify-center">
             <button
               type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              className={`bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 ${
+                isLoading ? 'opacity-50 cursor-not-allowed' : ''
+              }`} 
+              disabled={isLoading} 
             >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowModal(false)}
-              className="bg-gray-300 text-black px-4 py-2 rounded-md hover:bg-gray-400"
-            >
-              Cancel
+              {isLoading ? 'Updating Department...' : 'Update Department'} {/* Show loading text */}
             </button>
           </div>
         </form>
