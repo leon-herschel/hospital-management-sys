@@ -62,14 +62,32 @@ const DepartmentsTable = () => {
 
   const handleEditDepartment = (departmentId, updatedDepartment) => {
     const departmentRef = ref(database, `departments/${departmentId}`);
-
-    set(departmentRef, updatedDepartment)
+  
+    get(departmentRef)
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          const currentDepartment = snapshot.val();
+ 
+          const mergedDepartment = {
+            ...currentDepartment,
+            ...updatedDepartment,
+          };
+  
+          return set(departmentRef, mergedDepartment);
+        } else {
+          throw new Error('Department does not exist.');
+        }
+      })
       .then(() => {
         setDepartments((prevDepartments) =>
-          prevDepartments.map((department) => (department.id === departmentId ? { id: departmentId, ...updatedDepartment } : department))
+          prevDepartments.map((department) =>
+            department.id === departmentId ? { id: departmentId, ...updatedDepartment } : department
+          )
         );
         setFilteredDepartments((prevFiltered) =>
-          prevFiltered.map((department) => (department.id === departmentId ? { id: departmentId, ...updatedDepartment } : department))
+          prevFiltered.map((department) =>
+            department.id === departmentId ? { id: departmentId, ...updatedDepartment } : department
+          )
         );
         setShowEditDepartmentModal(false);
       })
