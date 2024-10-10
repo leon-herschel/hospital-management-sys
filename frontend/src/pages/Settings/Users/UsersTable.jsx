@@ -67,7 +67,7 @@ const UsersTable = () => {
           className="border border-slate-300 px-4 py-2 rounded-lg"
         />
         <button
-          className="ml-4 bg-green-600 text-white px-6 py-2 rounded-md"
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           onClick={() => setShowAddUserModal(true)}
         >
           Add Account
@@ -95,13 +95,13 @@ const UsersTable = () => {
                 <td className="px-6 py-4">{user.role}</td>
                 <td className="px-6 py-4 flex justify-center space-x-4">
                   <button
-                    className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
+                    className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
                     onClick={() => handleEditClick(user)}
                   >
                     Edit
                   </button>
                   <button
-                    className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
+                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
                     onClick={() => confirmDeleteUser(user)}
                   >
                     Delete
