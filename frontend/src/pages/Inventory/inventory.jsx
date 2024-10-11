@@ -72,7 +72,10 @@ function Inventory() {
       status: updatedStatus,
     };
 
-    await update(ref(database, `departments/${department}/localMeds/${currentItem.id}`), updatedInventory);
+    await update(
+      ref(database, `departments/${department}/localMeds/${currentItem.id}`),
+      updatedInventory
+    );
     toggleEditModal();
   };
 
@@ -94,7 +97,13 @@ function Inventory() {
       status: updatedStatus,
     };
 
-    await update(ref(database, `departments/${department}/localSupplies/${currentItem.id}`), updatedSupply);
+    await update(
+      ref(
+        database,
+        `departments/${department}/localSupplies/${currentItem.id}`
+      ),
+      updatedSupply
+    );
     toggleEditModal();
   };
 
@@ -114,9 +123,15 @@ function Inventory() {
   // Fetch inventory and supplies based on department
   useEffect(() => {
     if (department) {
-      const inventoryCollection = ref(database, `departments/${department}/localMeds`);
-      const suppliesCollection = ref(database, `departments/${department}/localSupplies`);
-      
+      const inventoryCollection = ref(
+        database,
+        `departments/${department}/localMeds`
+      );
+      const suppliesCollection = ref(
+        database,
+        `departments/${department}/localSupplies`
+      );
+
       const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -124,7 +139,7 @@ function Inventory() {
             const item = data[key];
             const maxQuantity = item.maxQuantity || item.quantity;
             const updatedStatus = calculateStatus(item.quantity, maxQuantity);
-      
+
             return {
               ...item,
               id: key,
@@ -142,7 +157,6 @@ function Inventory() {
           setInventoryList([]);
         }
       });
-      
 
       const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
         const data = snapshot.val();
@@ -183,20 +197,25 @@ function Inventory() {
   };
 
   const handleDelete = async () => {
-    const deletePath = selectedTab === "medicine" ?
-    `departments/${department}/localMeds/${currentItem.id}` :
-    `departments/${department}/localSupplies/${currentItem.id}`
+    const deletePath =
+      selectedTab === "medicine"
+        ? `departments/${department}/localMeds/${currentItem.id}`
+        : `departments/${department}/localSupplies/${currentItem.id}`;
     await remove(ref(database, deletePath));
     toggleDeleteModal();
   };
 
   const filteredList =
     selectedTab === "medicine"
-      ? inventoryList.filter((medicine) =>
-         medicine.itemName && medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+      ? inventoryList.filter(
+          (medicine) =>
+            medicine.itemName &&
+            medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         )
-      : suppliesList.filter((supply) =>
-        supply.itemName &&  supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+      : suppliesList.filter(
+          (supply) =>
+            supply.itemName &&
+            supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
   return (
@@ -262,14 +281,23 @@ function Inventory() {
               <tbody>
                 {filteredList.length > 0 ? (
                   filteredList.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-slate-100">
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-slate-100"
+                    >
                       <td className="px-6 py-3">{item.itemName}</td>
                       <td className="px-6 py-3">{item.quantity}</td>
                       <td className="px-6 py-3">
-                        {(item.costPrice !== undefined ? item.costPrice : 0).toFixed(2)}
+                        {(item.costPrice !== undefined
+                          ? item.costPrice
+                          : 0
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">
-                        {(item.retailPrice !== undefined ? item.retailPrice : 0).toFixed(2)}
+                        {(item.retailPrice !== undefined
+                          ? item.retailPrice
+                          : 0
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">{item.status}</td>
                       <td className="px-6 py-3 flex justify-center items-center">
@@ -340,14 +368,23 @@ function Inventory() {
               <tbody>
                 {filteredList.length > 0 ? (
                   filteredList.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-slate-100">
+                    <tr
+                      key={item.id}
+                      className="bg-white border-b hover:bg-slate-100"
+                    >
                       <td className="px-6 py-3">{item.itemName}</td>
                       <td className="px-6 py-3">{item.quantity}</td>
                       <td className="px-6 py-3">
-                        {(item.costPrice !== undefined ? item.costPrice : 0).toFixed(2)}
+                        {(item.costPrice !== undefined
+                          ? item.costPrice
+                          : 0
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">
-                        {(item.retailPrice !== undefined ? item.retailPrice : 0).toFixed(2)}
+                        {(item.retailPrice !== undefined
+                          ? item.retailPrice
+                          : 0
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">{item.status}</td>
                       <td className="px-6 py-4 flex justify-center items-center">
@@ -415,7 +452,9 @@ function Inventory() {
               Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item
             </h2>
             <form
-              onSubmit={selectedTab === "medicine" ? handleUpdate : handleUpdateSupply}
+              onSubmit={
+                selectedTab === "medicine" ? handleUpdate : handleUpdateSupply
+              }
             >
               <div className="mb-4">
                 <label className="block mb-2">Medicine Name</label>
@@ -481,4 +520,3 @@ function Inventory() {
 }
 
 export default Inventory;
-
