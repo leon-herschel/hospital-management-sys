@@ -19,7 +19,7 @@ function Patient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [department, setDepartment] = useState(""); // This will store the user's department
   const [isAdmin, setIsAdmin] = useState(false); // Check if user is admin
-  const roleData = useAccessControl();
+  const permissions = useAccessControl();
   const navigate = useNavigate();
   
 
@@ -42,8 +42,8 @@ function Patient() {
 
       // Fetch user's role
       onValue(userRoleRef, (snapshot) => {
-        const roleData = snapshot.val();
-        if (roleData && roleData === "admin") {
+        const permissions = snapshot.val();
+        if (permissions && permissions === "Admin") {
           setIsAdmin(true); // Set isAdmin to true if the user is an admin
         }
       });
@@ -125,7 +125,7 @@ function Patient() {
     return fullName.includes(searchQuery.toLowerCase());
   });
 
-  if (!roleData?.accessPatients) {
+  if (!permissions?.accessPatients) {
     return <AccessDenied />;
   }
 
