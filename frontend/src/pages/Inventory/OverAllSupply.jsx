@@ -9,7 +9,6 @@ const OverAllSupply = () => {
   useEffect(() => {
     const departmentsRef = ref(database, "departments");
 
-
     const fetchDepartments = async () => {
       try {
         const departmentsSnapshot = await get(departmentsRef);
@@ -21,13 +20,9 @@ const OverAllSupply = () => {
     };
 
     const fetchOverallInventory = async () => {
-      const [departmentsData] = await Promise.all([
-        fetchDepartments(),
-      ]);
+      const departmentsData = await fetchDepartments();
 
       const totalInventory = {};
-
-    
 
       // Process each department's supplies under the 'localSupplies' node
       Object.entries(departmentsData).forEach(
@@ -35,13 +30,15 @@ const OverAllSupply = () => {
           const departmentSupplies = departmentValue.localSupplies || {}; // Ensure you're targeting the correct supplies node within departments
 
           Object.entries(departmentSupplies).forEach(([key, value]) => {
-            if (totalInventory[key]) {
+            const itemName = value.itemName; // Use itemName as the unique identifier
+
+            if (totalInventory[itemName]) {
               // If the item exists in the main supplies, add the department's quantity
-              totalInventory[key].totalQuantity += value.quantity || 0;
+              totalInventory[itemName].totalQuantity += value.quantity || 0;
             } else {
               // If the item is not in the main supplies, create a new entry
-              totalInventory[key] = {
-                itemName: value.itemName,
+              totalInventory[itemName] = {
+                itemName: itemName,
                 totalQuantity: value.quantity || 0, // Only department's quantity
               };
             }
@@ -53,7 +50,7 @@ const OverAllSupply = () => {
     };
 
     fetchOverallInventory();
-    
+
     const unsubscribeDepartments = onValue(
       departmentsRef,
       fetchOverallInventory
@@ -67,7 +64,8 @@ const OverAllSupply = () => {
   // Filter the inventory based on the search term
   const filteredInventory = Object.entries(overallInventory).filter(
     ([key, item]) =>
-      item.itemName && item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+      item.itemName &&
+      item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -89,8 +87,8 @@ const OverAllSupply = () => {
         </thead>
         <tbody>
           {filteredInventory.length > 0 ? (
-             filteredInventory.map(([key, item]) => (
-              <tr key={key}>
+            filteredInventory.map(([itemName, item]) => (
+              <tr key={itemName}>
                 <td className="border border-gray-300 p-2">{item.itemName}</td>
                 <td className="border border-gray-300 p-2">
                   {item.totalQuantity}
@@ -104,7 +102,6 @@ const OverAllSupply = () => {
               </td>
             </tr>
           )}
-         
         </tbody>
       </table>
     </div>

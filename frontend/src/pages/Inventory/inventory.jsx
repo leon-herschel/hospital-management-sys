@@ -123,73 +123,162 @@ function Inventory() {
   // Fetch inventory and supplies based on department
   useEffect(() => {
     if (department) {
-      const inventoryCollection = ref(
-        database,
-        `departments/${department}/localMeds`
-      );
-      const suppliesCollection = ref(
-        database,
-        `departments/${department}/localSupplies`
-      );
+      if (department === "Admin") {
+        const adminInventoryCollection = ref(
+          database,
+          "departments/Pharmacy/localMeds"
+        );
+        const adminSuppliesCollection = ref(
+          database,
+          "departments/CSR/localSupplies"
+        );
 
-      const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const inventoryData = Object.keys(data).map((key) => {
-            const item = data[key];
-            const maxQuantity = item.maxQuantity || item.quantity;
-            const updatedStatus = calculateStatus(item.quantity, maxQuantity);
+        // Fetch Admin Inventory (Pharmacy localMeds)
+        const unsubscribeAdminInventory = onValue(
+          adminInventoryCollection,
+          (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+              const inventoryData = Object.keys(data).map((key) => {
+                const item = data[key];
+                const maxQuantity = item.maxQuantity || item.quantity;
+                const updatedStatus = calculateStatus(
+                  item.quantity,
+                  maxQuantity
+                );
 
-            return {
-              ...item,
-              id: key,
-              status: updatedStatus,
-              itemName: item.itemName || "", // Ensure itemName is defined
-            };
-          });
-          inventoryData.sort((a, b) => {
-            const nameA = a.itemName || "";
-            const nameB = b.itemName || "";
-            return nameA.localeCompare(nameB);
-          });
-          setInventoryList(inventoryData);
-        } else {
-          setInventoryList([]);
-        }
-      });
+                return {
+                  ...item,
+                  id: key,
+                  status: updatedStatus,
+                  itemName: item.itemName || "", // Ensure itemName is defined
+                };
+              });
+              inventoryData.sort((a, b) => {
+                const nameA = a.itemName || "";
+                const nameB = b.itemName || "";
+                return nameA.localeCompare(nameB);
+              });
+              setInventoryList(inventoryData);
+            } else {
+              setInventoryList([]);
+            }
+          }
+        );
 
-      const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const suppliesData = Object.keys(data).map((key) => {
-            const item = data[key];
-            const maxQuantity = item.maxQuantity || item.quantity;
-            const updatedStatus = calculateStatus(item.quantity, maxQuantity);
+        // Fetch Admin Supplies (CSR localSupplies)
+        const unsubscribeAdminSupplies = onValue(
+          adminSuppliesCollection,
+          (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+              const suppliesData = Object.keys(data).map((key) => {
+                const item = data[key];
+                const maxQuantity = item.maxQuantity || item.quantity;
+                const updatedStatus = calculateStatus(
+                  item.quantity,
+                  maxQuantity
+                );
 
-            return {
-              ...item,
-              id: key,
-              status: updatedStatus,
-              itemName: item.itemName || "",
-            };
-          });
-          suppliesData.sort((a, b) => {
-            const nameA = a.itemName || "";
-            const nameB = b.itemName || "";
-            return nameA.localeCompare(nameB);
-          });
-          setSuppliesList(suppliesData);
-        } else {
-          setSuppliesList([]);
-        }
-      });
+                return {
+                  ...item,
+                  id: key,
+                  status: updatedStatus,
+                  itemName: item.itemName || "",
+                };
+              });
+              suppliesData.sort((a, b) => {
+                const nameA = a.itemName || "";
+                const nameB = b.itemName || "";
+                return nameA.localeCompare(nameB);
+              });
+              setSuppliesList(suppliesData);
+            } else {
+              setSuppliesList([]);
+            }
+          }
+        );
 
-      return () => {
-        unsubscribeInventory();
-        unsubscribeSupplies();
-      };
+        return () => {
+          unsubscribeAdminInventory();
+          unsubscribeAdminSupplies();
+        };
+      } else {
+        // Fetch for non-admin departments
+        const inventoryCollection = ref(
+          database,
+          `departments/${department}/localMeds`
+        );
+        const suppliesCollection = ref(
+          database,
+          `departments/${department}/localSupplies`
+        );
+
+        const unsubscribeInventory = onValue(
+          inventoryCollection,
+          (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+              const inventoryData = Object.keys(data).map((key) => {
+                const item = data[key];
+                const maxQuantity = item.maxQuantity || item.quantity;
+                const updatedStatus = calculateStatus(
+                  item.quantity,
+                  maxQuantity
+                );
+
+                return {
+                  ...item,
+                  id: key,
+                  status: updatedStatus,
+                  itemName: item.itemName || "", // Ensure itemName is defined
+                };
+              });
+              inventoryData.sort((a, b) => {
+                const nameA = a.itemName || "";
+                const nameB = b.itemName || "";
+                return nameA.localeCompare(nameB);
+              });
+              setInventoryList(inventoryData);
+            } else {
+              setInventoryList([]);
+            }
+          }
+        );
+
+        const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const suppliesData = Object.keys(data).map((key) => {
+              const item = data[key];
+              const maxQuantity = item.maxQuantity || item.quantity;
+              const updatedStatus = calculateStatus(item.quantity, maxQuantity);
+
+              return {
+                ...item,
+                id: key,
+                status: updatedStatus,
+                itemName: item.itemName || "",
+              };
+            });
+            suppliesData.sort((a, b) => {
+              const nameA = a.itemName || "";
+              const nameB = b.itemName || "";
+              return nameA.localeCompare(nameB);
+            });
+            setSuppliesList(suppliesData);
+          } else {
+            setSuppliesList([]);
+          }
+        });
+
+        return () => {
+          unsubscribeInventory();
+          unsubscribeSupplies();
+        };
+      }
     }
-  }, [department]); // Dependency on department to ensure it's set first
+  }, [department]);
 
   const confirmDelete = (item) => {
     setCurrentItem(item);
