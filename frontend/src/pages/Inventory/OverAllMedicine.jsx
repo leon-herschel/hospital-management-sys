@@ -13,27 +13,43 @@ const OverAllMedicine = () => {
     const departmentsRef = ref(database, "departments");
     onValue(
       departmentsRef,
-      (snapshot) => {
+      async (snapshot) => {
         const departmentsData = snapshot.val();
         if (departmentsData) {
-          const medsPromises = Object.keys(departmentsData).map(async (department) => {
-            const localMedsRef = ref(database, `departments/${department}/localMeds`);
+          const totalMeds = {};
+
+          // Iterate over each department
+          for (const department of Object.keys(departmentsData)) {
+            const localMedsRef = ref(
+              database,
+              `departments/${department}/localMeds`
+            );
             const medsSnapshot = await get(localMedsRef);
             const localMedsData = medsSnapshot.val();
-            return localMedsData
-              ? Object.entries(localMedsData).map(([key, value]) => ({
-                  id: key,
-                  ...value,
-                  department, // Add department info for context
-                }))
-              : [];
-          });
 
-          Promise.all(medsPromises).then((allMedsArrays) => {
-            // Flatten the array of arrays into a single array
-            const allMeds = allMedsArrays.flat();
-            setMedsList(allMeds);
-          });
+            if (localMedsData) {
+              // Aggregate medicines by itemName
+              Object.entries(localMedsData).forEach(([key, value]) => {
+                const itemName = value.itemName;
+
+                if (totalMeds[itemName]) {
+                  // If the medicine already exists, add to the quantity
+                  totalMeds[itemName].quantity += value.quantity || 0;
+                } else {
+                  // If it doesn't exist, create a new entry
+                  totalMeds[itemName] = {
+                    id: key,
+                    itemName: itemName,
+                    quantity: value.quantity || 0,
+                    status: value.status, // Retain status for the medicine
+                  };
+                }
+              });
+            }
+          }
+
+          // Convert the object to an array for rendering
+          setMedsList(Object.values(totalMeds));
         } else {
           setMedsList([]);
         }
@@ -80,9 +96,15 @@ const OverAllMedicine = () => {
           {filteredInventory.length > 0 ? (
             filteredInventory.map((medicine) => (
               <tr key={medicine.id}>
-                <td className="border border-gray-300 p-3">{medicine.itemName}</td>
-                <td className="border border-gray-300 p-3">{medicine.quantity}</td>
-                <td className="border border-gray-300 p-3">{medicine.status}</td>
+                <td className="border border-gray-300 p-3">
+                  {medicine.itemName}
+                </td>
+                <td className="border border-gray-300 p-3">
+                  {medicine.quantity}
+                </td>
+                <td className="border border-gray-300 p-3">
+                  {medicine.status}
+                </td>
               </tr>
             ))
           ) : (

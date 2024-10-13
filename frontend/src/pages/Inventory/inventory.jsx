@@ -29,6 +29,7 @@ function Inventory() {
   const [selectedTab, setSelectedTab] = useState("medicine");
   const [searchTerm, setSearchTerm] = useState("");
   const [department, setDepartment] = useState("");
+  const [role, setRole] = useState("");
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -72,10 +73,11 @@ function Inventory() {
       status: updatedStatus,
     };
 
-    await update(
-      ref(database, `departments/${department}/localMeds/${currentItem.id}`),
-      updatedInventory
-    );
+    const updatePath =
+      role === "admin"
+        ? `departments/Pharmacy/localMeds/${currentItem.id}`
+        : `departments/${department}/localMeds/${currentItem.id}`;
+    await update(ref(database, updatePath), updatedInventory);
     toggleEditModal();
   };
 
@@ -110,86 +112,97 @@ function Inventory() {
   // Fetch user department
   useEffect(() => {
     if (user) {
-      const userDepartmentRef = ref(database, `users/${user.uid}/department`);
-      onValue(userDepartmentRef, (snapshot) => {
-        const departmentData = snapshot.val();
-        if (departmentData) {
-          setDepartment(departmentData);
+      const userDepartmentRef = ref(database, `users/${user.uid}`);
+      onValue(
+        userDepartmentRef,
+        (snapshot) => {
+          const departmentData = snapshot.val();
+          if (departmentData) {
+            setDepartment(departmentData.department);
+            setRole(departmentData.role);
+          }
+        },
+        (error) => {
+          console.error("Error fetching department:", error);
         }
-      });
+      );
     }
   }, [user]);
 
-  // Fetch inventory and supplies based on department
   useEffect(() => {
     if (department) {
-      const inventoryCollection = ref(
-        database,
-        `departments/${department}/localMeds`
-      );
-      const suppliesCollection = ref(
-        database,
-        `departments/${department}/localSupplies`
-      );
+      const inventoryPath =
+        role === "admin"
+          ? "departments/Pharmacy/localMeds"
+          : `departments/${department}/localMeds`;
+      const suppliesPath =
+        role === "admin"
+          ? "departments/CSR/localSupplies"
+          : `departments/${department}/localSupplies`;
 
-      const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const inventoryData = Object.keys(data).map((key) => {
-            const item = data[key];
-            const maxQuantity = item.maxQuantity || item.quantity;
-            const updatedStatus = calculateStatus(item.quantity, maxQuantity);
+      const inventoryCollection = ref(database, inventoryPath);
+      const suppliesCollection = ref(database, suppliesPath);
 
-            return {
-              ...item,
-              id: key,
-              status: updatedStatus,
-              itemName: item.itemName || "", // Ensure itemName is defined
-            };
-          });
-          inventoryData.sort((a, b) => {
-            const nameA = a.itemName || "";
-            const nameB = b.itemName || "";
-            return nameA.localeCompare(nameB);
-          });
+      const unsubscribeInventory = onValue(
+        inventoryCollection,
+        (snapshot) => {
+          const data = snapshot.val();
+          const inventoryData = data
+            ? Object.keys(data)
+                .map((key) => {
+                  const item = data[key];
+                  const maxQuantity = item.maxQuantity || item.quantity;
+                  return {
+                    ...item,
+                    id: key,
+                    status: calculateStatus(item.quantity, maxQuantity),
+                    itemName: item.itemName || "",
+                  };
+                })
+                .sort((a, b) => a.itemName.localeCompare(b.itemName))
+            : [];
+
           setInventoryList(inventoryData);
-        } else {
+        },
+        (error) => {
+          console.error("Error fetching inventory:", error);
           setInventoryList([]);
         }
-      });
+      );
 
-      const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const suppliesData = Object.keys(data).map((key) => {
-            const item = data[key];
-            const maxQuantity = item.maxQuantity || item.quantity;
-            const updatedStatus = calculateStatus(item.quantity, maxQuantity);
+      const unsubscribeSupplies = onValue(
+        suppliesCollection,
+        (snapshot) => {
+          const data = snapshot.val();
+          const suppliesData = data
+            ? Object.keys(data)
+                .map((key) => {
+                  const item = data[key];
+                  const maxQuantity = item.maxQuantity || item.quantity;
+                  return {
+                    ...item,
+                    id: key,
+                    status: calculateStatus(item.quantity, maxQuantity),
+                    itemName: item.itemName || "",
+                  };
+                })
+                .sort((a, b) => a.itemName.localeCompare(b.itemName))
+            : [];
 
-            return {
-              ...item,
-              id: key,
-              status: updatedStatus,
-              itemName: item.itemName || "",
-            };
-          });
-          suppliesData.sort((a, b) => {
-            const nameA = a.itemName || "";
-            const nameB = b.itemName || "";
-            return nameA.localeCompare(nameB);
-          });
           setSuppliesList(suppliesData);
-        } else {
+        },
+        (error) => {
+          console.error("Error fetching supplies:", error);
           setSuppliesList([]);
         }
-      });
+      );
 
       return () => {
         unsubscribeInventory();
         unsubscribeSupplies();
       };
     }
-  }, [department]); // Dependency on department to ensure it's set first
+  }, [role, department]);
 
   const confirmDelete = (item) => {
     setCurrentItem(item);
@@ -197,10 +210,18 @@ function Inventory() {
   };
 
   const handleDelete = async () => {
-    const deletePath =
-      selectedTab === "medicine"
-        ? `departments/${department}/localMeds/${currentItem.id}`
-        : `departments/${department}/localSupplies/${currentItem.id}`;
+    let deletePath;
+    if (role === "admin") {
+      deletePath =
+        selectedTab === "medicine"
+          ? `departments/Pharmacy/localMeds/${currentItem.id}`
+          : `departments/CSR/localSupplies/${currentItem.id}`;
+    } else {
+      deletePath =
+        selectedTab === "medicine"
+          ? `departments/${department}/localMeds/${currentItem.id}`
+          : `departments/${department}/localSupplies/${currentItem.id}`;
+    }
     await remove(ref(database, deletePath));
     toggleDeleteModal();
   };
