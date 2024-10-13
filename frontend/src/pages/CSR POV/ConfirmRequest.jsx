@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, onValue, update } from 'firebase/database'; // Use 'update' for deducting from inventory
+import { ref, get, set, push, onValue, update } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
@@ -50,7 +50,7 @@ const ConfirmRequest = ({ requestToConfirm }) => {
 
   // Real-time update of supplies using onValue
   useEffect(() => {
-    const suppliesRef = ref(database, 'supplies');
+    const suppliesRef = ref(database, 'departments/CSR/localSupplies');
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
       if (snapshot.exists()) {
         const supplies = Object.entries(snapshot.val())
@@ -178,24 +178,23 @@ const ConfirmRequest = ({ requestToConfirm }) => {
       // Update the local supplies with the new quantity
       await set(ref(database, departmentPath), {
         ...item,
+        itemKey: item.itemKey,
         quantity: newQuantity,
         status: formData.status,
         timestamp: formData.timestamp,
+
       });
 
       // Deduct the quantity from main inventory in 'supplies'
-      const mainInventoryPath = `departments/CSR/localSupplies/${item.itemKey}`;
-      const mainInventorySnapshot = await get(ref(database, mainInventoryPath));
+      const mainInventoryRef = ref(database, `'departments/CSR/localSupplies/${item.itemKey}`);
+      const mainInventorySnapshot = await get(mainInventoryRef);
 
       if (mainInventorySnapshot.exists()) {
-        const mainInventoryData = mainInventorySnapshot.val();
-        const updatedQuantity = mainInventoryData.quantity - item.quantity;
-
-        if (updatedQuantity < 0) {
-          alert('Not enough quantity in main inventory.');
-        } else {
-          await update(ref(database, mainInventoryPath), { quantity: updatedQuantity });
-        }
+        const currentData = mainInventorySnapshot.val();
+        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0); // Deduct the item quantity
+        await update(mainInventoryRef, { quantity: updatedQuantity }); // Updates the new quantity in the database
+      } else {
+        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
       }
     }
 
@@ -255,7 +254,7 @@ const ConfirmRequest = ({ requestToConfirm }) => {
                 </option>
               ))}
             </select>
-            {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
+            {errorMessages.departmentError && <p className="text-red-500 text-sm">This field is required</p>}
           </div>
 
           <div>
@@ -268,55 +267,70 @@ const ConfirmRequest = ({ requestToConfirm }) => {
             >
               <option value="Draft">Draft</option>
               <option value="Confirmed">Confirmed</option>
+              <option value="Denied">Denied</option>
             </select>
-            {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
+            {errorMessages.statusError && <p className="text-red-500 text-sm">This field is required</p>}
           </div>
         </div>
       </div>
 
-      {/* Reason Input */}
+      {/* Items to Add */}
       <div className="mb-4">
-      <label className="block font-semibold mb-1">Reason</label>
-        <textarea
-          name="reason"
-          value={formData.reason}
-          onChange={handleInputChange}
-          className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-          rows="3"
-          placeholder="Enter the reason for this request..."
-        ></textarea>
-        {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason.</p>}
+        <label className="block font-semibold mb-1">Add Items</label>
+        <input
+          type="text"
+          name="searchItem"
+          placeholder="Search for items"
+          value={searchRef.current}
+          onChange={handleSearchChange}
+          className="border p-2 w-full rounded"
+        />
       </div>
 
-
-      {/* Selected Items Display */}
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
-        {selectedItems.length > 0 ? (
-          selectedItems.map(item => (
-            <div key={item.itemKey} className="flex justify-between items-center p-2 border rounded mb-2">
-              <span>{item.itemName}</span>
-              <div className="flex items-center">
-                <input
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                  className="border p-1 rounded w-16 mr-2"
-                />
-                <button
-                  onClick={() => removeItem(item)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p>No items selected.</p>
-        )}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {filteredItems.map(item => (
+          <button
+            key={item.itemKey}
+            onClick={() => addItem(item)}
+            className="bg-blue-500 text-white px-2 py-1 rounded"
+          >
+            {item.itemName} ({item.quantity} in stock)
+          </button>
+        ))}
       </div>
+
+      {/* Selected Items */}
+      {selectedItems.length > 0 && (
+        <>
+          <div className="mb-4">
+            <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
+            <ul>
+              {selectedItems.map((item, index) => (
+                <li key={index} className="flex justify-between items-center mb-2">
+                  <div>
+                    <p>{item.itemName}</p>
+                    <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                      className="border p-1 w-16 rounded"
+                    />
+                    <button
+                      className="bg-red-500 text-white px-2 py-1 rounded"
+                      onClick={() => removeItem(item)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 };

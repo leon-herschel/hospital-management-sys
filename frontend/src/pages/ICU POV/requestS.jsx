@@ -59,7 +59,10 @@ const RequestS = () => {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const itemsList = Object.values(data); // Extract the items from the selected node
+          const itemsList = Object.keys(data).map((key) => ({
+            itemKey: key, // Store the item key
+            ...data[key], // Spread the item data
+          }));
           setItems(itemsList); // Set the items state
         } else {
           console.log('No data available');
@@ -230,65 +233,60 @@ const RequestS = () => {
           value={formData.reason}
           onChange={handleInputChange}
           className={`border ${reasonError ? 'border-red-500' : 'border-gray-300'} rounded p-2 w-full`}
+          placeholder="Enter reason for request"
         />
-        {reasonError && <span className="text-red-500">Please provide a reason.</span>}
+        {reasonError && <span className="text-red-500">Please enter a reason.</span>}
       </div>
-
-      {/* Items Search and Selection */}
       <div className="mb-4">
-        <label htmlFor="search" className="block font-bold mb-1">Search Items</label>
+        <label className="block font-bold mb-1">Search Items</label>
         <input
-          id="search"
-          name="search"
+          type="text"
           value={searchTerm}
           onChange={handleSearchChange}
           className="border border-gray-300 rounded p-2 w-full"
-          placeholder="Search for items..."
+          placeholder="Search items..."
         />
-        <div className="mt-2">
-          {filteredItems.map((item) => (
-            <div key={item.itemName} className="flex justify-between items-center border-b py-2">
-              <div>{item.itemName} (Max: {item.maxQuantity})</div>
+      </div>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        {filteredItems.length > 0 ? filteredItems.map((item) => (
+          <div key={item.itemKey} className="border rounded p-2 shadow">
+            <h3 className="font-bold">{item.itemName}</h3>
+            <p>Max Quantity: {item.maxQuantity}</p>
+            <button
+              onClick={() => addItem(item)}
+              className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
+            >
+              Add Item
+            </button>
+          </div>
+        )) : (
+          <p>No items found</p>
+        )}
+      </div>
+      <div>
+        <h2 className="font-bold mb-2">Selected Items</h2>
+        {selectedItems.length > 0 ? (
+          selectedItems.map((item) => (
+            <div key={item.itemKey} className="border rounded p-2 mb-2 shadow">
+              <h3 className="font-bold">{item.itemName}</h3>
+              <input
+                type="number"
+                value={item.quantity}
+                onChange={(e) => handleQuantityChange(item, e.target.value)}
+                className="border border-gray-300 rounded p-1 w-1/3"
+              />
               <button
-                className="bg-blue-500 text-white px-2 py-1 rounded"
-                onClick={() => addItem(item)}
+                onClick={() => removeItem(item)}
+                className="bg-red-500 text-white px-2 py-1 rounded ml-2"
               >
-                Add
+                Remove
               </button>
             </div>
-          ))}
-        </div>
+          ))
+        ) : (
+          <p>No items selected</p>
+        )}
       </div>
-
-      {/* Selected Items */}
-      {selectedItems.length > 0 && (
-        <div className="mb-4">
-          <h2 className="font-bold mb-2">Selected Items</h2>
-          <ul className="space-y-2">
-            {selectedItems.map((item) => (
-              <li key={item.itemName} className="flex justify-between items-center">
-                <span>{item.itemName} (Quantity: {item.quantity})</span>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    min="1"
-                    max={item.maxQuantity}
-                    onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                    className="border border-gray-300 rounded p-1 w-16"
-                  />
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };
