@@ -105,7 +105,7 @@ const RequestS = () => {
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]); // Default quantity is set to 1
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: '' }]); // Default quantity is set to 1
       setSearchTerm(''); // Clear search term after adding
       setFilteredItems([]); // Clear filtered items
     }
@@ -121,7 +121,7 @@ const RequestS = () => {
       return; // Stop execution if quantity exceeds
     }
 
-    const newQuantity = Math.min(Math.max(value, 1), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
+    const newQuantity = Math.min(Math.max(value, ''), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
     const updatedItems = selectedItems.map(selectedItem =>
       selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: newQuantity } : selectedItem
     );
@@ -137,21 +137,21 @@ const RequestS = () => {
     return formData.department && formData.status && formData.reason;
   };
 
-  // Handle the transfer of data
+  // Handle the request of data
   const handleTransfer = () => {
     if (!validateInputs()) {
       alert('Please fill in all required fields.');
       return; // Stop execution if validation fails
     }
 
-    if (selectedItems.length === 0) {
-      alert('Please select items to transfer.');
+    if (selectedItems.length === '') {
+      alert('Please select items to request.');
       return; // Stop execution if no items are selected
     }
 
     setSubmitting(true); // Disable the button and show loading
 
-    const transferData = {
+    const handleTransfer = {
       name: formData.name,
       status: formData.status,
       reason: formData.reason,
@@ -165,9 +165,9 @@ const RequestS = () => {
     // Create a new child node under the "Request" node
     const newRequestRef = push(ref(database, requestNodePath));
 
-    set(newRequestRef, transferData)
+    set(newRequestRef, handleTransfer)
       .then(() => {
-        alert('Transfer successful!');
+        alert('Request successful!');
         // Optionally, reset formData and selectedItems here
         setFormData({ ...formData, reason: '', status: 'Draft' }); // Reset formData
         setSelectedItems([]); // Clear selected items
