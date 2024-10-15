@@ -52,7 +52,7 @@ const TransferMed = () => {
   
 // Real-time update of medicine supplies using onValue
 useEffect(() => {
-  const medicineRef = ref(database, 'medicine');
+  const medicineRef = ref(database, 'departments/Pharmacy/localMeds');
   
   // Real-time listener
   const unsubscribe = onValue(medicineRef, (snapshot) => {
@@ -175,16 +175,24 @@ useEffect(() => {
       });
   
       // Update the main inventory (deduct quantity)
-      const mainInventoryRef = ref(database, `medicine/${item.itemKey}`);
-      const mainInventorySnapshot = await get(mainInventoryRef);
-  
-      if (mainInventorySnapshot.exists()) {
-        const currentData = mainInventorySnapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
-        await update(mainInventoryRef, { quantity: updatedQuantity });
-      } else {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
-      }
+      // Update the main inventory (deduct quantity)
+const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${item.itemKey}`);
+const mainInventorySnapshot = await get(mainInventoryRef);
+
+if (mainInventorySnapshot.exists()) {
+  const currentData = mainInventorySnapshot.val();
+  const updatedQuantity = currentData.quantity - item.quantity;
+
+  if (updatedQuantity < 0) {
+    console.error(`Not enough stock in Pharmacy for item: ${item.itemName}`);
+  } else {
+    // Update the quantity of the item in Pharmacy
+    await update(mainInventoryRef, { quantity: updatedQuantity });
+  }
+} else {
+  console.error(`Item ${item.itemName} does not exist in Pharmacy's inventory.`);
+}
+
     }
   
     alert('Transfer successful!');

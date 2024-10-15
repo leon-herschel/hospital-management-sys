@@ -152,6 +152,14 @@ const Request = () => {
           )}
         </>
       )}
+       {/* Modal to display the Transfer component */}
+       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+        <Transfer
+          selectedItems={selectedItems}
+          recipientDepartment={recipientDepartment} // Pass recipient department
+          onClose={handleCloseModal}
+        />
+      </Modal>
     </div>
   );
 };

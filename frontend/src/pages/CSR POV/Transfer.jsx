@@ -9,22 +9,22 @@ const Transfer = () => {
     department: 'Pharmacy',
     status: 'Draft',
     reason: '',
-    timestamp: new Date().toLocaleString() // Add current timestamp on initial load
+    timestamp: new Date().toISOString(),
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // Will be updated in real-time with only supplies
+  const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-
-  const searchRef = useRef(''); // Ref to store search term without triggering re-renders
-  const departmentRef = useRef(); // Ref to store Firebase reference for departments
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
     statusError: false,
     reasonError: false,
   });
+
+  const searchRef = useRef('');
+  const departmentRef = useRef();
 
   // Fetch authenticated user data
   useEffect(() => {
@@ -49,16 +49,15 @@ const Transfer = () => {
       .catch(error => console.error('Error fetching departments:', error));
   }, []);
 
-  // Real-time update of supplies using onValue
+  // Real-time update of supplies
   useEffect(() => {
-    const suppliesRef = ref(database, 'supplies');
-    const unsubscribe = onValue(suppliesRef, (snapshot) => {
+    const suppliesRef = ref(database, 'departments/CSR/localSupplies');
+    const unsubscribe = onValue(suppliesRef, snapshot => {
       if (snapshot.exists()) {
-        const supplies = Object.entries(snapshot.val())
-          .map(([key, value]) => ({
-            ...value,
-            itemKey: key,
-          }));
+        const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
+          ...value,
+          itemKey: key,
+        }));
         setItems(supplies);
       }
     });
@@ -116,7 +115,6 @@ const Transfer = () => {
     return department && status && reason;
   };
 
-
   const handleTransfer = async () => {
     if (!validateInputs()) {
       alert('Please fill in all required fields.');
@@ -126,55 +124,54 @@ const Transfer = () => {
       alert('Please select items to transfer.');
       return;
     }
-  
+
     setSubmitting(true);
-  
+
     const transferData = {
       name: formData.name,
       status: formData.status,
       reason: formData.reason,
       timestamp: formData.timestamp,
-      recipientDepartment: formData.department, // Make sure we are passing the department here
+      recipientDepartment: formData.department,
     };
-  
+
     for (const item of selectedItems) {
-      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;  // Uses the selected department
-      
+      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
+
       // Fetch the existing quantity in the local supplies
       const localSupplySnapshot = await get(ref(database, departmentPath));
       let newQuantity = item.quantity;
-  
+
       if (localSupplySnapshot.exists()) {
-        // Add to the existing quantity if the item already exists
         const existingData = localSupplySnapshot.val();
         newQuantity += existingData.quantity;
       }
-  
+
       // Update the local supplies with the new quantity
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        status: formData.status, // You can keep other fields like status if needed
-        timestamp: formData.timestamp, // Timestamp remains here
+        status: formData.status,
+        timestamp: formData.timestamp,
       });
-  
-      // Push each transfer directly under InventoryHistoryTransfer
+
+      // Push transfer details to InventoryHistoryTransfer
       const historyPath = `departments/CSR/InventoryHistoryTransfer`;
-      const newHistoryRef = push(ref(database, historyPath));  // `push()` will ensure a unique key is generated
+      const newHistoryRef = push(ref(database, historyPath));
       await set(newHistoryRef, {
         itemKey: item.itemKey,
         itemName: item.itemName,
         quantity: item.quantity,
         timestamp: formData.timestamp,
         sender: formData.name,
-        recipientDepartment: formData.department,  // Ensure recipientDepartment is included
-        reason: formData.reason, // Include reason in the history
+        recipientDepartment: formData.department,
+        reason: formData.reason,
       });
-  
+
       // Update the main inventory (deduct quantity)
-      const mainInventoryRef = ref(database, `supplies/${item.itemKey}`);
+      const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
       const mainInventorySnapshot = await get(mainInventoryRef);
-  
+
       if (mainInventorySnapshot.exists()) {
         const currentData = mainInventorySnapshot.val();
         const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
@@ -183,11 +180,12 @@ const Transfer = () => {
         console.error(`Item ${item.itemName} does not exist in the main inventory.`);
       }
     }
-  
+
     alert('Transfer successful!');
     setFormData({ ...formData, reason: '', status: '' });
     setSelectedItems([]);
     setSubmitting(false);
+    setIsModalOpen(false); // Close modal after transfer
   };
   
   return (
@@ -196,14 +194,13 @@ const Transfer = () => {
         <h1 className="text-xl font-bold">Create a new stock transfer.</h1>
         <button
           className="bg-green-500 text-white px-2 py-1 rounded"
-          onClick={handleTransfer}
+          onClick={openModal} // Open modal on click
           disabled={submitting}
         >
-          {submitting ? 'Transferring...' : 'Transfer'}
+          Proceed
         </button>
       </div>
 
-      {/* Name Input */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Name:</label>
         <input
@@ -216,13 +213,11 @@ const Transfer = () => {
         <p className="text-gray-500 text-sm">The one who processes.</p>
       </div>
 
-      {/* Timestamp Display */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Transfer Timestamp:</label>
         <p>{formData.timestamp}</p>
       </div>
 
-      {/* General Input Fields */}
       <div className="mb-4">
         <h2 className="font-semibold text-lg mb-2">General</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -258,86 +253,107 @@ const Transfer = () => {
           </div>
         </div>
 
-        {/* Reason Input */}
         <div className="mb-4">
-          <label className="block font-semibold mb-1">Reason:</label>
+          <label className="block font-semibold mb-1">Reason for Transfer</label>
           <textarea
             name="reason"
             value={formData.reason}
             onChange={handleInputChange}
             className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-          ></textarea>
-          {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
+          />
+          {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason.</p>}
         </div>
       </div>
 
-      {/* Items Section */}
       <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Items</h2>
-        <div className="flex justify-between items-center mb-2">
-          <input
-            type="text"
-            placeholder="Search Item"
-            value={searchRef.current}
-            onChange={handleSearchChange}
-            className="border p-2 rounded w-1/2"
-          />
-        </div>
-
-        {/* Show Filtered Items */}
-        {searchRef.current && (
-          <div className="max-h-40 overflow-y-auto border border-gray-300 rounded mb-4">
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item, index) => (
-                <div key={index} className="flex justify-between p-2 border-b hover:bg-gray-100 cursor-pointer"
-                  onClick={() => addItem(item)}
-                >
-                  <span>{item.itemName}</span>
-                  <span className="text-gray-500">{item.quantity}</span>
-                </div>
+        <h2 className="font-semibold text-lg mb-2">Select Items to Transfer</h2>
+        <input
+          type="text"
+          placeholder="Search items..."
+          onChange={handleSearchChange}
+          value={searchRef.current}
+          className="border p-2 w-full rounded mb-2"
+        />
+        <ul className="border rounded">
+          {filteredItems.length === 0
+            ? items.map(item => (
+                <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
+                  {item.itemName} (Available: {item.quantity})
+                  <button
+                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                    onClick={() => addItem(item)}
+                  >
+                    Add
+                  </button>
+                </li>
               ))
-            ) : (
-              <div className="p-2 text-gray-500">No items found.</div>
-            )}
-          </div>
-        )}
+            : filteredItems.map(item => (
+                <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
+                  {item.itemName} (Available: {item.quantity})
+                  <button
+                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                    onClick={() => addItem(item)}
+                  >
+                    Add
+                  </button>
+                </li>
+              ))}
+        </ul>
+      </div>
 
-        {/* Selected Items Display in Table Format */}
-        <table className="min-w-full border-collapse border border-gray-300 mt-4">
-          <thead>
-            <tr>
-              <th className="border border-gray-300 p-2">Item Name</th>
-              <th className="border border-gray-300 p-2">Quantity</th>
-              <th className="border border-gray-300 p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {selectedItems.map((item, index) => (
-              <tr key={index}>
-                <td className="border border-gray-300 p-2">{item.itemName}</td>
-                <td className="border border-gray-300 p-2">
+      <div className="mb-4">
+        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
+        {selectedItems.length === 0 ? (
+          <p>No items selected.</p>
+        ) : (
+          <ul className="border rounded">
+            {selectedItems.map(item => (
+              <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
+                {item.itemName} (Quantity: {item.quantity})
+                <div className="flex items-center">
                   <input
                     type="number"
-                    min="1"
-                    max={item.quantity}
                     value={item.quantity}
+                    min="1"
                     onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                    className="border rounded w-16 text-center"
+                    className="border rounded w-16 text-center mr-2"
                   />
-                </td>
-                <td className="border border-gray-300 p-2">
                   <button
                     className="bg-red-500 text-white px-2 py-1 rounded"
                     onClick={() => removeItem(item)}
                   >
                     Remove
                   </button>
-                </td>
-              </tr>
+                </div>
+              </li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+        )}
       </div>
+
+      {/* Modal for final confirmation */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 relative">
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 text-gray-500">✖️</button>
+            <h2 className="text-lg font-semibold">Confirm Transfer</h2>
+            <p>Are you sure you want to proceed with the transfer?</p>
+            <div className="mt-4">
+              <h3 className="font-semibold">Items to Transfer:</h3>
+              <ul>
+                {selectedItems.map(item => (
+                  <li key={item.itemKey}>
+                    {item.itemName} (Quantity: {item.quantity})
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button onClick={handleTransfer} className="bg-green-500 text-white px-4 py-2 mt-4 rounded" disabled={submitting}>
+              {submitting ? 'Processing...' : 'Confirm Transfer'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { ref, get, set, push } from 'firebase/database'; // Import Firebase functions
-import { database } from '../../firebase/firebase'; // Firebase configuration
-import { getAuth } from 'firebase/auth'; // Import Firebase Auth
+import React, { useState, useEffect } from "react";
+import { ref, get, set, push } from "firebase/database"; // Import Firebase functions
+import { database } from "../../firebase/firebase"; // Firebase configuration
+import { getAuth } from "firebase/auth"; // Import Firebase Auth
 
 const RequestS = () => {
-  const [activeTab, setActiveTab] = useState('General'); // Tab state
+  const [activeTab, setActiveTab] = useState("General"); // Tab state
   const [formData, setFormData] = useState({
-    name: '', // Default name
-    department: 'Pharmacy', // Default department
-    status: 'Draft',
-    reason: '',
-    timestamp: '', // Timestamp to track transfer creation
+    name: "", // Default name
+    department: "Pharmacy", // Default department
+    status: "Draft",
+    reason: "",
+    timestamp: "", // Timestamp to track transfer creation
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // To store medicines or supplies data
   const [selectedItems, setSelectedItems] = useState([]); // To store selected items
-  const [searchTerm, setSearchTerm] = useState(''); // Search term state
+  const [searchTerm, setSearchTerm] = useState(""); // Search term state
   const [filteredItems, setFilteredItems] = useState([]); // Filtered items based on search
 
   // Error states
@@ -29,25 +29,30 @@ const RequestS = () => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      setFormData((prevData) => ({ ...prevData, name: user.displayName || user.email })); // Use displayName or email as fallback
+      setFormData((prevData) => ({
+        ...prevData,
+        name: user.displayName || user.email,
+      })); // Use displayName or email as fallback
     }
   }, []);
 
   // Fetch departments from Firebase
   useEffect(() => {
-    const departmentRef = ref(database, 'departments');
+    const departmentRef = ref(database, "departments");
     get(departmentRef)
       .then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const departmentNames = Object.keys(data).filter(dept => dept === 'CSR' || dept === 'Pharmacy'); // Filter for CSR and Pharmacy
+          const departmentNames = Object.keys(data).filter(
+            (dept) => dept === "CSR" || dept === "Pharmacy"
+          ); // Filter for CSR and Pharmacy
           setDepartments(departmentNames);
         } else {
-          console.log('No data available');
+          console.log("No data available");
         }
       })
       .catch((error) => {
-        console.error('Error fetching departments:', error);
+        console.error("Error fetching departments:", error);
       });
   }, []);
 
@@ -65,10 +70,10 @@ const RequestS = () => {
           }));
           setItems(itemsList); // Set the items state
         } else {
-          console.log('No data available');
+          console.log("No data available");
         }
       } catch (error) {
-        console.error('Error fetching items:', error);
+        console.error("Error fetching items:", error);
       }
     };
     fetchItems();
@@ -97,7 +102,7 @@ const RequestS = () => {
     setSearchTerm(value);
 
     // Filter items based on search term
-    const filtered = items.filter(item =>
+    const filtered = items.filter((item) =>
       item.itemName.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredItems(filtered);
@@ -112,7 +117,9 @@ const RequestS = () => {
   };
 
   const removeItem = (itemToRemove) => {
-    setSelectedItems(selectedItems.filter(item => item.itemName !== itemToRemove.itemName));
+    setSelectedItems(
+      selectedItems.filter((item) => item.itemName !== itemToRemove.itemName)
+    );
   };
 
   const handleQuantityChange = (item, value) => {
@@ -140,7 +147,7 @@ const RequestS = () => {
   // Handle the request of data
   const handleTransfer = () => {
     if (!validateInputs()) {
-      alert('Please fill in all required fields.');
+      alert("Please fill in all required fields.");
       return; // Stop execution if validation fails
     }
 
@@ -169,13 +176,13 @@ const RequestS = () => {
       .then(() => {
         alert('Request successful!');
         // Optionally, reset formData and selectedItems here
-        setFormData({ ...formData, reason: '', status: 'Draft' }); // Reset formData
+        setFormData({ ...formData, reason: "", status: "Draft" }); // Reset formData
         setSelectedItems([]); // Clear selected items
         setSubmitting(false); // Re-enable the button
       })
       .catch((error) => {
-        console.error('Error transferring data:', error);
-        alert('Error transferring data. Please try again.');
+        console.error("Error transferring data:", error);
+        alert("Error transferring data. Please try again.");
         setSubmitting(false); // Re-enable the button
       });
   };
@@ -189,17 +196,21 @@ const RequestS = () => {
           onClick={handleTransfer}
           disabled={submitting}
         >
-          {submitting ? 'Submitting...' : 'Submit'}
+          {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
       <div className="mb-4">
-        <label htmlFor="department" className="block font-bold mb-1">Department</label>
+        <label htmlFor="department" className="block font-bold mb-1">
+          Department
+        </label>
         <select
           id="department"
           name="department"
           value={formData.department}
           onChange={handleInputChange}
-          className={`border ${departmentError ? 'border-red-500' : 'border-gray-300'} rounded p-2`}
+          className={`border ${
+            departmentError ? "border-red-500" : "border-gray-300"
+          } rounded p-2`}
         >
           {departments.map((dept) => (
             <option key={dept} value={dept}>
@@ -207,26 +218,36 @@ const RequestS = () => {
             </option>
           ))}
         </select>
-        {departmentError && <span className="text-red-500">Please select a department.</span>}
+        {departmentError && (
+          <span className="text-red-500">Please select a department.</span>
+        )}
       </div>
       <div className="mb-4">
-        <label htmlFor="status" className="block font-bold mb-1">Status</label>
+        <label htmlFor="status" className="block font-bold mb-1">
+          Status
+        </label>
         <select
           id="status"
           name="status"
           value={formData.status}
           onChange={handleInputChange}
-          className={`border ${statusError ? 'border-red-500' : 'border-gray-300'} rounded p-2`}
+          className={`border ${
+            statusError ? "border-red-500" : "border-gray-300"
+          } rounded p-2`}
         >
           <option value="Draft">Draft</option>
           <option value="Pending">Pending</option>
           <option value="Approved">Approved</option>
           <option value="Rejected">Rejected</option>
         </select>
-        {statusError && <span className="text-red-500">Please select a status.</span>}
+        {statusError && (
+          <span className="text-red-500">Please select a status.</span>
+        )}
       </div>
       <div className="mb-4">
-        <label htmlFor="reason" className="block font-bold mb-1">Reason</label>
+        <label htmlFor="reason" className="block font-bold mb-1">
+          Reason
+        </label>
         <input
           id="reason"
           name="reason"

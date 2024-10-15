@@ -34,44 +34,50 @@ const RolesTable = () => {
   useEffect(() => {
     setFilteredRoles(
       roles.filter(role =>
-        role.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchTerm.toLowerCase())
+        role.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
   }, [searchTerm, roles]);
 
-  const handleAddRole = (newRole) => {
-    const roleId = Object.keys(newRole)[0];
-    const rolesRef = ref(database, `roles/${roleId}`);
+  const handleAddRole = async (newRole) => {
+    const roleName = Object.keys(newRole)[0]; 
+    const roleData = newRole[roleName]; 
 
-    set(rolesRef, newRole[roleId])
-      .then(() => {
-        setRoles((prevRoles) => [
-          ...prevRoles,
-          { id: roleId, ...newRole[roleId] },
-        ]);
-        setFilteredRoles((prevFiltered) => [
-          ...prevFiltered,
-          { id: roleId, ...newRole[roleId] },
-        ]);
-        setShowAddRoleModal(false);
-      })
-      .catch((error) => {
-        console.error('Error adding role:', error);
-      });
-  };
+    setRoles((prevRoles) => [
+        ...prevRoles,
+        { id: roleName, ...roleData } 
+    ]);
+
+    const roleRef = ref(database, `roles/${roleName}`); 
+    try {
+        await set(roleRef, roleData); 
+    } catch (error) {
+        console.error('Error adding role to database:', error);
+    }
+};
 
   const handleEditRole = (roleId, updatedRole) => {
     const roleRef = ref(database, `roles/${roleId}`);
-
-    set(roleRef, updatedRole)
+  
+    const roleData = {
+      name: updatedRole.name,
+      permissions: {
+        canAdd: updatedRole.permissions.canAdd,
+        canEdit: updatedRole.permissions.canEdit,
+        canDelete: updatedRole.permissions.canDelete,
+        canView: updatedRole.permissions.canView
+      }
+    };
+  
+    set(roleRef, roleData)
       .then(() => {
         setRoles((prevRoles) =>
-          prevRoles.map((role) => (role.id === roleId ? { id: roleId, ...updatedRole } : role))
+          prevRoles.map((role) => (role.id === roleId ? { id: roleId, ...roleData } : role))
         );
         setFilteredRoles((prevFiltered) =>
-          prevFiltered.map((role) => (role.id === roleId ? { id: roleId, ...updatedRole } : role))
+          prevFiltered.map((role) => (role.id === roleId ? { id: roleId, ...roleData } : role))
         );
+        setShowEditRoleModal(false); 
       })
       .catch((error) => {
         console.error('Error updating role:', error);
@@ -105,11 +111,11 @@ const RolesTable = () => {
           type="text"
           placeholder="Search"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)} // Update search term on input change
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="border border-slate-300 px-4 py-2 rounded-lg"
         />
         <button
-          className="ml-4 bg-green-600 text-white px-6 py-2 rounded-md"
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           onClick={() => setShowAddRoleModal(true)}
         >
           Add Role
@@ -120,10 +126,10 @@ const RolesTable = () => {
           <thead className="text-md bg-slate-200">
             <tr>
               <th scope="col" className="px-6 py-3">Role</th>
-              <th scope="col" className="px-6 py-3">Description</th>
-              <th scope="col" className="px-6 py-3">Access Inventory</th>
-              <th scope="col" className="px-6 py-3">Access Inventory History</th>
-              <th scope="col" className="px-6 py-3">Access Patients</th>
+              <th scope="col" className="px-6 py-3">Can Add</th>
+              <th scope="col" className="px-6 py-3">Can Edit</th>
+              <th scope="col" className="px-6 py-3">Can Delete</th>
+              <th scope="col" className="px-6 py-3">Can View</th>
               <th scope="col" className="px-6 py-3">Actions</th>
             </tr>
           </thead>
@@ -131,27 +137,31 @@ const RolesTable = () => {
             {filteredRoles.map((role) => (
               <tr key={role.id} className="bg-white border-b hover:bg-slate-100">
                 <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                  {role.id}
+                  {role.name}
                 </th>
-                <td className="px-6 py-4">{role.description}</td>
-                <td className="px-6 py-4">
-                  <span className={role.accessInventory ? 'text-green-600' : 'text-red-600'}>
-                    {role.accessInventory ? 'Yes' : 'No'}
+                <td className="px-6 py-4">  
+                  <span className={role.permissions?.canAdd ? 'text-green-600' : 'text-red-600'}>
+                    {role.permissions?.canAdd ? 'Yes' : 'No'}
                   </span>
                 </td>
-                <td className="px-6 py-4">
-                  <span className={role.accessInventoryHistory ? 'text-green-600' : 'text-red-600'}>
-                    {role.accessInventoryHistory ? 'Yes' : 'No'}
+                <td className="px-6 py-4">  
+                  <span className={role.permissions?.canEdit ? 'text-green-600' : 'text-red-600'}>
+                    {role.permissions?.canEdit ? 'Yes' : 'No'}
                   </span>
                 </td>
-                <td className="px-6 py-4">
-                  <span className={role.accessPatients ? 'text-green-600' : 'text-red-600'}>
-                    {role.accessPatients ? 'Yes' : 'No'}
+                <td className="px-6 py-4">  
+                  <span className={role.permissions?.canDelete ? 'text-green-600' : 'text-red-600'}>
+                    {role.permissions?.canDelete ? 'Yes' : 'No'}
+                  </span>
+                </td>
+                <td className="px-6 py-4">  
+                  <span className={role.permissions?.canView ? 'text-green-600' : 'text-red-600'}>
+                    {role.permissions?.canView ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className="px-6 py-4 flex justify-center space-x-4">
                   <button
-                    className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
+                    className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
                     onClick={() => {
                       setSelectedRole(role);
                       setShowEditRoleModal(true);
@@ -160,7 +170,7 @@ const RolesTable = () => {
                     Edit
                   </button>
                   <button
-                    className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
+                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
                     onClick={() => confirmDeleteRole(role)}
                   >
                     Delete
@@ -188,7 +198,7 @@ const RolesTable = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
               <h2 className="text-xl font-bold mb-4">Delete Role</h2>
-              <p>Are you sure you want to delete the role "{roleToDelete?.id}"?</p>
+              <p>Are you sure you want to delete the role "{roleToDelete?.name}"?</p>
               <div className="flex justify-center space-x-4 mt-4">
                 <button
                   onClick={handleDeleteRole}

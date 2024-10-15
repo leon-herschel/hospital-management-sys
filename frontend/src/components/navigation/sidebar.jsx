@@ -23,12 +23,13 @@ import LogoutConfirmationModal from "./LogoutConfirmationModal";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false); 
-  const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false); 
+  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
+  const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false);
+  const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = useAuth();
-  const roleData = useAccessControl();
+  const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const handleLogout = () => {
@@ -53,6 +54,10 @@ const Sidebar = () => {
     setDepartmentsDropdownOpen(!departmentsDropdownOpen);
   };
 
+  const toggleHistoryDropdown = () => {
+    setHistoryDropdownOpen(!historyDropdownOpen)
+  }
+
   // Titles based on route paths
   const titles = {
     "/dashboard": "Overview",
@@ -62,10 +67,11 @@ const Sidebar = () => {
     "/analytics": "Analytics",
     "/billing": "Billing List",
     "/inventory-history": "Inventory History",
-    "/OverallInventory": "Overall Inventory",
+    "/OverAllInventory": "Overall Inventory",
     "/stockTransfer": "CSR Department",
     "/requestStock": "ICU Department",
-    "/med": "PHARMACY Department",
+    "/med": "Pharmacy Department",
+
   };
 
   let currentTitle = "Overview";
@@ -82,17 +88,15 @@ const Sidebar = () => {
     <div className="flex h-screen">
       {/* Sidebar Toggle */}
       <div
-        className={`fixed inset-0 z-20 transition-opacity bg-neutral-100 opacity-50 lg:hidden ${
-          sidebarOpen ? "block" : "hidden"
-        }`}
+        className={`fixed inset-0 z-20 transition-opacity bg-neutral-100 opacity-50 lg:hidden ${sidebarOpen ? "block" : "hidden"
+          }`}
         onClick={() => setSidebarOpen(false)}
       ></div>
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-slate-900 ${
-          sidebarOpen ? "translate-x-0 ease-out" : "-translate-x-full ease-in"
-        } lg:translate-x-0 lg:static lg:inset-0`}
+        className={`fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-slate-900 ${sidebarOpen ? "translate-x-0 ease-out" : "-translate-x-full ease-in"
+          } lg:translate-x-0 lg:static lg:inset-0`}
       >
         <div className="flex items-center justify-center">
           <img
@@ -106,88 +110,183 @@ const Sidebar = () => {
         <nav className="mt-1">
           <Link
             to="/dashboard"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-              isActive("/dashboard")
-                ? "bg-slate-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-slate-800`}
+            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/dashboard")
+              ? "bg-slate-800 text-white shadow-sm"
+              : "text-white"
+              } hover:bg-slate-800`}
           >
             <HomeIcon className="w-6 h-6 mr-3" />
             Overview
           </Link>
 
-          {roleData?.accessInventory && (
+          {permissions?.accessInventory && (
             <>
-            {/* Inventory Dropdown */}
+              {/* Inventory Dropdown */}
               <div
                 className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
                 onClick={toggleInventoryDropdown}
               >
-              <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
-              <span>Inventory</span>
-              <ChevronDownIcon
-                className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
-                  inventoryDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </div>
+                <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
+                <span>Inventory</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${inventoryDropdownOpen ? "rotate-180" : ""
+                    }`}
+                />
+              </div>
 
-            <div
-              className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${
-                inventoryDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
+              <div
+                className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${inventoryDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  }`}
+              >
                 <Link
                   to="/inventory"
-                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                    isActive("/inventory")
-                      ? "bg-slate-800 text-white shadow-sm"
-                      : "text-white"
-                  } hover:bg-slate-800`}
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/inventory")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                    } hover:bg-slate-800`}
                 >
                   <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
                   Inventory
                 </Link>
 
-                {roleData?.accessInventoryHistory && (
-                  <Link
-                    to="/inventory-history"
-                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                      isActive("/inventory-history")
-                        ? "bg-slate-800 text-white shadow-sm"
-                        : "text-white"
-                    } hover:bg-slate-800`}
-                  >
-                    <ArchiveBoxIcon className="w-5 h-5 mr-3" />
-                    History
-                  </Link>
-                )}
+
 
                 {/* Adding Overall Inventory */}
                 <Link
                   to="/OverallInventory"
-                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                    isActive("/OverallInventory")
-                      ? "bg-slate-800 text-white shadow-sm"
-                      : "text-white"
-                  } hover:bg-slate-800`}
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                    } hover:bg-slate-800`}
                 >
                   <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
                   Overall Inventory
                 </Link>
               </div>
             </>
-            )}
+          )}
+          <>
+            <Link to="Transfer"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+                } hover:bg-slate-800`}
+            >
+              Transfer Supply
+            </Link>
 
+          </>
+          <>
+            <Link to="transferMed" className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+              ? "bg-slate-800 text-white shadow-sm"
+              : "text-white"
+              } hover:bg-slate-800`}
+            >Transfer Medicine</Link>
+          </>
+          <>
+            <Link to="ViewRequest"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+                } hover:bg-slate-800`}
+            >
+              View Supply Request
+            </Link>
+          </>
+          <>
+            <Link to="ViewMedReq"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+                } hover:bg-slate-800`}
+            >
+              View Medicine Request
+            </Link>
+          </>
+
+          <>
+            <Link to="requestS"
+
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+                } hover:bg-slate-800`}
+            > Request Stock
+            </Link></>
+          {permissions?.accessInventoryHistory && (
+            <>
+              <div
+                className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
+                onClick={toggleHistoryDropdown}
+              >
+                <ArchiveBoxIcon className="w-5 h-5 mr-3" />
+                <span>History</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${historyDropdownOpen ? "rotate-180" : ""
+                    }`}
+                />
+              </div>
+
+              <div
+                className={`ml-8 transition-all duration-300 ease-in-out ${historyDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  }`}
+                style={{
+                  maxHeight: historyDropdownOpen ? "160px" : "0", // Control max height
+                }}
+              >
+                <div className="overflow-y-auto max-h-40">
+                  <Link
+                    to="/usage-history"
+                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/usage-history")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                      } hover:bg-slate-800`}
+                  >
+                    Usage History
+                  </Link>
+
+                  <Link
+                    to="/local-history"
+                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/local-history")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                      } hover:bg-slate-800`}
+                  >
+                    Local History
+                  </Link>
+
+                  <Link
+                    to="PharmacyTransferHistory"
+                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PharmacyTransferHistory")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                      } hover:bg-slate-800`}
+                  >
+                    Medicine Transfer History
+                  </Link>
+
+                  <Link
+                    to="CsrTransferHistory"
+                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/CsrTransferHistory")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                      } hover:bg-slate-800`}
+                  >
+                    Supply Transfer History
+                  </Link>
+                </div>
+              </div>
+
+            </>
+          )}
           {/* Other Sidebar Links */}
-          {roleData?.accessPatients && (
+          {permissions?.accessPatients && (
             <Link
               to="/patients"
-              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                isActive("/patients")
-                  ? "bg-slate-800 text-white shadow-sm"
-                  : "text-white"
-              } hover:bg-slate-800`}
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/patients")
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-white"
+                } hover:bg-slate-800`}
             >
               <UserGroupIcon className="w-6 h-6 mr-3" />
               Patients
@@ -196,113 +295,48 @@ const Sidebar = () => {
 
           <Link
             to="/billing"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-              isActive("/billing")
-                ? "bg-slate-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-slate-800`}
+            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/billing")
+              ? "bg-slate-800 text-white shadow-sm"
+              : "text-white"
+              } hover:bg-slate-800`}
           >
             <CreditCardIcon className="w-6 h-6 mr-3" />
             Billing
           </Link>
 
-          {/* Departments Dropdown */}
-          <div
-              className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
-              onClick={toggleDepartmentsDropdown}
-            >
-              <BuildingOffice2Icon className="w-6 h-6 mr-3" />
-              <span>Departments</span>
-              <ChevronDownIcon
-                className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
-                  departmentsDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </div>
-
-            <div
-              className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${
-                departmentsDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-              }`}
-            >
-              <Link
-                to="/stockTransfer"
-                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                  isActive("/stockTransfer")
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-white"
-                } hover:bg-slate-800`}
-              >
-                CSR POV
-              </Link>
-
-              <Link
-                to="/requestStock"
-                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                  isActive("/requestStock")
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-white"
-                } hover:bg-slate-800`}
-              >
-                ICU POV
-              </Link>
-              
-              <Link
-                to="/med"
-                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                  isActive("/med")
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-white"
-                } hover:bg-slate-800`}
-              >
-                PHARMACY POV
-              </Link>
-            </div>
-
 
           <Link
             to="/analytics"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-              isActive("/analytics")
-                ? "bg-slate-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-slate-800`}
+            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/analytics")
+              ? "bg-slate-800 text-white shadow-sm"
+              : "text-white"
+              } hover:bg-slate-800`}
           >
             <ChartBarIcon className="w-6 h-6 mr-3" />
             Analytics
           </Link>
 
-          <Link
-            to="/settings"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-              isActive("/settings")
+          {permissions?.accessSettings && (
+            <Link
+              to="/settings"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/settings")
                 ? "bg-slate-800 text-white shadow-sm"
                 : "text-white"
-            } hover:bg-slate-800`}
-          >
-            <Cog8ToothIcon className="w-6 h-6 mr-3" />
-            Settings
-          </Link>
+                } hover:bg-slate-800`}
+            >
+              <Cog8ToothIcon className="w-6 h-6 mr-3" />
+              Settings
+            </Link>
+          )}
 
-          <Link
-            to="/InventoryHistory"
-            className={`flex items-center px-4 py-2 mt-2 ${
-              isActive("/InventoryHistory")
-                ? "bg-red-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-red-800`}
-          >
-            <ChartBarIcon className="w-6 h-6 mr-3" />
-            History
-          </Link>
           <a
-          onClick={handleLogout}
-          className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white hover:bg-slate-800 cursor-pointer"
-        >
-          <PowerIcon className="w-6 h-6 mr-3" />
-          Logout
-        </a>
-      </nav>
+            onClick={handleLogout}
+            className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white hover:bg-slate-800 cursor-pointer"
+          >
+            <PowerIcon className="w-6 h-6 mr-3" />
+            Logout
+          </a>
+        </nav>
       </div>
 
       {/* Right Content */}
