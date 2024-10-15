@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import { getAuth } from "firebase/auth";
 import AddInventory from "./AddInventory";
 import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
@@ -23,13 +24,15 @@ function Inventory() {
   const [modal, setModal] = useState(false);
   const [supplyModal, setSupplyModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
-  const [deleteModal, setDeleteModal] = useState(false); // New state for delete confirmation
+  const [deleteModal, setDeleteModal] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [selectedTab, setSelectedTab] = useState("medicine");
   const [searchTerm, setSearchTerm] = useState("");
+  const [department, setDepartment] = useState("");
+  const [role, setRole] = useState("");
 
-  const inventoryCollection = ref(database, "medicine");
-  const suppliesCollection = ref(database, "supplies");
+  const auth = getAuth();
+  const user = auth.currentUser;
 
   const toggleModal = () => {
     setModal(!modal);
@@ -65,15 +68,16 @@ function Inventory() {
       itemName: itemName.value,
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
-      retailPrice: Number(retailPrice.value), // Updated retail price field
-      costPrice: Number(costPrice.value), // Updated cost price field
+      retailPrice: Number(retailPrice.value),
+      costPrice: Number(costPrice.value),
       status: updatedStatus,
     };
 
-    await update(
-      ref(database, `${selectedTab}/${currentItem.id}`),
-      updatedInventory
-    );
+    const updatePath =
+      role === "admin"
+        ? `departments/Pharmacy/localMeds/${currentItem.id}`
+        : `departments/${department}/localMeds/${currentItem.id}`;
+    await update(ref(database, updatePath), updatedInventory);
     toggleEditModal();
   };
 
@@ -90,79 +94,150 @@ function Inventory() {
       itemName: itemName.value,
       quantity: updatedQuantity,
       maxQuantity: maxQuantity,
-      retailPrice: Number(retailPrice.value), // Updated retail price field
-      costPrice: Number(costPrice.value), // Updated cost price field
+      retailPrice: Number(retailPrice.value),
+      costPrice: Number(costPrice.value),
       status: updatedStatus,
     };
 
     await update(
-      ref(database, `${selectedTab}/${currentItem.id}`),
+      ref(
+        database,
+        `departments/${department}/localSupplies/${currentItem.id}`
+      ),
       updatedSupply
     );
     toggleEditModal();
   };
 
+  // Fetch user department
   useEffect(() => {
-    const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const inventoryData = Object.keys(data).map((key) => {
-          const item = data[key];
-          const maxQuantity = item.maxQuantity || item.quantity;
-          const updatedStatus = calculateStatus(item.quantity, maxQuantity); // Calculate status
+    if (user) {
+      const userDepartmentRef = ref(database, `users/${user.uid}`);
+      onValue(
+        userDepartmentRef,
+        (snapshot) => {
+          const departmentData = snapshot.val();
+          if (departmentData) {
+            setDepartment(departmentData.department);
+            setRole(departmentData.role);
+          }
+        },
+        (error) => {
+          console.error("Error fetching department:", error);
+        }
+      );
+    }
+  }, [user]);
 
-          return {
-            ...item,
-            id: key,
-            status: updatedStatus, // Assign calculated status
-          };
-        });
-        inventoryData.sort((a, b) => a.itemName.localeCompare(b.itemName));
-        setInventoryList(inventoryData);
-      } else {
-        setInventoryList([]);
-      }
-    });
+  useEffect(() => {
+    if (department) {
+      const inventoryPath =
+        role === "admin"
+          ? "departments/Pharmacy/localMeds"
+          : `departments/${department}/localMeds`;
+      const suppliesPath =
+        role === "admin"
+          ? "departments/CSR/localSupplies"
+          : `departments/${department}/localSupplies`;
 
-    const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const suppliesData = Object.keys(data).map((key) => {
-          const item = data[key];
-          const maxQuantity = item.maxQuantity || item.quantity;
-          const updatedStatus = calculateStatus(item.quantity, maxQuantity); // Calculate status
+      const inventoryCollection = ref(database, inventoryPath);
+      const suppliesCollection = ref(database, suppliesPath);
 
-          return {
-            ...item,
-            id: key,
-            status: updatedStatus, // Assign calculated status
-          };
-        });
-        suppliesData.sort((a, b) => a.itemName.localeCompare(b.itemName));
-        setSuppliesList(suppliesData);
-      } else {
-        setSuppliesList([]);
-      }
-    });
+      const unsubscribeInventory = onValue(
+        inventoryCollection,
+        (snapshot) => {
+          const data = snapshot.val();
+          const inventoryData = data
+            ? Object.keys(data)
+                .map((key) => {
+                  const item = data[key];
+                  const maxQuantity = item.maxQuantity || item.quantity;
+                  return {
+                    ...item,
+                    id: key,
+                    status: calculateStatus(item.quantity, maxQuantity),
+                    itemName: item.itemName || "",
+                  };
+                })
+                .sort((a, b) => a.itemName.localeCompare(b.itemName))
+            : [];
 
-    return () => {
-      unsubscribeInventory();
-      unsubscribeSupplies();
-    };
-  }, []);
+          setInventoryList(inventoryData);
+        },
+        (error) => {
+          console.error("Error fetching inventory:", error);
+          setInventoryList([]);
+        }
+      );
+
+      const unsubscribeSupplies = onValue(
+        suppliesCollection,
+        (snapshot) => {
+          const data = snapshot.val();
+          const suppliesData = data
+            ? Object.keys(data)
+                .map((key) => {
+                  const item = data[key];
+                  const maxQuantity = item.maxQuantity || item.quantity;
+                  return {
+                    ...item,
+                    id: key,
+                    status: calculateStatus(item.quantity, maxQuantity),
+                    itemName: item.itemName || "",
+                  };
+                })
+                .sort((a, b) => a.itemName.localeCompare(b.itemName))
+            : [];
+
+          setSuppliesList(suppliesData);
+        },
+        (error) => {
+          console.error("Error fetching supplies:", error);
+          setSuppliesList([]);
+        }
+      );
+
+      return () => {
+        unsubscribeInventory();
+        unsubscribeSupplies();
+      };
+    }
+  }, [role, department]);
 
   const confirmDelete = (item) => {
     setCurrentItem(item);
-    toggleDeleteModal(); // Open the delete confirmation modal
+    toggleDeleteModal();
   };
 
   const handleDelete = async () => {
-    await remove(ref(database, `${selectedTab}/${currentItem.id}`));
-    toggleDeleteModal(); // Close the delete confirmation modal after deleting
+    let deletePath;
+    if (role === "admin") {
+      deletePath =
+        selectedTab === "medicine"
+          ? `departments/Pharmacy/localMeds/${currentItem.id}`
+          : `departments/CSR/localSupplies/${currentItem.id}`;
+    } else {
+      deletePath =
+        selectedTab === "medicine"
+          ? `departments/${department}/localMeds/${currentItem.id}`
+          : `departments/${department}/localSupplies/${currentItem.id}`;
+    }
+    await remove(ref(database, deletePath));
+    toggleDeleteModal();
   };
 
   const filteredList =
-    selectedTab === "medicine" ? inventoryList : suppliesList;
+    selectedTab === "medicine"
+      ? inventoryList.filter(
+          (medicine) =>
+            medicine.itemName &&
+            medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : suppliesList.filter(
+          (supply) =>
+            supply.itemName &&
+            supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
   return (
     <div className="w-full">
@@ -237,13 +312,13 @@ function Inventory() {
                         {(item.costPrice !== undefined
                           ? item.costPrice
                           : 0
-                        ).toFixed(2)}{" "}
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">
                         {(item.retailPrice !== undefined
                           ? item.retailPrice
                           : 0
-                        ).toFixed(2)}{" "}
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">{item.status}</td>
                       <td className="px-6 py-3 flex justify-center items-center">
@@ -257,7 +332,7 @@ function Inventory() {
                           Edit
                         </button>
                         <button
-                          onClick={() => confirmDelete(item)} // Ask for delete confirmation
+                          onClick={() => confirmDelete(item)}
                           className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
                         >
                           Delete
@@ -267,7 +342,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="px-6 py-3">
+                    <td colSpan="7" className="px-6 py-3">
                       No items in inventory.
                     </td>
                   </tr>
@@ -324,13 +399,13 @@ function Inventory() {
                         {(item.costPrice !== undefined
                           ? item.costPrice
                           : 0
-                        ).toFixed(2)}{" "}
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">
                         {(item.retailPrice !== undefined
                           ? item.retailPrice
                           : 0
-                        ).toFixed(2)}{" "}
+                        ).toFixed(2)}
                       </td>
                       <td className="px-6 py-3">{item.status}</td>
                       <td className="px-6 py-4 flex justify-center items-center">
@@ -344,7 +419,7 @@ function Inventory() {
                           Edit
                         </button>
                         <button
-                          onClick={() => confirmDelete(item)} // Ask for delete confirmation
+                          onClick={() => confirmDelete(item)}
                           className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
                         >
                           Delete
@@ -380,7 +455,7 @@ function Inventory() {
                 Cancel
               </button>
               <button
-                onClick={handleDelete} // Confirm deletion
+                onClick={handleDelete}
                 className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
               >
                 Yes, Delete
@@ -390,6 +465,7 @@ function Inventory() {
         </div>
       )}
 
+      {/* Edit Modal */}
       {editModal && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { ref, push, set, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import "../../App.css";
-import { generatePDF } from "./GeneratePDF";  
+import { generatePDF } from "./GeneratePDF";
+import { getAuth } from "firebase/auth"; // Import auth to get current user
 
 function AddPatient({ isOpen, toggleModal }) {
   const [firstName, setFirstName] = useState("");
@@ -12,11 +13,13 @@ function AddPatient({ isOpen, toggleModal }) {
   const [gender, setGender] = useState("");
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState("");
-  const [roomType, setRoomType] = useState("");
+  const [roomType, setRoomType] = useState(""); // Automatically set based on user's department
   const [dateTime, setDateTime] = useState("");
-  const [submitting, setSubmitting] = useState(false); // Add submitting state
-  const [departments, setDepartments] = useState([]); // New state to store department list
+  const [submitting, setSubmitting] = useState(false);
+  const [departments, setDepartments] = useState([]); // State to store department list
+  const [department, setDepartment] = useState(""); // State for the logged-in user's department
 
+  // Error state variables
   const [firstNameError, setFirstNameError] = useState(false);
   const [lastNameError, setLastNameError] = useState(false);
   const [birthError, setBirthError] = useState(false);
@@ -74,7 +77,29 @@ function AddPatient({ isOpen, toggleModal }) {
     fetchDepartments();
   }, []);
 
+  // Fetch logged-in user's department and set roomType
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      const userDepartmentRef = ref(database, `users/${user.uid}/department`);
+      get(userDepartmentRef).then((snapshot) => {
+        const departmentData = snapshot.val();
+        if (departmentData) {
+          setDepartment(departmentData); // Set the user's department
+          if (departmentData !== "Admin") {
+            setRoomType(departmentData); // Set roomType to user's department
+          } else {
+            setRoomType("");
+          }
+        }
+      });
+    }
+  }, []);
+
   const handleSubmit = () => {
+    // Reset error states
     setFirstNameError(false);
     setLastNameError(false);
     setBirthError(false);
@@ -87,6 +112,7 @@ function AddPatient({ isOpen, toggleModal }) {
 
     let hasError = false;
 
+    // Validate input fields
     if (!firstName) {
       setFirstNameError(true);
       hasError = true;
@@ -134,6 +160,9 @@ function AddPatient({ isOpen, toggleModal }) {
     const newPatientRef = push(patientRef);
     const uniqueKey = newPatientRef.key;
 
+    const dateTimeObject = new Date(dateTime);
+    const timestamp = dateTimeObject.getTime();
+
     const patientInfo = {
       firstName,
       lastName,
@@ -143,9 +172,8 @@ function AddPatient({ isOpen, toggleModal }) {
       contact,
       status,
       roomType,
-      dateTime,
       qrData: uniqueKey,
-      dateTime: dateTime,
+      dateTime: timestamp,
     };
 
     set(newPatientRef, patientInfo)
@@ -171,7 +199,7 @@ function AddPatient({ isOpen, toggleModal }) {
     setGender("");
     setContact("");
     setStatus("");
-    setRoomType("");
+    setRoomType(""); // Reset roomType as well
     setDateTime("");
   };
 
@@ -204,7 +232,9 @@ function AddPatient({ isOpen, toggleModal }) {
             onChange={(e) => setFirstName(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
-          {firstNameError && <p className="text-red-500 mt-1">First Name is required</p>}
+          {firstNameError && (
+            <p className="text-red-500 mt-1">First Name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -222,7 +252,9 @@ function AddPatient({ isOpen, toggleModal }) {
             onChange={(e) => setLastName(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
-          {lastNameError && <p className="text-red-500 mt-1">Last Name is required</p>}
+          {lastNameError && (
+            <p className="text-red-500 mt-1">Last Name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -337,25 +369,40 @@ function AddPatient({ isOpen, toggleModal }) {
             <label htmlFor="roomType" className="block text-gray-700 mb-2">
               Department
             </label>
-            <select
-              id="roomType"
-              name="roomType"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-                roomTypeError ? "border-red-500" : "border-gray-300"
-              }`}
-              value={roomType}
-              onChange={(e) => setRoomType(e.target.value)}
-              disabled={submitting} // Disable input when submitting
-            >
-              <option value="" disabled>
-                Select Department
-              </option>
-              {departments.map((department) => (
-                <option key={department} value={department}>
-                  {department}
+            {department === "Admin" ? (
+              // Show dropdown for Admin to select room type
+              <select
+                id="roomType"
+                name="roomType"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                  roomTypeError ? "border-red-500" : "border-gray-300"
+                }`}
+                value={roomType}
+                onChange={(e) => setRoomType(e.target.value)}
+                disabled={submitting} // Disable input when submitting
+              >
+                <option value="" disabled>
+                  Select Department
                 </option>
-              ))}
-            </select>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              // Automatically set and make it read-only for non-admin users
+              <input
+                type="text"
+                id="roomType"
+                name="roomType"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                  roomTypeError ? "border-red-500" : "border-gray-300"
+                }`}
+                value={roomType} // Automatically set from user's department
+                readOnly // Make this read-only for non-admin users
+              />
+            )}
             {roomTypeError && (
               <p className="text-red-500 mt-1">
                 Department is required for inpatients
@@ -388,7 +435,7 @@ function AddPatient({ isOpen, toggleModal }) {
           onClick={handleSubmit}
           disabled={submitting} // Disable the button when submitting
         >
-          {submitting ? "Submitting..." : "Submit"} {/* Show loading text */}
+          {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
     </div>
