@@ -76,8 +76,9 @@ const Sidebar = () => {
     "/Transfer": "Transfer Supply",
     "/transferMed": "Transfer Medicine",
     "/requestS": "Request Stock",
-
-
+    "/PharmacyTransferHistory": "Transfer History",
+    "/CsrTransferHistory": "Transfer History",
+    "/UsageHistory": "Usage History",
   };
 
   let currentTitle = "Overview";
@@ -242,7 +243,7 @@ const Sidebar = () => {
               >
                 <div className="overflow-y-auto max-h-40">
                   <Link
-                    to="/usage-history"
+                    to="/UsageHistory"
                     className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/usage-history")
                       ? "bg-slate-800 text-white shadow-sm"
                       : "text-white"

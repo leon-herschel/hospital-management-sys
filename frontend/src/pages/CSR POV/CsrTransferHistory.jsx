@@ -1,9 +1,27 @@
 import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import {getAuth} from "firebase/auth";
 
 const CsrTransferHistory = () => {
     const [transferList, setTransferList] = useState([]);
+    const [department, setDepartment] = useState("");
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    useEffect(() => {
+        if (user) {
+            const departmentRef = ref(database, `users/${user.uid}/department`)
+
+            onValue(departmentRef, (snapshot) => {
+                const departmentData = snapshot.val();
+                if (departmentData) {
+                    setDepartment(departmentData)
+                }
+            })
+        }
+    }, [user])
 
     useEffect(() => {
         const CsrHistoryRef = ref(database, "supplyHistoryTransfer")
@@ -16,15 +34,14 @@ const CsrTransferHistory = () => {
                     const CsrData = Object.keys(data).map((key) => ({
                         ...data[key],
                         id: key,
-                    }));
+                    }))
+                    .filter((supply) => supply.recipientDepartment === department);
                     setTransferList(CsrData);
-                } else {
-                    setTransferList([])
-                }
+                } 
             }
         );
         return () => unsubscribeCsrHistory();
-    }, []);
+    }, [department]);
 
     return (
         <div className="relative overflow-x-auto rounded-md shadow-sm">
@@ -53,7 +70,7 @@ const CsrTransferHistory = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="6" className="px-6 py-3">No CSR Transfer History found.</td>
+                            <td colSpan="6" className="px-6 py-3">No {department} Transfer History found.</td>
                         </tr>
                     )}
                 </tbody>
