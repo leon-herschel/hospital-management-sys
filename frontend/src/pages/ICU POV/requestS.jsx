@@ -187,7 +187,7 @@ const RequestS = () => {
   };
 
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Create a new Request Stock.</h1>
         <button
