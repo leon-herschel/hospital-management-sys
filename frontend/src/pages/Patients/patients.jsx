@@ -7,8 +7,8 @@ import { useAccessControl } from "../../components/roles/accessControl";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useNavigate } from "react-router-dom";
 import AddPatient from "./AddPatient";
-import EditPatientModal from "./EditPatientModal"; 
-import { getAuth } from 'firebase/auth';
+import EditPatientModal from "./EditPatientModal";
+import { getAuth } from "firebase/auth";
 
 function Patient() {
   const [patientList, setPatientList] = useState([]);
@@ -18,10 +18,9 @@ function Patient() {
   const [currentPatient, setCurrentPatient] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [department, setDepartment] = useState(""); // This will store the user's department
-  const [isAdmin, setIsAdmin] = useState(false); // Check if user is admin
-  const roleData = useAccessControl();
+  const [role, setRole] = useState(""); // This will store the user's role
+  const permissions = useAccessControl();
   const navigate = useNavigate();
-  
 
   // Fetch authenticated user and their department
   useEffect(() => {
@@ -29,22 +28,14 @@ function Patient() {
     const user = auth.currentUser;
 
     if (user) {
-      // Fetch user's department from the database
-      const userDepartmentRef = ref(database, `users/${user.uid}/department`);
-      const userRoleRef = ref(database, `users/${user.uid}/role`); // Assuming there is a role field
+      // Fetch user's department and role from the database
+      const userRef = ref(database, `users/${user.uid}`);
 
-      onValue(userDepartmentRef, (snapshot) => {
-        const departmentData = snapshot.val();
-        if (departmentData) {
-          setDepartment(departmentData); // Set department based on user
-        }
-      });
-
-      // Fetch user's role
-      onValue(userRoleRef, (snapshot) => {
-        const roleData = snapshot.val();
-        if (roleData && roleData === "admin") {
-          setIsAdmin(true); // Set isAdmin to true if the user is an admin
+      onValue(userRef, (snapshot) => {
+        const userData = snapshot.val();
+        if (userData) {
+          setDepartment(userData.department); // Set department based on user
+          setRole(userData.role); // Set role based on user
         }
       });
     }
@@ -56,17 +47,27 @@ function Patient() {
     const unsubscribe = onValue(patientCollection, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const filteredPatients = Object.keys(data)
-          .map((key) => ({
-            id: key,
-            ...data[key],
-          }))
-          .filter((patient) => isAdmin || patient.roomType === department); // Show all if admin, else filter by room type
+        const allPatients = Object.keys(data).map((key) => ({
+          id: key,
+          ...data[key],
+        }));
+
+        let filteredPatients;
+
+        // Check if user is admin
+        if (role === "admin") {
+          filteredPatients = allPatients; // Admin sees all patients
+        } else {
+          // Filter patients by department
+          filteredPatients = allPatients.filter(
+            (patient) => patient.roomType === department
+          );
+        }
 
         // Sort patients by first name
         filteredPatients.sort((a, b) => {
-          const nameA = a.firstName ? String(a.firstName).toLowerCase() : '';
-          const nameB = b.firstName ? String(b.firstName).toLowerCase() : '';
+          const nameA = a.firstName ? String(a.firstName).toLowerCase() : "";
+          const nameB = b.firstName ? String(b.firstName).toLowerCase() : "";
           return nameA.localeCompare(nameB);
         });
 
@@ -78,7 +79,7 @@ function Patient() {
     return () => {
       unsubscribe();
     };
-  }, [isAdmin, department]);
+  }, [department, role]); // Add role as a dependency
 
   const toggleModal = () => {
     setModal(!modal);
@@ -115,17 +116,17 @@ function Patient() {
   };
 
   const handleViewClick = (id) => {
-    navigate(`/patients/${id}`); 
+    navigate(`/patients/${id}`);
   };
 
   const filteredPatients = patientList.filter((patient) => {
-    const firstName = patient.firstName ? patient.firstName.toLowerCase() : '';
-    const lastName = patient.lastName ? patient.lastName.toLowerCase() : '';
+    const firstName = patient.firstName ? patient.firstName.toLowerCase() : "";
+    const lastName = patient.lastName ? patient.lastName.toLowerCase() : "";
     const fullName = `${firstName} ${lastName}`.trim();
     return fullName.includes(searchQuery.toLowerCase());
   });
 
-  if (!roleData?.accessPatients) {
+  if (!permissions?.accessPatients) {
     return <AccessDenied />;
   }
 
@@ -167,7 +168,10 @@ function Patient() {
           <tbody>
             {filteredPatients.length > 0 ? (
               filteredPatients.map((patient) => (
-                <tr key={patient.id} className="bg-white border-b hover:bg-slate-100">
+                <tr
+                  key={patient.id}
+                  className="bg-white border-b hover:bg-slate-100"
+                >
                   <td className="px-6 py-3">{patient.firstName}</td>
                   <td className="px-6 py-3">{patient.lastName}</td>
                   <td className="px-6 py-3">{patient.birth}</td>
@@ -177,9 +181,16 @@ function Patient() {
                   <td className="px-6 py-3">{patient.contact}</td>
                   <td className="px-6 py-3">{patient.roomType}</td>
                   <td className="px-6 py-3">
-                    <QRCode size={50} bgColor="white" fgColor="black" value={patient.id} />
+                    <QRCode
+                      size={50}
+                      bgColor="white"
+                      fgColor="black"
+                      value={patient.id}
+                    />
                   </td>
-                  <td className="px-6 py-3">{new Date(patient.dateTime).toLocaleString()}</td>
+                  <td className="px-6 py-3">
+                    {new Date(patient.dateTime).toLocaleString()}
+                  </td>
                   <td className="flex flex-col px-6 py-3 space-y-2 justify-center">
                     <button
                       onClick={() => handleViewClick(patient.id)}

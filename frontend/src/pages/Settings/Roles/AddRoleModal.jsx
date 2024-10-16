@@ -2,26 +2,38 @@ import { useState } from 'react';
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
-  const [role, setRole] = useState(''); 
-  const [description, setDescription] = useState(''); 
-  const [accessInventory, setAccessInventory] = useState(false); 
-  const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
-  const [accessPatients, setAccessPatients] = useState(false); 
+  const [roleName, setRoleName] = useState(''); 
+  const [canAdd, setCanAdd] = useState(false); 
+  const [canEdit, setCanEdit] = useState(false);
+  const [canDelete, setCanDelete] = useState(false); 
+  const [canView, setCanView] = useState(false); 
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+    const handleSubmit = (e) => {
+        e.preventDefault();
 
-    const newRole = {
-      [role]: { 
-        accessInventory,
-        accessInventoryHistory,
-        accessPatients,
-        description,
-      },
+        const updatedPermissions = {
+            canAdd: canAdd,
+            canEdit: canEdit,
+            canDelete: canDelete,
+            canView: canView,
+        };
+
+        const newRole = {
+            [roleName.toLowerCase()]: { 
+                name: roleName, 
+                permissions: updatedPermissions 
+            }
+        };
+
+        onAddRole(newRole);
+
+        setRoleName(''); 
+        setCanAdd(false); 
+        setCanEdit(false);
+        setCanDelete(false); 
+        setCanView(false); 
+        setShowModal(false); 
     };
-    onAddRole(newRole);
-    setShowModal(false);
-  };
 
   if (!showModal) return null;
 
@@ -35,28 +47,16 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
           <XMarkIcon className="h-6 w-6" />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6">Add Role</h2>
+        <h2 className="text-2xl font-bold mb-6">Add Role</h2> 
 
         <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
           <div className="mb-4">
-            <label className="block text-gray-700">Role</label>
+            <label className="block text-gray-700">Role Name</label> 
             <input
               type="text"
-              placeholder="Role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              required
-              className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-gray-700">Description</label>
-            <input
-              type="text"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Role Name"
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value)}
               required
               className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
             />
@@ -67,38 +67,47 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={accessInventory}
-                onChange={() => setAccessInventory(!accessInventory)}
+                checked={canAdd}
+                onChange={() => setCanAdd(!canAdd)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Inventory</span>
+              <span className="ml-2 text-gray-700">Can Add</span>
             </label>
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={accessInventoryHistory}
-                onChange={() => setAccessInventoryHistory(!accessInventoryHistory)}
+                checked={canEdit}
+                onChange={() => setCanEdit(!canEdit)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Inventory History</span>
+              <span className="ml-2 text-gray-700">Can Edit</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={canDelete}
+                onChange={() => setCanDelete(!canDelete)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Can Delete</span>
             </label>
             <label className="flex items-center mb-4">
               <input
                 type="checkbox"
-                checked={accessPatients}
-                onChange={() => setAccessPatients(!accessPatients)}
+                checked={canView}
+                onChange={() => setCanView(!canView)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Patients</span>
+              <span className="ml-2 text-gray-700">Can View</span>
             </label>
           </div>
 
           <div className="flex justify-center">
             <button
               type="submit"
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
             >
-              Add Role
+              Create Role
             </button>
           </div>
         </form>

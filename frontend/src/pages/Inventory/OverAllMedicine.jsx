@@ -13,27 +13,43 @@ const OverAllMedicine = () => {
     const departmentsRef = ref(database, "departments");
     onValue(
       departmentsRef,
-      (snapshot) => {
+      async (snapshot) => {
         const departmentsData = snapshot.val();
         if (departmentsData) {
-          const medsPromises = Object.keys(departmentsData).map(async (department) => {
-            const localMedsRef = ref(database, `departments/${department}/localMeds`);
+          const totalMeds = {};
+
+          // Iterate over each department
+          for (const department of Object.keys(departmentsData)) {
+            const localMedsRef = ref(
+              database,
+              `departments/${department}/localMeds`
+            );
             const medsSnapshot = await get(localMedsRef);
             const localMedsData = medsSnapshot.val();
-            return localMedsData
-              ? Object.entries(localMedsData).map(([key, value]) => ({
-                  id: key,
-                  ...value,
-                  department, // Add department info for context
-                }))
-              : [];
-          });
 
-          Promise.all(medsPromises).then((allMedsArrays) => {
-            // Flatten the array of arrays into a single array
-            const allMeds = allMedsArrays.flat();
-            setMedsList(allMeds);
-          });
+            if (localMedsData) {
+              // Aggregate medicines by itemName
+              Object.entries(localMedsData).forEach(([key, value]) => {
+                const itemName = value.itemName;
+
+                if (totalMeds[itemName]) {
+                  // If the medicine already exists, add to the quantity
+                  totalMeds[itemName].quantity += value.quantity || 0;
+                } else {
+                  // If it doesn't exist, create a new entry
+                  totalMeds[itemName] = {
+                    id: key,
+                    itemName: itemName,
+                    quantity: value.quantity || 0,
+                    status: value.status, // Retain status for the medicine
+                  };
+                }
+              });
+            }
+          }
+
+          // Convert the object to an array for rendering
+          setMedsList(Object.values(totalMeds));
         } else {
           setMedsList([]);
         }
@@ -59,35 +75,42 @@ const OverAllMedicine = () => {
   );
 
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-md p-6">
       <h1 className="text-xl font-bold mb-4">Overall Medicine Inventory</h1>
       <input
         type="text"
         placeholder="Search for items..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="border p-2 mb-4 w-full"
+        className="w-full border border-slate-300 px-4 py-2 rounded-md mb-4"
       />
-      <table className="min-w-full border-collapse block md:table">
-        <thead>
+      
+      <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+        <thead className="text-md bg-slate-200">
           <tr>
-            <th className="border border-gray-300 p-3">Item Name</th>
-            <th className="border border-gray-300 p-3">Quantity</th>
-            <th className="border border-gray-300 p-3">Status</th>
+            <th className="px-6 py-3">Item Name</th>
+            <th className="px-6 py-3">Quantity</th>
+            <th className="px-6 py-3">Status</th>
           </tr>
         </thead>
         <tbody>
           {filteredInventory.length > 0 ? (
             filteredInventory.map((medicine) => (
-              <tr key={medicine.id}>
-                <td className="border border-gray-300 p-3">{medicine.itemName}</td>
-                <td className="border border-gray-300 p-3">{medicine.quantity}</td>
-                <td className="border border-gray-300 p-3">{medicine.status}</td>
+              <tr key={medicine.id} className="bg-white border-b hover:bg-slate-100">
+                <td className="px-6 py-3">
+                  {medicine.itemName}
+                </td>
+                <td className="px-6 py-3">
+                  {medicine.quantity}
+                </td>
+                <td className="px-6 py-3">
+                  {medicine.status}
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="3" className="block md:table-cell p-2 text-center">
+              <td colSpan="3" className="px-6 py-3">
                 No medicines found.
               </td>
             </tr>

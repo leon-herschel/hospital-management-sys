@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ref, push, set, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import "../../App.css";
-import { generatePDF } from "./GeneratePDF";  
+import { generatePDF } from "./GeneratePDF";
 import { getAuth } from "firebase/auth"; // Import auth to get current user
 
 function AddPatient({ isOpen, toggleModal }) {
@@ -88,7 +88,11 @@ function AddPatient({ isOpen, toggleModal }) {
         const departmentData = snapshot.val();
         if (departmentData) {
           setDepartment(departmentData); // Set the user's department
-          setRoomType(departmentData); // Set roomType to user's department
+          if (departmentData !== "Admin") {
+            setRoomType(departmentData); // Set roomType to user's department
+          } else {
+            setRoomType("");
+          }
         }
       });
     }
@@ -157,7 +161,7 @@ function AddPatient({ isOpen, toggleModal }) {
     const uniqueKey = newPatientRef.key;
 
     const dateTimeObject = new Date(dateTime);
-  const timestamp = dateTimeObject.getTime();
+    const timestamp = dateTimeObject.getTime();
 
     const patientInfo = {
       firstName,
@@ -228,7 +232,9 @@ function AddPatient({ isOpen, toggleModal }) {
             onChange={(e) => setFirstName(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
-          {firstNameError && <p className="text-red-500 mt-1">First Name is required</p>}
+          {firstNameError && (
+            <p className="text-red-500 mt-1">First Name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -246,7 +252,9 @@ function AddPatient({ isOpen, toggleModal }) {
             onChange={(e) => setLastName(e.target.value)}
             disabled={submitting} // Disable input when submitting
           />
-          {lastNameError && <p className="text-red-500 mt-1">Last Name is required</p>}
+          {lastNameError && (
+            <p className="text-red-500 mt-1">Last Name is required</p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -361,16 +369,40 @@ function AddPatient({ isOpen, toggleModal }) {
             <label htmlFor="roomType" className="block text-gray-700 mb-2">
               Department
             </label>
-            <input
-              type="text"
-              id="roomType"
-              name="roomType"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-                roomTypeError ? "border-red-500" : "border-gray-300"
-              }`}
-              value={roomType} // Automatically set from user's department
-              readOnly // Make this read-only
-            />
+            {department === "Admin" ? (
+              // Show dropdown for Admin to select room type
+              <select
+                id="roomType"
+                name="roomType"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                  roomTypeError ? "border-red-500" : "border-gray-300"
+                }`}
+                value={roomType}
+                onChange={(e) => setRoomType(e.target.value)}
+                disabled={submitting} // Disable input when submitting
+              >
+                <option value="" disabled>
+                  Select Department
+                </option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              // Automatically set and make it read-only for non-admin users
+              <input
+                type="text"
+                id="roomType"
+                name="roomType"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                  roomTypeError ? "border-red-500" : "border-gray-300"
+                }`}
+                value={roomType} // Automatically set from user's department
+                readOnly // Make this read-only for non-admin users
+              />
+            )}
             {roomTypeError && (
               <p className="text-red-500 mt-1">
                 Department is required for inpatients

@@ -66,7 +66,10 @@ function Notification() {
   useEffect(() => {
     if (department) {
       const inventoryRef = ref(database, `departments/${department}/localMeds`);
-      const suppliesRef = ref(database, `departments/${department}/localSupplies`);
+      const suppliesRef = ref(
+        database,
+        `departments/${department}/localSupplies`
+      );
 
       const notifyLowStock = (data) => {
         const newNotifications = [];
@@ -74,7 +77,9 @@ function Notification() {
 
         for (const key in data) {
           const item = data[key];
-          console.log(`Checking item: ${item.itemName}, Status: ${item.status}`);
+          console.log(
+            `Checking item: ${item.itemName}, Status: ${item.status}`
+          );
 
           // Notify if the status is "Very Low" and not already tracked
           if (item.status === "Very Low" && !updatedItemsTracked[key]) {
