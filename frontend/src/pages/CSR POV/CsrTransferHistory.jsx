@@ -6,7 +6,7 @@ const CsrTransferHistory = () => {
     const [transferList, setTransferList] = useState([]);
 
     useEffect(() => {
-        const CsrHistoryRef = ref(database, "departments/CSR/InventoryHistoryTransfer")
+        const CsrHistoryRef = ref(database, "supplyHistoryTransfer")
 
         const unsubscribeCsrHistory = onValue(
             CsrHistoryRef,

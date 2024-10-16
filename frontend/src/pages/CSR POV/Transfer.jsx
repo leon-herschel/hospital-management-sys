@@ -147,7 +147,7 @@ const Transfer = () => {
       });
 
       // Push transfer details to InventoryHistoryTransfer
-      const historyPath = `departments/CSR/InventoryHistoryTransfer`;
+      const historyPath = `supplyHistoryTransfer`;
       const newHistoryRef = push(ref(database, historyPath));
       await set(newHistoryRef, {
         itemKey: item.itemKey,

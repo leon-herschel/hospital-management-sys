@@ -158,7 +158,7 @@ const ConfirmMedRequest = ({ requestToConfirm }) => {
     };
 
     // Push the confirmation data to history
-    const historyPath = `departments/Pharmacy/MedicineHistoryTransfer`; // Update the path for confirmation history
+    const historyPath = `medicineHistoryTransfer`; // Update the path for confirmation history
     const newHistoryRef = push(ref(database, historyPath));
     await set(newHistoryRef, confirmationData);
 

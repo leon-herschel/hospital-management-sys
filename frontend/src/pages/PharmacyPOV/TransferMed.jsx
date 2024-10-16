@@ -163,7 +163,7 @@ useEffect(() => {
       });
   
       // Ensure each transfer is added as a new entry in InventoryTransferHistory
-      const historyPath = `departments/Pharmacy/InventoryTransferHistory`;
+      const historyPath = `medicineTransferHistory`;
       const newHistoryRef = push(ref(database, historyPath)); // Use push to generate a unique key
       await set(newHistoryRef, {
         itemName: item.itemName,
