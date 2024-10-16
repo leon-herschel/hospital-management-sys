@@ -51,7 +51,7 @@ const ViewMedReq = () => {
   };
 
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg">
       {requests.length === 0 ? (
         <p className="p-4 text-center">No requests found.</p>
       ) : (
