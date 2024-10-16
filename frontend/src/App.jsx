@@ -21,12 +21,12 @@ import RequestStock from "./pages/ICU POV/requestStock";
 import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
+import TransferMed from "./pages/PharmacyPOV/TransferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
-import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
-import ViewRequest from "./pages/CSR POV/ViewRequest";
-import TransferMed from "./pages/PharmacyPOV/TransferMed";
+import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
+import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory"
 import { element } from "prop-types";
 
 function App() {

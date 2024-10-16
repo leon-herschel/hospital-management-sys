@@ -9,7 +9,7 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
                 {/* Total Low Stock */}
-                <div className="h-56 w-full rounded-xl bg-white shadow-lg flex flex-col justify-between">
+                <div className="h-56 w-full rounded-lg bg-white shadow-lg flex flex-col justify-between">
                     <div className="px-6 pt-6 text-md font-semibold">
                         Low Stock
                     </div>
@@ -28,7 +28,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* New Patients */}
-                <div className="h-56 w-full rounded-xl bg-white shadow-lg flex flex-col justify-between">
+                <div className="h-56 w-full rounded-lg bg-white shadow-lg flex flex-col justify-between">
                     <div className="px-6 pt-6 text-md font-semibold">
                         New Patients Today
                     </div>
@@ -47,7 +47,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Usage Analytics */}
-                <div className="h-56 w-full rounded-xl bg-white shadow-lg flex flex-col justify-between">
+                <div className="h-56 w-full rounded-lg bg-white shadow-lg flex flex-col justify-between">
                     <div className="px-6 pt-6 text-md font-semibold">
                         Usage Analytics
                     </div>
@@ -66,7 +66,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Pending Orders */}
-                <div className="h-56 w-full rounded-xl bg-white shadow-lg flex flex-col justify-between">
+                <div className="h-56 w-full rounded-lg bg-white shadow-lg flex flex-col justify-between">
                     <div className="px-6 pt-6 text-md font-semibold">
                         Pending Orders
                     </div>
