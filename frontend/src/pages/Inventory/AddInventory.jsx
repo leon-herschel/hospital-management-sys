@@ -30,11 +30,13 @@ const calculateStatus = (quantity, maxQuantity) => {
 function AddInventory({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [brand, setBrand] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [retailPrice, setRetailPrice] = useState("");
   const [loading, setLoading] = useState(false); // New state to track loading
 
   const [itemNameError, setItemNameError] = useState(false);
+  const [brandError, setBrandError] = useState(false);
   const [quantityError, setQuantityError] = useState(false);
   const [costPriceError, setCostPriceError] = useState(false);
   const [retailPriceError, setRetailPriceError] = useState(false);
@@ -44,6 +46,7 @@ function AddInventory({ isOpen, toggleModal }) {
     setQuantityError(false);
     setCostPriceError(false);
     setRetailPriceError(false);
+    setBrandError(false);
 
     let hasError = false;
 
@@ -53,6 +56,10 @@ function AddInventory({ isOpen, toggleModal }) {
     }
     if (!quantity) {
       setQuantityError(true);
+      hasError = true;
+    }
+    if (!brand) {
+      setBrandError(true);
       hasError = true;
     }
     if (!costPrice) {
@@ -78,6 +85,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
       const inventoryData = {
         itemName: itemName,
+        brand: brand,
         quantity: maxQuantity,
         maxQuantity: maxQuantity,
         costPrice: Number(costPrice),
@@ -91,6 +99,7 @@ function AddInventory({ isOpen, toggleModal }) {
       alert("Inventory has been added successfully!");
       setItemName("");
       setQuantity("");
+      setBrand("");
       setCostPrice("");
       setRetailPrice("");
       toggleModal();
@@ -152,6 +161,26 @@ function AddInventory({ isOpen, toggleModal }) {
           />
           {quantityError && (
             <p className="text-red-500 mt-1">Quantity is required</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="brand" className="block text-gray-700 mb-2">
+            Brand
+          </label>
+          <input
+            type="text"
+            id="brand"
+            name="brand"
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+              brandError ? "border-red-500" : "border-gray-300"
+            }`}
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            disabled={loading} // Disable the input while loading
+          />
+          {brandError && (
+            <p className="text-red-500 mt-1">Brand is required</p>
           )}
         </div>
 
