@@ -1,10 +1,17 @@
 import { useState } from "react";
 import OverAllSupply from "./OverAllSupply";
 import OverAllMedicine from "./OverAllMedicine";
+import { useAccessControl } from "../../components/roles/accessControl";
+import AccessDenied from "../ErrorPages/AccessDenied";
 
 const OverAllInventory = () => {
+  const permissions = useAccessControl();
 
   const [selectedTab, setSelectedTab] = useState("medicine")
+
+  if (!permissions?.accessOverallInventory) {
+    return <AccessDenied />;
+  }
   return (
     <div>
      <button onClick={() => setSelectedTab("medicine")} className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
