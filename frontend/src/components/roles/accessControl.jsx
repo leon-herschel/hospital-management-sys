@@ -3,24 +3,25 @@ import { getDatabase, ref, onValue } from 'firebase/database';
 import { useAuth } from "../../context/authContext/authContext";
 
 export const useAccessControl = () => {
-  const [roleData, setRoleData] = useState(null);
-  const { role } = useAuth();
+  const [permissions, setPermissions] = useState(null); 
+  const { department } = useAuth(); 
 
   useEffect(() => {
-    if (role) {
+    if (department) {
       const db = getDatabase();
-      const roleRef = ref(db, `roles/${role}`);
-      
-      onValue(roleRef, (snapshot) => {
+      // Only fetch the permissions for the specific department
+      const permissionsRef = ref(db, `departments/${department}/permissions`);
+
+      onValue(permissionsRef, (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setRoleData(data);
+          setPermissions(data); 
         } else {
-          console.error('No role data available');
+          console.error('No permissions data available for this department');
         }
       });
     }
-  }, [role]);
+  }, [department]);
 
-  return roleData;
+  return permissions; 
 };

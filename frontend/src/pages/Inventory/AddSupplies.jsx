@@ -73,7 +73,7 @@ function AddSupplies({ isOpen, toggleModal }) {
 
     setLoading(true); // Set loading to true when submission starts
 
-    const supplyRef = ref(database, "supplies");
+    const supplyRef = ref(database, "departments/CSR/localSupplies");
     const newSupplyRef = push(supplyRef);
 
     const maxQuantity = Number(quantity);

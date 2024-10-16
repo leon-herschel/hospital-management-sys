@@ -1,39 +1,30 @@
 import { useState } from 'react';
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
-const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
-  const [roleName, setRoleName] = useState(''); 
-  const [canAdd, setCanAdd] = useState(false); 
-  const [canEdit, setCanEdit] = useState(false);
-  const [canDelete, setCanDelete] = useState(false); 
-  const [canView, setCanView] = useState(false); 
+const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
+  const [departmentName, setDepartmentName] = useState(''); 
+  const [accessInventory, setAccessInventory] = useState(false); 
+  const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
+  const [accessPatients, setAccessPatients] = useState(false); 
+  const [accessSettings, setAccessSettings] = useState(false); 
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-        const updatedPermissions = {
-            canAdd: canAdd,
-            canEdit: canEdit,
-            canDelete: canDelete,
-            canView: canView,
-        };
-
-        const newRole = {
-            [roleName.toLowerCase()]: { 
-                name: roleName, 
-                permissions: updatedPermissions 
-            }
-        };
-
-        onAddRole(newRole);
-
-        setRoleName(''); 
-        setCanAdd(false); 
-        setCanEdit(false);
-        setCanDelete(false); 
-        setCanView(false); 
-        setShowModal(false); 
+    const newDepartment = {
+      [departmentName]: { 
+        permissions: {  
+          accessInventory,
+          accessInventoryHistory,
+          accessPatients,
+          accessSettings,
+        },
+      },
     };
+
+    onAddDepartment(newDepartment); 
+    setShowModal(false); 
+  };
 
   if (!showModal) return null;
 
@@ -47,16 +38,16 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
           <XMarkIcon className="h-6 w-6" />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6">Add Role</h2> 
+        <h2 className="text-2xl font-bold mb-6">Add Department</h2> 
 
         <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
           <div className="mb-4">
-            <label className="block text-gray-700">Role Name</label> 
+            <label className="block text-gray-700">Department Name</label> 
             <input
               type="text"
-              placeholder="Role Name"
-              value={roleName}
-              onChange={(e) => setRoleName(e.target.value)}
+              placeholder="Department Name"
+              value={departmentName}
+              onChange={(e) => setDepartmentName(e.target.value)}
               required
               className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
             />
@@ -67,38 +58,38 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={canAdd}
-                onChange={() => setCanAdd(!canAdd)}
+                checked={accessInventory}
+                onChange={() => setAccessInventory(!accessInventory)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Can Add</span>
+              <span className="ml-2 text-gray-700">Access Inventory</span>
             </label>
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={canEdit}
-                onChange={() => setCanEdit(!canEdit)}
+                checked={accessInventoryHistory}
+                onChange={() => setAccessInventoryHistory(!accessInventoryHistory)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Can Edit</span>
+              <span className="ml-2 text-gray-700">Access Inventory History</span>
             </label>
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={canDelete}
-                onChange={() => setCanDelete(!canDelete)}
+                checked={accessPatients}
+                onChange={() => setAccessPatients(!accessPatients)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Can Delete</span>
+              <span className="ml-2 text-gray-700">Access Patients</span>
             </label>
             <label className="flex items-center mb-4">
               <input
                 type="checkbox"
-                checked={canView}
-                onChange={() => setCanView(!canView)}
+                checked={accessSettings}
+                onChange={() => setAccessSettings(!accessSettings)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Can View</span>
+              <span className="ml-2 text-gray-700">Access Settings</span>
             </label>
           </div>
 
@@ -107,7 +98,7 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
               type="submit"
               className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
             >
-              Create Role
+              Create Department 
             </button>
           </div>
         </form>
@@ -116,4 +107,4 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
   );
 };
 
-export default AddRoleModal;
+export default AddDepartmentModal;

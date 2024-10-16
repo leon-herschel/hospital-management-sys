@@ -30,9 +30,9 @@ function ViewPatient() {
   const handleGeneratePDF = () => {
     setTimeout(() => {
       if (patient) {
-      generatePDF(patient);
+        generatePDF(patient);
       }
-  }, 100);
+    }, 100);
   };
 
   // Fetch patient data and prescriptions when the component loads
@@ -63,7 +63,6 @@ function ViewPatient() {
     }
   }, [id]);
 
-
   const handleAddPrescriptionClick = () => {
     setAddPrescription(true);
   };
@@ -80,7 +79,8 @@ function ViewPatient() {
     setErrors({ prescriptionName: "", dosage: "", instruction: "" });
 
     const newErrors = {};
-    if (!prescriptionName) newErrors.prescriptionName = "Prescription Name is required.";
+    if (!prescriptionName)
+      newErrors.prescriptionName = "Prescription Name is required.";
     if (!dosage) newErrors.dosage = "Dosage is required.";
     if (!instruction) newErrors.instruction = "Instruction is required.";
 
@@ -102,7 +102,10 @@ function ViewPatient() {
     try {
       if (editingId) {
         // If editing, update the existing prescription
-        const updateRef = ref(database, `patient/${id}/prescriptions/${editingId}`);
+        const updateRef = ref(
+          database,
+          `patient/${id}/prescriptions/${editingId}`
+        );
         await update(updateRef, patientPrescription);
         setConfirmationMessage("Prescription updated successfully.");
       } else {
@@ -147,10 +150,15 @@ function ViewPatient() {
   };
 
   const confirmRemovePrescription = async () => {
-    const prescriptionRef = ref(database, `patient/${id}/prescriptions/${prescriptionToRemove}`);
+    const prescriptionRef = ref(
+      database,
+      `patient/${id}/prescriptions/${prescriptionToRemove}`
+    );
     try {
       await remove(prescriptionRef);
-      setPrescriptionList((prev) => prev.filter((prescription) => prescription.id !== prescriptionToRemove));
+      setPrescriptionList((prev) =>
+        prev.filter((prescription) => prescription.id !== prescriptionToRemove)
+      );
       setConfirmationMessage("Prescription removed successfully.");
       setShowConfirmation(true);
     } catch (error) {
@@ -172,15 +180,20 @@ function ViewPatient() {
   // Render the list of prescriptions
   const renderPrescriptions = () => {
     return prescriptionList.map((prescription) => (
-      <div key={prescription.id} className="border border-gray-300 p-4 mb-4 rounded">
+      <div
+        key={prescription.id}
+        className="border border-gray-300 p-4 mb-4 rounded"
+      >
         <div>
-          <span className="font-bold">Prescription Name:</span> {prescription.prescriptionName}
+          <span className="font-bold">Prescription Name:</span>{" "}
+          {prescription.prescriptionName}
         </div>
         <div>
           <span className="font-bold">Dosage:</span> {prescription.dosage}
         </div>
         <div>
-          <span className="font-bold">Instruction:</span> {prescription.instruction}
+          <span className="font-bold">Instruction:</span>{" "}
+          {prescription.instruction}
         </div>
         <div>
           <span className="font-bold">Timestamp:</span>{" "}
@@ -204,46 +217,44 @@ function ViewPatient() {
     ));
   };
 
-  
-const renderMedUse = () => {
-  if (!patient || !patient.medUse) {
-    return <div>No medicines used yet.</div>;
-  }
+  const renderMedUse = () => {
+    if (!patient || !patient.medUse) {
+      return <div>No medicines used yet.</div>;
+    }
 
-  return Object.entries(patient.medUse).map(([key, med]) => (
-    <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
-      <div className="">
-        <span className="font-bold">Medicine Name:</span>
-        <span className="ml-2">{med.name}</span>
+    return Object.entries(patient.medUse).map(([key, med]) => (
+      <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
+        <div className="">
+          <span className="font-bold">Medicine Name:</span>
+          <span className="ml-2">{med.name}</span>
+        </div>
+        <div className="">
+          <span className="font-bold">Quantity:</span>
+          <span className="ml-2">{med.quantity}</span>
+        </div>
       </div>
-      <div className="">
-        <span className="font-bold">Quantity:</span>
-        <span className="ml-2">{med.quantity}</span>
-      </div>
-    </div>
-  ));
-};
+    ));
+  };
 
-// Render supplies used by the patient
-const renderSuppliesUsed = () => {
-  if (!patient || !patient.suppliesUsed) {
-    return <div>No supplies used yet.</div>;
-  }
+  // Render supplies used by the patient
+  const renderSuppliesUsed = () => {
+    if (!patient || !patient.suppliesUsed) {
+      return <div>No supplies used yet.</div>;
+    }
 
-  return Object.entries(patient.suppliesUsed).map(([key, supp]) => (
-    <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
-      <div className="">
-        <span className="font-bold">Supply Name:</span>
-        <span className="ml-2">{supp.name}</span>
+    return Object.entries(patient.suppliesUsed).map(([key, supp]) => (
+      <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
+        <div className="">
+          <span className="font-bold">Supply Name:</span>
+          <span className="ml-2">{supp.name}</span>
+        </div>
+        <div className="">
+          <span className="font-bold">Quantity:</span>
+          <span className="ml-2">{supp.quantity}</span>
+        </div>
       </div>
-      <div className="">
-        <span className="font-bold">Quantity:</span>
-        <span className="ml-2">{supp.quantity}</span>
-      </div>
-    </div>
-  ));
-};
-
+    ));
+  };
 
   // Show a loading state until data is fetched
   if (loading) return <div>Loading...</div>;
@@ -282,12 +293,12 @@ const renderSuppliesUsed = () => {
         </div>
       )}
       <div className="mb-4">
-  {patient.status === "Inpatient" ? (
-    <>
-      <strong>Room Type:</strong> {patient.roomType}
-    </>
-  ) : null}
-</div>
+        {patient.status === "Inpatient" ? (
+          <>
+            <strong>Room Type:</strong> {patient.roomType}
+          </>
+        ) : null}
+      </div>
 
       {/* Render supplies used */}
       <div className="mb-4">
@@ -315,12 +326,16 @@ const renderSuppliesUsed = () => {
             <label className="block mb-1">Prescription Name:</label>
             <input
               type="text"
-              className={`w-full border ${errors.prescriptionName ? "border-red-500" : "border-gray-300"} p-2 rounded`}
+              className={`w-full border ${
+                errors.prescriptionName ? "border-red-500" : "border-gray-300"
+              } p-2 rounded`}
               value={prescriptionName}
               onChange={(e) => setPrescriptionName(e.target.value)}
             />
             {errors.prescriptionName && (
-              <span className="text-red-500 text-sm">{errors.prescriptionName}</span>
+              <span className="text-red-500 text-sm">
+                {errors.prescriptionName}
+              </span>
             )}
           </div>
 
@@ -328,22 +343,30 @@ const renderSuppliesUsed = () => {
             <label className="block mb-1">Dosage:</label>
             <input
               type="text"
-              className={`w-full border ${errors.dosage ? "border-red-500" : "border-gray-300"} p-2 rounded`}
+              className={`w-full border ${
+                errors.dosage ? "border-red-500" : "border-gray-300"
+              } p-2 rounded`}
               value={dosage}
               onChange={(e) => setDosage(e.target.value)}
             />
-            {errors.dosage && <span className="text-red-500 text-sm">{errors.dosage}</span>}
+            {errors.dosage && (
+              <span className="text-red-500 text-sm">{errors.dosage}</span>
+            )}
           </div>
 
           <div className="mb-2">
             <label className="block mb-1">Instruction:</label>
             <input
               type="text"
-              className={`w-full border ${errors.instruction ? "border-red-500" : "border-gray-300"} p-2 rounded`}
+              className={`w-full border ${
+                errors.instruction ? "border-red-500" : "border-gray-300"
+              } p-2 rounded`}
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
             />
-            {errors.instruction && <span className="text-red-500 text-sm">{errors.instruction}</span>}
+            {errors.instruction && (
+              <span className="text-red-500 text-sm">{errors.instruction}</span>
+            )}
           </div>
           
 
@@ -374,7 +397,13 @@ const renderSuppliesUsed = () => {
         )
       )}
 
-      <button className="bg-gray-500 text-white py-2 px-4 rounded" onClick={handleGeneratePDF}> Generate PDF</button>
+      <button
+        className="bg-gray-500 text-white py-2 px-4 rounded"
+        onClick={handleGeneratePDF}
+      >
+        {" "}
+        Generate PDF
+      </button>
       {/* Confirmation Modal for Removing Prescriptions */}
       <DeleteConfirmationModal
         isOpen={removeModalOpen}

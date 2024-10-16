@@ -168,7 +168,7 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
               <div className="flex justify-center">
                 <button
                   type="submit"
-                  className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   disabled={isLoading}
                 >
                   {isLoading ? 'Updating Account...' : 'Update Account'}
@@ -183,11 +183,11 @@ const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
       {success && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
-            <h2 className="text-xl font-bold mb-4">Account Updated Successfully!</h2>
+            <h2 className="text-xl font-bold mb-4">Account Updated Successfully</h2>
             <p className="text-gray-700 mb-6">The user account has been updated.</p>
             <button
               onClick={closeSuccessModal}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
             >
               OK
             </button>
