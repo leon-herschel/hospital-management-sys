@@ -59,12 +59,15 @@ const RequestS = () => {
   // Fetch medicines or supplies based on selected department
   useEffect(() => {
     const fetchItems = async () => {
-      const itemRef = ref(database, "departments/Pharmacy/localSupplies");
+      const itemRef = ref(database, formData.department === 'Pharmacy' ? 'departments/Pharmacy/localMeds' : 'departments/CSR/localSupplies');
       try {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const itemsList = Object.values(data); // Extract the items from the selected node
+          const itemsList = Object.keys(data).map((key) => ({
+            itemKey: key, // Store the item key
+            ...data[key], // Spread the item data
+          }));
           setItems(itemsList); // Set the items state
         } else {
           console.log("No data available");
@@ -106,9 +109,9 @@ const RequestS = () => {
   };
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find((item) => item.itemName === itemToAdd.itemName)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]); // Default quantity is set to 1
-      setSearchTerm(""); // Clear search term after adding
+    if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: '' }]); // Default quantity is set to 1
+      setSearchTerm(''); // Clear search term after adding
       setFilteredItems([]); // Clear filtered items
     }
   };
@@ -125,11 +128,9 @@ const RequestS = () => {
       return; // Stop execution if quantity exceeds
     }
 
-    const newQuantity = Math.min(Math.max(value, 1), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
-    const updatedItems = selectedItems.map((selectedItem) =>
-      selectedItem.itemName === item.itemName
-        ? { ...selectedItem, quantity: newQuantity }
-        : selectedItem
+    const newQuantity = Math.min(Math.max(value, ''), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
+    const updatedItems = selectedItems.map(selectedItem =>
+      selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: newQuantity } : selectedItem
     );
     setSelectedItems(updatedItems);
   };
@@ -143,21 +144,21 @@ const RequestS = () => {
     return formData.department && formData.status && formData.reason;
   };
 
-  // Handle the transfer of data
+  // Handle the request of data
   const handleTransfer = () => {
     if (!validateInputs()) {
       alert("Please fill in all required fields.");
       return; // Stop execution if validation fails
     }
 
-    if (selectedItems.length === 0) {
-      alert("Please select items to transfer.");
+    if (selectedItems.length === '') {
+      alert('Please select items to request.');
       return; // Stop execution if no items are selected
     }
 
     setSubmitting(true); // Disable the button and show loading
 
-    const transferData = {
+    const handleTransfer = {
       name: formData.name,
       status: formData.status,
       reason: formData.reason,
@@ -171,9 +172,9 @@ const RequestS = () => {
     // Create a new child node under the "Request" node
     const newRequestRef = push(ref(database, requestNodePath));
 
-    set(newRequestRef, transferData)
+    set(newRequestRef, handleTransfer)
       .then(() => {
-        alert("Transfer successful!");
+        alert('Request successful!');
         // Optionally, reset formData and selectedItems here
         setFormData({ ...formData, reason: "", status: "Draft" }); // Reset formData
         setSelectedItems([]); // Clear selected items
@@ -252,84 +253,61 @@ const RequestS = () => {
           name="reason"
           value={formData.reason}
           onChange={handleInputChange}
-          className={`border ${
-            reasonError ? "border-red-500" : "border-gray-300"
-          } rounded p-2 w-full`}
+          className={`border ${reasonError ? 'border-red-500' : 'border-gray-300'} rounded p-2 w-full`}
+          placeholder="Enter reason for request"
         />
-        {reasonError && (
-          <span className="text-red-500">Please provide a reason.</span>
-        )}
+        {reasonError && <span className="text-red-500">Please enter a reason.</span>}
       </div>
-
-      {/* Items Search and Selection */}
       <div className="mb-4">
-        <label htmlFor="search" className="block font-bold mb-1">
-          Search Items
-        </label>
+        <label className="block font-bold mb-1">Search Items</label>
         <input
-          id="search"
-          name="search"
+          type="text"
           value={searchTerm}
           onChange={handleSearchChange}
           className="border border-gray-300 rounded p-2 w-full"
-          placeholder="Search for items..."
+          placeholder="Search items..."
         />
-        <div className="mt-2">
-          {filteredItems.map((item) => (
-            <div
-              key={item.itemName}
-              className="flex justify-between items-center border-b py-2"
+      </div>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        {filteredItems.length > 0 ? filteredItems.map((item) => (
+          <div key={item.itemKey} className="border rounded p-2 shadow">
+            <h3 className="font-bold">{item.itemName}</h3>
+            <p>Max Quantity: {item.quantity}</p>
+            <button
+              onClick={() => addItem(item)}
+              className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
             >
-              <div>
-                {item.itemName} (Max: {item.maxQuantity})
-              </div>
+              Add Item
+            </button>
+          </div>
+        )) : (
+          <p>No items found</p>
+        )}
+      </div>
+      <div>
+        <h2 className="font-bold mb-2">Selected Items</h2>
+        {selectedItems.length > 0 ? (
+          selectedItems.map((item) => (
+            <div key={item.itemKey} className="border rounded p-2 mb-2 shadow">
+              <h3 className="font-bold">{item.itemName}</h3>
+              <input
+                type="number"
+                value={item.quantity}
+                onChange={(e) => handleQuantityChange(item, e.target.value)}
+                className="border border-gray-300 rounded p-1 w-1/3"
+              />
               <button
-                className="bg-blue-500 text-white px-2 py-1 rounded"
-                onClick={() => addItem(item)}
+                onClick={() => removeItem(item)}
+                className="bg-red-500 text-white px-2 py-1 rounded ml-2"
               >
-                Add
+                Remove
               </button>
             </div>
-          ))}
-        </div>
+          ))
+        ) : (
+          <p>No items selected</p>
+        )}
       </div>
-
-      {/* Selected Items */}
-      {selectedItems.length > 0 && (
-        <div className="mb-4">
-          <h2 className="font-bold mb-2">Selected Items</h2>
-          <ul className="space-y-2">
-            {selectedItems.map((item) => (
-              <li
-                key={item.itemName}
-                className="flex justify-between items-center"
-              >
-                <span>
-                  {item.itemName} (Quantity: {item.quantity})
-                </span>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    min="1"
-                    max={item.maxQuantity}
-                    onChange={(e) =>
-                      handleQuantityChange(item, parseInt(e.target.value))
-                    }
-                    className="border border-gray-300 rounded p-1 w-16"
-                  />
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };

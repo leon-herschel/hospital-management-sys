@@ -68,15 +68,16 @@ const Sidebar = () => {
     "/billing": "Billing List",
     "/inventory-history": "Inventory History",
     "/OverAllInventory": "Overall Inventory",
-    "/usage-history": "Usage History",
-    "/local-history": "Local History",
-    "/PharmacyTransferHistory": "Transfer History",
-    "/CsrTransferHistory": "Transfer History",
+    "/stockTransfer": "CSR Department",
+    "/requestStock": "ICU Department",
+    "/med": "Pharmacy Department",
+    "/ViewMedReq": "View Medicine Request",
+    "/ViewRequest": "View Supply Request",
     "/Transfer": "Transfer Supply",
     "/transferMed": "Transfer Medicine",
-    "/ViewRequest": "View Supply Request",
-    "/ViewMedReq": "View Medicine Request",
-    "/requestS": "Request Stock"
+    "/requestS": "Request Stock",
+
+
   };
 
   let currentTitle = "Overview";
