@@ -6,7 +6,7 @@ const PharmacyTransferHistory = () => {
     const [transferList, setTransferList] = useState([]);
 
     useEffect(() => {
-        const PharmacyHistoryRef = ref(database, "departments/Pharmacy/InventoryTransferHistory")
+        const PharmacyHistoryRef = ref(database, "medicineTransferHistory")
 
         const unsubscribePharmacyHistory = onValue(
             PharmacyHistoryRef,
@@ -31,7 +31,7 @@ const PharmacyTransferHistory = () => {
             <table className="w-full text-md text-gray-900 text-center border border-slate-200">
                 <thead className="text-md bg-slate-200">
                     <tr>
-                        <th className="px-6 py-3">Supply Name</th>
+                        <th className="px-6 py-3">Medicine Name</th>
                         <th className="px-6 py-3">Quantity</th>
                         <th className="px-6 py-3">Sender</th>
                         <th className="px-6 py-3">Timestamp</th>

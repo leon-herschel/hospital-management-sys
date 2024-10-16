@@ -23,12 +23,13 @@ import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
-import TransferMed from "./pages/PharmacyPOV/transferMed";
+import TransferMed from "./pages/PharmacyPOV/TransferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
 import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
 import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory"
+import { element } from "prop-types";
 
 function App() {
   const routesArray = [
