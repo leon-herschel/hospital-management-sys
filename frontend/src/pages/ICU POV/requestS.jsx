@@ -250,32 +250,43 @@ const RequestS = () => {
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         {filteredItems.length > 0 ? filteredItems.map((item) => (
-          <div key={item.itemKey} className="border rounded p-2">
+          <div key={item.itemKey} className="border rounded p-2 shadow">
             <h3 className="font-bold">{item.itemName}</h3>
-            <p>Max Quantity: {item.maxQuantity}</p>
-            <button onClick={() => addItem(item)} className="bg-blue-500 text-white rounded px-2 py-1">Add</button>
+            <p>Max Quantity: {item.quantity}</p>
+            <button
+              onClick={() => addItem(item)}
+              className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
+            >
+              Add Item
+            </button>
           </div>
         )) : (
           <p>No items found</p>
         )}
       </div>
       <div>
-        <h2 className="text-lg font-bold">Selected Items</h2>
-        {selectedItems.map((item, index) => (
-          <div key={index} className="flex justify-between items-center border rounded p-2 mb-2">
-            <div>
-              <p>{item.itemName}</p>
+        <h2 className="font-bold mb-2">Selected Items</h2>
+        {selectedItems.length > 0 ? (
+          selectedItems.map((item) => (
+            <div key={item.itemKey} className="border rounded p-2 mb-2 shadow">
+              <h3 className="font-bold">{item.itemName}</h3>
               <input
                 type="number"
                 value={item.quantity}
                 onChange={(e) => handleQuantityChange(item, e.target.value)}
-                className="border border-gray-300 rounded p-1 w-20"
-                placeholder="Quantity"
+                className="border border-gray-300 rounded p-1 w-1/3"
               />
+              <button
+                onClick={() => removeItem(item)}
+                className="bg-red-500 text-white px-2 py-1 rounded ml-2"
+              >
+                Remove
+              </button>
             </div>
-            <button onClick={() => removeItem(item)} className="bg-red-500 text-white rounded px-2 py-1">Remove</button>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p>No items selected</p>
+        )}
       </div>
     </div>
   );

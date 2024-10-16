@@ -292,6 +292,7 @@ function Inventory() {
                 <tr>
                   <th className="px-6 py-3">Medicine Name</th>
                   <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Brand</th>
                   <th className="px-6 py-3">Cost Price (₱)</th>
                   <th className="px-6 py-3">Retail Price (₱)</th>
                   <th className="px-6 py-3">Status</th>
@@ -308,6 +309,7 @@ function Inventory() {
                     >
                       <td className="px-6 py-3">{item.itemName}</td>
                       <td className="px-6 py-3">{item.quantity}</td>
+                      <td className="px-6 py-3">{item.brand}</td>
                       <td className="px-6 py-3">
                         {(item.costPrice !== undefined
                           ? item.costPrice
@@ -379,6 +381,7 @@ function Inventory() {
                 <tr>
                   <th className="px-6 py-3">Supply Name</th>
                   <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Brand</th>
                   <th className="px-6 py-3">Cost Price (₱)</th>
                   <th className="px-6 py-3">Retail Price (₱)</th>
                   <th className="px-6 py-3">Status</th>
@@ -395,6 +398,7 @@ function Inventory() {
                     >
                       <td className="px-6 py-3">{item.itemName}</td>
                       <td className="px-6 py-3">{item.quantity}</td>
+                      <td className="px-6 py-3">{item.brand}</td>
                       <td className="px-6 py-3">
                         {(item.costPrice !== undefined
                           ? item.costPrice
@@ -541,3 +545,4 @@ function Inventory() {
 }
 
 export default Inventory;
+

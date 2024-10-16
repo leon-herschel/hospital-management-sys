@@ -50,7 +50,6 @@ const OverAllSupply = () => {
     };
 
     fetchOverallInventory();
-
     const unsubscribeDepartments = onValue(
       departmentsRef,
       fetchOverallInventory

@@ -269,66 +269,63 @@ const ConfirmMedRequest = ({ requestToConfirm }) => {
         </div>
       </div>
 
-      {/* Medications Section */}
+      {/* Search for Medicines */}
       <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Medications</h2>
-
-        {/* Search Field */}
+        <label className="block font-semibold mb-1">Search Medicines</label>
         <input
           type="text"
+          name="searchItem"
+          placeholder="Search for medicines"
           value={searchRef.current}
           onChange={handleSearchChange}
-          placeholder="Search medications"
-          className="border p-2 w-full rounded mb-4"
+          className="border p-2 w-full rounded"
         />
-
-        {/* Filtered Medications */}
-        <ul>
-          {filteredMedications.map((med, index) => (
-            <li
-              key={index}
-              className="bg-gray-100 p-2 my-2 rounded cursor-pointer hover:bg-gray-200"
-              onClick={() => addMedication(med)}
-            >
-              {med.itemName} - {med.quantity} available
-            </li>
-          ))}
-        </ul>
       </div>
 
-      {/* Selected Medications */}
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Selected Medications</h2>
-        {selectedMedications.length === 0 && <p>No medications selected yet.</p>}
-
-        {selectedMedications.map((med, index) => (
-          <div key={index} className="bg-gray-100 p-2 my-2 rounded">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-semibold">{med.itemName}</p>
-                <p className="text-sm">Max available: {medications.find(m => m.itemKey === med.itemKey)?.quantity || 0}</p>
-              </div>
-              <button
-                className="bg-red-500 text-white px-2 py-1 rounded"
-                onClick={() => removeMedication(med)}
-              >
-                Remove
-              </button>
-            </div>
-
-            {/* Quantity Input */}
-            <div className="mt-2">
-              <label className="block text-sm">Quantity:</label>
-              <input
-                type="number"
-                value={med.quantity}
-                onChange={(e) => handleQuantityChange(med, parseInt(e.target.value))}
-                className="border p-2 rounded w-full"
-              />
-            </div>
-          </div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {filteredMedications.map(med => (
+          <button
+            key={med.itemKey}
+            onClick={() => addMedication(med)}
+            className="bg-blue-500 text-white px-2 py-1 rounded"
+          >
+            {med.itemName} ({med.quantity} in stock)
+          </button>
         ))}
       </div>
+
+      {/* Selected Medicines */}
+      {selectedMedications.length > 0 && (
+        <>
+          <div className="mb-4">
+            <h2 className="font-semibold text-lg mb-2">Selected Medicines</h2>
+            <ul>
+              {selectedMedications.map((med, index) => (
+                <li key={index} className="flex justify-between items-center mb-2">
+                  <div>
+                    <p>{med.itemName}</p>
+                    <p className="text-sm text-gray-500">Quantity: {med.quantity}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={med.quantity}
+                      onChange={(e) => handleQuantityChange(med, parseInt(e.target.value))}
+                      className="border p-1 w-16 rounded"
+                    />
+                    <button
+                      className="bg-red-500 text-white px-2 py-1 rounded"
+                      onClick={() => removeMedication(med)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 };
