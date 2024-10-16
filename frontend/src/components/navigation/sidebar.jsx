@@ -155,6 +155,7 @@ const Sidebar = () => {
 
 
                 {/* Adding Overall Inventory */}
+                {permissions?.accessOverallInventory && (
                 <Link
                   to="/OverAllInventory"
                   className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
@@ -165,6 +166,7 @@ const Sidebar = () => {
                   <CubeIcon className="w-5 h-5 mr-3" />
                   Overall Inventory
                 </Link>
+                )}
               </div>
             </>
           )}

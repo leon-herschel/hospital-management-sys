@@ -4,6 +4,7 @@ import { XMarkIcon } from "@heroicons/react/24/solid";
 const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
   const [departmentName, setDepartmentName] = useState(''); 
   const [accessInventory, setAccessInventory] = useState(false); 
+  const [accessOverallInventory, setAccessOverallInventory] = useState(false); 
   const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
   const [accessPatients, setAccessPatients] = useState(false); 
   const [accessSettings, setAccessSettings] = useState(false); 
@@ -15,6 +16,7 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
       [departmentName]: { 
         permissions: {  
           accessInventory,
+          accessOverallInventory,
           accessInventoryHistory,
           accessPatients,
           accessSettings,
@@ -63,6 +65,15 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">Access Inventory</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessOverallInventory}
+                onChange={() => setAccessOverallInventory(!accessOverallInventory)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Overall Inventory</span>
             </label>
             <label className="flex items-center mb-2">
               <input
