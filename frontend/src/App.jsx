@@ -27,8 +27,13 @@ import TransferMed from "./pages/PharmacyPOV/transferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
+<<<<<<< HEAD
 import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
 import { element } from "prop-types";
+=======
+import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
+import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory"
+>>>>>>> 99605bfbe892113125ed291785528e257a440225
 
 function App() {
   const routesArray = [
@@ -65,7 +70,6 @@ function App() {
         { path: "requestStock", element: <RequestStock /> },
         { path: "icuLocalInventory", element: <IcuLocalInventory /> },
         { path: "transferMed", element: <TransferMed /> },
-
         { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
         { path: "OverallInventory", element: <OverallInventory /> },
