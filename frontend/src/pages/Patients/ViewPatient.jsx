@@ -182,6 +182,10 @@ function ViewPatient() {
         <div>
           <span className="font-bold">Instruction:</span> {prescription.instruction}
         </div>
+        <div>
+          <span className="font-bold">Timestamp:</span>{" "}
+          {prescription.createdAt}
+        </div>
         <div className="mt-2 flex gap-2">
           <button
             onClick={() => handleEditPrescriptionClick(prescription)}
@@ -258,7 +262,10 @@ const renderSuppliesUsed = () => {
 
       <h1 className="text-2xl font-bold mb-4">Patient Details</h1>
       <div className="mb-4">
-        <strong>Name:</strong> {patient.name}
+        <strong>Name:</strong> {patient.firstName}
+      </div>
+      <div className="mb-4">
+        <strong>Last Name:</strong> {patient.lastName}
       </div>
       <div className="mb-4">
         <strong>Date of Birth:</strong> {patient.birth}
@@ -269,6 +276,11 @@ const renderSuppliesUsed = () => {
       <div className="mb-4">
         <strong>Status:</strong> {patient.status}
       </div>
+      {patient.diagnosis && (
+        <div className="mb-4">
+          <strong>Diagnosis:</strong> {patient.diagnosis}
+        </div>
+      )}
       <div className="mb-4">
   {patient.status === "Inpatient" ? (
     <>
@@ -290,7 +302,7 @@ const renderSuppliesUsed = () => {
       </div>
 
       {/* Render prescriptions only if the patient is Outpatient */}
-      {patient.status === "Outpatient" && (
+      {patient.status === "Outpatient" && prescriptionList.length > 0 && (
         <div className="mb-4">
           <strong>Prescriptions:</strong>
           {renderPrescriptions()}
@@ -333,6 +345,7 @@ const renderSuppliesUsed = () => {
             />
             {errors.instruction && <span className="text-red-500 text-sm">{errors.instruction}</span>}
           </div>
+          
 
           <div className="flex justify-between mt-4">
             <button

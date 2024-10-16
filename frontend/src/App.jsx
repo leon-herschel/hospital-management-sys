@@ -23,7 +23,7 @@ import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
-import TransferMed from "./pages/PharmacyPOV/transferMed";
+import TransferMed from "./pages/PharmacyPOV/TransferMed";
 import Med from "./pages/PharmacyPOV/med";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
