@@ -5,6 +5,7 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
   const [departmentName, setDepartmentName] = useState('');
   const [permissions, setPermissions] = useState({
     accessInventory: false,
+    accessOverallInventory: false,
     accessInventoryHistory: false,
     accessPatients: false,
     accessSettings: false,
@@ -16,6 +17,7 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
       setDepartmentName(department.id || '');
       setPermissions({
         accessInventory: department.permissions.accessInventory || false,
+        accessOverallInventory: department.permissions.accessOverallInventory || false,
         accessInventoryHistory: department.permissions.accessInventoryHistory || false,
         accessPatients: department.permissions.accessPatients || false,
         accessSettings: department.permissions.accessSettings || false,
@@ -81,7 +83,7 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
                   name={permission}
                   checked={permissions[permission]}
                   onChange={handleChange}
-                  disabled={department.id === 'Admin'}
+                  
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="ml-2 text-gray-700 capitalize">
