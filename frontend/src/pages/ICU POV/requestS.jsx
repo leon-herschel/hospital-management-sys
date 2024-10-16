@@ -59,7 +59,7 @@ const RequestS = () => {
   // Fetch medicines or supplies based on selected department
   useEffect(() => {
     const fetchItems = async () => {
-      const itemRef = ref(database, formData.department === 'Pharmacy' ? 'medicine' : 'departments/CSR/localSupplies');
+      const itemRef = ref(database, formData.department === 'Pharmacy' ? 'departments/Pharmacy/localMeds' : 'departments/CSR/localSupplies');
       try {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
@@ -272,7 +272,7 @@ const RequestS = () => {
         {filteredItems.length > 0 ? filteredItems.map((item) => (
           <div key={item.itemKey} className="border rounded p-2 shadow">
             <h3 className="font-bold">{item.itemName}</h3>
-            <p>Max Quantity: {item.maxQuantity}</p>
+            <p>Max Quantity: {item.quantity}</p>
             <button
               onClick={() => addItem(item)}
               className="bg-blue-500 text-white px-2 py-1 rounded mt-2"

@@ -15,7 +15,6 @@ const Transfer = () => {
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
@@ -127,14 +126,6 @@ const Transfer = () => {
 
     setSubmitting(true);
 
-    const transferData = {
-      name: formData.name,
-      status: formData.status,
-      reason: formData.reason,
-      timestamp: formData.timestamp,
-      recipientDepartment: formData.department,
-    };
-
     for (const item of selectedItems) {
       const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
 
@@ -185,7 +176,6 @@ const Transfer = () => {
     setFormData({ ...formData, reason: '', status: '' });
     setSelectedItems([]);
     setSubmitting(false);
-    setIsModalOpen(false); // Close modal after transfer
   };
   
   return (
@@ -194,10 +184,10 @@ const Transfer = () => {
         <h1 className="text-xl font-bold">Create a new stock transfer.</h1>
         <button
           className="bg-green-500 text-white px-2 py-1 rounded"
-          onClick={openModal} // Open modal on click
+          onClick={handleTransfer} // Call handleTransfer directly
           disabled={submitting}
         >
-          Proceed
+          {submitting ? 'Processing...' : 'Transfer'}
         </button>
       </div>
 
@@ -261,99 +251,61 @@ const Transfer = () => {
             onChange={handleInputChange}
             className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
           />
-          {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason.</p>}
+          {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason for the transfer.</p>}
         </div>
       </div>
 
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Select Items to Transfer</h2>
+      <div>
+        <label className="block font-semibold mb-1">Search for Items to Transfer</label>
         <input
           type="text"
-          placeholder="Search items..."
-          onChange={handleSearchChange}
           value={searchRef.current}
-          className="border p-2 w-full rounded mb-2"
+          onChange={handleSearchChange}
+          className="border p-2 w-full rounded mb-4"
+          placeholder="Search by item name"
         />
-        <ul className="border rounded">
-          {filteredItems.length === 0
-            ? items.map(item => (
-                <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
-                  {item.itemName} (Available: {item.quantity})
-                  <button
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                    onClick={() => addItem(item)}
-                  >
-                    Add
-                  </button>
-                </li>
-              ))
-            : filteredItems.map(item => (
-                <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
-                  {item.itemName} (Available: {item.quantity})
-                  <button
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                    onClick={() => addItem(item)}
-                  >
-                    Add
-                  </button>
-                </li>
-              ))}
-        </ul>
-      </div>
-
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
-        {selectedItems.length === 0 ? (
-          <p>No items selected.</p>
-        ) : (
-          <ul className="border rounded">
-            {selectedItems.map(item => (
-              <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
-                {item.itemName} (Quantity: {item.quantity})
-                <div className="flex items-center">
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    min="1"
-                    onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                    className="border rounded w-16 text-center mr-2"
-                  />
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </div>
+        {filteredItems.length > 0 && (
+          <ul className="border rounded p-2 max-h-40 overflow-y-auto">
+            {filteredItems.map(item => (
+              <li
+                key={item.itemKey}
+                className="cursor-pointer hover:bg-gray-200 p-2 rounded"
+                onClick={() => addItem(item)}
+              >
+                {item.itemName} (Available: {item.quantity})
               </li>
             ))}
           </ul>
         )}
-      </div>
 
-      {/* Modal for final confirmation */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 relative">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 text-gray-500">✖️</button>
-            <h2 className="text-lg font-semibold">Confirm Transfer</h2>
-            <p>Are you sure you want to proceed with the transfer?</p>
-            <div className="mt-4">
-              <h3 className="font-semibold">Items to Transfer:</h3>
-              <ul>
-                {selectedItems.map(item => (
-                  <li key={item.itemKey}>
-                    {item.itemName} (Quantity: {item.quantity})
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <button onClick={handleTransfer} className="bg-green-500 text-white px-4 py-2 mt-4 rounded" disabled={submitting}>
-              {submitting ? 'Processing...' : 'Confirm Transfer'}
-            </button>
+        {selectedItems.length > 0 && (
+          <div className="mt-4">
+            <h3 className="font-semibold text-lg mb-2">Selected Items</h3>
+            <ul>
+              {selectedItems.map((item, index) => (
+                <li key={index} className="flex justify-between items-center mb-2">
+                  <span>{item.itemName} (Available: {items.find(i => i.itemKey === item.itemKey)?.quantity || 0})</span>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) => handleQuantityChange(item, Number(e.target.value))}
+                      className="border p-1 w-16 rounded mr-2"
+                    />
+                    <button
+                      className="bg-red-500 text-white px-2 py-1 rounded"
+                      onClick={() => removeItem(item)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

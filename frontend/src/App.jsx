@@ -17,17 +17,16 @@ import AccessDenied from "./pages/ErrorPages/AccessDenied";
 import ViewPatient from "./pages/Patients/ViewPatient";
 import StockTransfer from "./pages/CSR POV/stockTransfer";
 import Transfer from "./pages/CSR POV/Transfer";
-import Request from "./pages/CSR POV/ViewRequest";
 import RequestStock from "./pages/ICU POV/requestStock";
 import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
-import ViewRequest from "./pages/CSR POV/ViewRequest";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
 import TransferMed from "./pages/PharmacyPOV/transferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
 import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
+import ViewRequest from "./pages/CSR POV/ViewRequest";
 import { element } from "prop-types";
 
 function App() {
@@ -61,11 +60,11 @@ function App() {
         { path: "Request", element: <Request /> },
         { path: "requestS", element: <RequestS /> },
         { path: "inventoryStock", element: <InventoryStock /> },
-        { path: "ViewRequest", element: <ViewRequest /> },
         { path: "requestStock", element: <RequestStock /> },
         { path: "icuLocalInventory", element: <IcuLocalInventory /> },
         { path: "transferMed", element: <TransferMed /> },
 
+        { path: "ViewRequest", element: <ViewRequest/> },
         { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
         { path: "OverallInventory", element: <OverallInventory /> },

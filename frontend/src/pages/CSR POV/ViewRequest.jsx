@@ -3,7 +3,7 @@ import { ref, onValue } from 'firebase/database'; // Use onValue for real-time u
 import { database } from '../../firebase/firebase'; // Import Firebase configuration
 import ConfirmRequest from './ConfirmRequest'; // Import ConfirmRequest
 
-const Request = () => {
+const ViewRequest = () => {
   const [requests, setRequests] = useState([]); // Store fetched requests
   const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
   const [requestToTransfer, setRequestToTransfer] = useState(null); // Store selected request for transfer
@@ -152,16 +152,8 @@ const Request = () => {
           )}
         </>
       )}
-       {/* Modal to display the Transfer component */}
-       <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        <Transfer
-          selectedItems={selectedItems}
-          recipientDepartment={recipientDepartment} // Pass recipient department
-          onClose={handleCloseModal}
-        />
-      </Modal>
     </div>
   );
 };
 
-export default Request;
+export default ViewRequest;

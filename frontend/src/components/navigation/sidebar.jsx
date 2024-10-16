@@ -71,6 +71,12 @@ const Sidebar = () => {
     "/stockTransfer": "CSR Department",
     "/requestStock": "ICU Department",
     "/med": "Pharmacy Department",
+    "/ViewMedReq": "View Medicine Request",
+    "/ViewRequest": "View Supply Request",
+    "/Transfer": "Transfer Supply",
+    "/transferMed": "Transfer Medicine",
+    "/requestS": "Request Stock",
+
 
   };
 

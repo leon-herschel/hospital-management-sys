@@ -182,11 +182,10 @@ const ConfirmRequest = ({ requestToConfirm }) => {
         quantity: newQuantity,
         status: formData.status,
         timestamp: formData.timestamp,
-
       });
 
       // Deduct the quantity from main inventory in 'supplies'
-      const mainInventoryRef = ref(database, `'departments/CSR/localSupplies/${item.itemKey}`);
+      const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`); // Corrected the reference path
       const mainInventorySnapshot = await get(mainInventoryRef);
 
       if (mainInventorySnapshot.exists()) {
@@ -254,7 +253,7 @@ const ConfirmRequest = ({ requestToConfirm }) => {
                 </option>
               ))}
             </select>
-            {errorMessages.departmentError && <p className="text-red-500 text-sm">This field is required</p>}
+            {errorMessages.departmentError && <p className="text-red-500 text-sm">Department is required.</p>}
           </div>
 
           <div>
@@ -265,72 +264,91 @@ const ConfirmRequest = ({ requestToConfirm }) => {
               onChange={handleInputChange}
               className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
             >
+              <option value="">Select Status</option>
               <option value="Draft">Draft</option>
               <option value="Confirmed">Confirmed</option>
               <option value="Denied">Denied</option>
             </select>
-            {errorMessages.statusError && <p className="text-red-500 text-sm">This field is required</p>}
+            {errorMessages.statusError && <p className="text-red-500 text-sm">Status is required.</p>}
           </div>
         </div>
       </div>
 
-      {/* Items to Add */}
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Add Items</label>
+        <label className="block font-semibold mb-1">Reason</label>
+        <textarea
+          name="reason"
+          value={formData.reason}
+          onChange={handleInputChange}
+          className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
+        ></textarea>
+        {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
+      </div>
+
+      {/* Item Selection Section */}
+      <div className="mb-4">
+        <h2 className="font-semibold text-lg mb-2">Items</h2>
         <input
           type="text"
-          name="searchItem"
-          placeholder="Search for items"
-          value={searchRef.current}
+          placeholder="Search items..."
           onChange={handleSearchChange}
-          className="border p-2 w-full rounded"
+          className="border p-2 w-full rounded mb-2"
         />
+
+        <div className="flex flex-col">
+          {filteredItems.length > 0 ? filteredItems.map(item => (
+            <div key={item.itemKey} className="flex justify-between items-center mb-2">
+              <span>{item.itemName} (Available: {item.quantity})</span>
+              <button
+                onClick={() => addItem(item)}
+                className="bg-blue-500 text-white px-2 py-1 rounded"
+              >
+                Add
+              </button>
+            </div>
+          )) : (
+            items.map(item => (
+              <div key={item.itemKey} className="flex justify-between items-center mb-2">
+                <span>{item.itemName} (Available: {item.quantity})</span>
+                <button
+                  onClick={() => addItem(item)}
+                  className="bg-blue-500 text-white px-2 py-1 rounded"
+                >
+                  Add
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        {filteredItems.map(item => (
-          <button
-            key={item.itemKey}
-            onClick={() => addItem(item)}
-            className="bg-blue-500 text-white px-2 py-1 rounded"
-          >
-            {item.itemName} ({item.quantity} in stock)
-          </button>
-        ))}
+      {/* Selected Items Section */}
+      <div className="mb-4">
+        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
+        {selectedItems.length > 0 ? (
+          selectedItems.map(item => (
+            <div key={item.itemKey} className="flex justify-between items-center mb-2">
+              <span>{item.itemName}</span>
+              <input
+                type="number"
+                value={item.quantity}
+                min="1"
+                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
+                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                className="border p-1 rounded w-16 text-center"
+              />
+              <button
+                onClick={() => removeItem(item)}
+                className="bg-red-500 text-white px-2 py-1 rounded"
+              >
+                Remove
+              </button>
+            </div>
+          ))
+        ) : (
+          <p>No items selected.</p>
+        )}
       </div>
-
-      {/* Selected Items */}
-      {selectedItems.length > 0 && (
-        <>
-          <div className="mb-4">
-            <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
-            <ul>
-              {selectedItems.map((item, index) => (
-                <li key={index} className="flex justify-between items-center mb-2">
-                  <div>
-                    <p>{item.itemName}</p>
-                    <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                      className="border p-1 w-16 rounded"
-                    />
-                    <button
-                      className="bg-red-500 text-white px-2 py-1 rounded"
-                      onClick={() => removeItem(item)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
     </div>
   );
 };
