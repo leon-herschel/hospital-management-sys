@@ -7,7 +7,6 @@ const ConfirmRequest = ({ requestToConfirm }) => {
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
-    status: 'Draft',
     reason: '',
     timestamp: new Date().toLocaleString(),
   });
@@ -21,7 +20,6 @@ const ConfirmRequest = ({ requestToConfirm }) => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
-    statusError: false,
     reasonError: false,
   });
 
@@ -128,13 +126,12 @@ const ConfirmRequest = ({ requestToConfirm }) => {
   };
 
   const validateInputs = () => {
-    const { department, status, reason } = formData;
+    const { department, reason } = formData;
     setErrorMessages({
       departmentError: !department,
-      statusError: !status,
       reasonError: !reason,
     });
-    return department && status && reason;
+    return department && reason;
   };
 
   const handleConfirm = async () => {
@@ -151,14 +148,13 @@ const ConfirmRequest = ({ requestToConfirm }) => {
 
     const confirmationData = {
       name: formData.name,
-      status: formData.status,
       reason: formData.reason,
       timestamp: formData.timestamp,
       recipientDepartment: formData.department,
     };
 
     // Push the confirmation data to history
-    const historyPath = `departments/CSR/InventoryHistoryTransfer`; // Update the path for confirmation history
+    const historyPath = `supplyHistoryTransfer`; // Update the path for confirmation history
     const newHistoryRef = push(ref(database, historyPath));
     await set(newHistoryRef, confirmationData);
 
@@ -180,7 +176,6 @@ const ConfirmRequest = ({ requestToConfirm }) => {
         ...item,
         itemKey: item.itemKey,
         quantity: newQuantity,
-        status: formData.status,
         timestamp: formData.timestamp,
       });
 
@@ -198,7 +193,7 @@ const ConfirmRequest = ({ requestToConfirm }) => {
     }
 
     alert('Confirmation successful!');
-    setFormData({ ...formData, reason: '', status: '' });
+    setFormData({ ...formData, reason: '' });
     setSelectedItems([]);
     setSubmitting(false);
   };
@@ -253,102 +248,75 @@ const ConfirmRequest = ({ requestToConfirm }) => {
                 </option>
               ))}
             </select>
-            {errorMessages.departmentError && <p className="text-red-500 text-sm">Department is required.</p>}
+            {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Status</label>
-            <select
-              name="status"
-              value={formData.status}
+            <label className="block font-semibold mb-1">Reason</label>
+            <textarea
+              name="reason"
+              value={formData.reason}
               onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
-            >
-              <option value="">Select Status</option>
-              <option value="Draft">Draft</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Denied">Denied</option>
-            </select>
-            {errorMessages.statusError && <p className="text-red-500 text-sm">Status is required.</p>}
+              className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
+            />
+            {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason for this transfer.</p>}
           </div>
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block font-semibold mb-1">Reason</label>
-        <textarea
-          name="reason"
-          value={formData.reason}
-          onChange={handleInputChange}
-          className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-        ></textarea>
-        {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
-      </div>
-
-      {/* Item Selection Section */}
+      {/* Item Search and Selection */}
       <div className="mb-4">
         <h2 className="font-semibold text-lg mb-2">Items</h2>
         <input
           type="text"
           placeholder="Search items..."
+          value={searchRef.current}
           onChange={handleSearchChange}
-          className="border p-2 w-full rounded mb-2"
+          className="border p-2 w-full rounded"
         />
-
-        <div className="flex flex-col">
-          {filteredItems.length > 0 ? filteredItems.map(item => (
-            <div key={item.itemKey} className="flex justify-between items-center mb-2">
-              <span>{item.itemName} (Available: {item.quantity})</span>
-              <button
-                onClick={() => addItem(item)}
-                className="bg-blue-500 text-white px-2 py-1 rounded"
-              >
-                Add
-              </button>
-            </div>
-          )) : (
-            items.map(item => (
-              <div key={item.itemKey} className="flex justify-between items-center mb-2">
-                <span>{item.itemName} (Available: {item.quantity})</span>
+        {filteredItems.length > 0 && (
+          <ul className="mt-2">
+            {filteredItems.map(item => (
+              <li key={item.itemKey} className="flex justify-between items-center mb-2">
+                <span>{item.itemName}</span>
                 <button
-                  onClick={() => addItem(item)}
                   className="bg-blue-500 text-white px-2 py-1 rounded"
+                  onClick={() => addItem(item)}
                 >
                   Add
                 </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Selected Items Section */}
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
-        {selectedItems.length > 0 ? (
-          selectedItems.map(item => (
-            <div key={item.itemKey} className="flex justify-between items-center mb-2">
-              <span>{item.itemName}</span>
-              <input
-                type="number"
-                value={item.quantity}
-                min="1"
-                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
-                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                className="border p-1 rounded w-16 text-center"
-              />
-              <button
-                onClick={() => removeItem(item)}
-                className="bg-red-500 text-white px-2 py-1 rounded"
-              >
-                Remove
-              </button>
-            </div>
-          ))
-        ) : (
-          <p>No items selected.</p>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
+
+      {/* Selected Items */}
+      {selectedItems.length > 0 && (
+        <div className="mb-4">
+          <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
+          <ul>
+            {selectedItems.map(item => (
+              <li key={item.itemKey} className="flex justify-between items-center mb-2">
+                <span>{item.itemName}</span>
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => handleQuantityChange(item, Number(e.target.value))}
+                  min="1"
+                  className="border p-2 w-20 rounded"
+                />
+                <button
+                  className="bg-red-500 text-white px-2 py-1 rounded"
+                  onClick={() => removeItem(item)}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
