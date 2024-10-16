@@ -171,6 +171,7 @@ const RolesTable = () => {
                   </button>
                   <button
                     className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                    disabled={role.id === 'admin'}
                     onClick={() => confirmDeleteRole(role)}
                   >
                     Delete
@@ -198,7 +199,7 @@ const RolesTable = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
               <h2 className="text-xl font-bold mb-4">Delete Role</h2>
-              <p>Are you sure you want to delete the role "{roleToDelete?.name}"?</p>
+              <p>Are you sure you want to delete the role <b>{roleToDelete?.name}</b>?</p>
               <div className="flex justify-center space-x-4 mt-4">
                 <button
                   onClick={handleDeleteRole}
