@@ -260,39 +260,48 @@ const Transfer = () => {
             </ul>
           )}
         </div>
-
         <div>
-          <h2 className="font-semibold text-lg mb-2">Selected Items for Transfer</h2>
-          {selectedItems.length > 0 ? (
-            <ul className="border rounded p-2 mb-4">
-              {selectedItems.map((item, index) => (
-                <li key={index} className="flex justify-between items-center mb-2">
-                  <div>
-                    {item.itemName} (Available: {item.quantity})
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                      className="border p-1 w-20 rounded"
-                    />
-                    <button
-                      className="bg-red-500 text-white px-2 py-1 rounded"
-                      onClick={() => removeItem(item)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 mb-4">No items selected.</p>
-          )}
-        </div>
+          
+  <h2 className="font-semibold text-lg mb-2">Selected Items for Transfer</h2>
+  {selectedItems.length > 0 ? (
+    <table className="border rounded w-full mb-4">
+      <thead>
+        <tr className="bg-gray-200">
+          <th className="text-left p-2">Name</th>
+          <th className="text-left p-2">Quantity</th>
+          <th className="text-left p-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {selectedItems.map((item, index) => (
+          <tr key={index} className="border-b">
+            <td className="p-2">{item.itemName} (Available: {item.quantity})</td>
+            <td className="p-2">
+              <input
+                type="number"
+                min="1"
+                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
+                value={item.quantity}
+                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                className="border p-1 w-20 rounded"
+              />
+            </td>
+            <td className="p-2">
+              <button
+                className="bg-red-500 text-white px-2 py-1 rounded"
+                onClick={() => removeItem(item)}
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <p className="text-gray-500 mb-4">No items selected.</p>
+  )}
+</div>
       </div>
     );
   };

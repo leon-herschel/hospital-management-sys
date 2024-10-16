@@ -283,6 +283,7 @@ if (mainInventorySnapshot.exists()) {
               <li key={index} className="mb-2">
                 <div className="flex justify-between">
                   <span>{item.itemName}</span>
+                  <span>Available: {item.quantity}</span>
                   <button
                     className="bg-blue-500 text-white px-2 py-1 rounded"
                     onClick={() => addItem(item)}
@@ -296,34 +297,45 @@ if (mainInventorySnapshot.exists()) {
         </div>
       )}
 
-      {/* Selected Items */}
-      {selectedItems.length > 0 && (
-        <div className="mb-4">
-          <h3 className="font-semibold mb-1">Selected Items:</h3>
-          <ul className="border rounded p-2">
-            {selectedItems.map((item, index) => (
-              <li key={index} className="mb-2">
-                <div className="flex justify-between">
-                  <span>{item.itemName}</span>
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    min={1}
-                    max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
-                    onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                    className="border p-1 w-20 rounded"
-                  />
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+{/* Selected Items */}
+{selectedItems.length > 0 && (
+  <div className="mb-4">
+    <h3 className="font-semibold mb-1">Selected Items:</h3>
+    <table className="border rounded w-full">
+      <thead>
+        <tr className="bg-gray-200">
+          <th className="border px-4 py-2">Name</th>
+          <th className="border px-4 py-2">Quantity</th>
+          <th className="border px-4 py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {selectedItems.map((item, index) => (
+          <tr key={index} className="border-b">
+            <td className="border px-4 py-2">{item.itemName}</td>
+            <td className="border px-4 py-2">
+              <input
+                type="number"
+                value={item.quantity}
+                min={1}
+                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
+                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                className="border p-1 w-20 rounded"
+              />
+            </td>
+            <td className="border px-4 py-2">
+              <button
+                className="bg-red-500 text-white px-2 py-1 rounded"
+                onClick={() => removeItem(item)}
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
       )}
     </div>
   );
