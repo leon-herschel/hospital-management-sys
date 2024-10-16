@@ -139,6 +139,7 @@ const DepartmentsTable = () => {
             <tr>
               <th scope="col" className="px-6 py-3">Department</th>
               <th scope="col" className="px-6 py-3">Access Inventory</th>
+              <th scope="col" className="px-6 py-3">Access Overall Inventory</th>
               <th scope="col" className="px-6 py-3">Access Inventory History</th>
               <th scope="col" className="px-6 py-3">Access Patients</th>
               <th scope="col" className="px-6 py-3">Access Settings</th>
@@ -154,6 +155,11 @@ const DepartmentsTable = () => {
                 <td className="px-6 py-4">
                   <span className={department.permissions?.accessInventory ? 'text-green-600' : 'text-red-600'}>
                     {department.permissions?.accessInventory ? 'Yes' : 'No'}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={department.permissions?.accessOverallInventory ? 'text-green-600' : 'text-red-600'}>
+                    {department.permissions?.accessOverallInventory ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className="px-6 py-4">
