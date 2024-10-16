@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ref, get, set, push, update, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
@@ -202,7 +202,7 @@ if (mainInventorySnapshot.exists()) {
   };
   
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Create a new stock transfer.</h1>
         <button
@@ -291,7 +291,7 @@ if (mainInventorySnapshot.exists()) {
             placeholder="Search Item"
             value={searchRef.current}
             onChange={handleSearchChange}
-            className="border p-2 rounded w-1/2"
+            className="border border-slate-300 px-4 py-2 rounded-md mb-4 w-1/2"
           />
         </div>
 
@@ -314,19 +314,19 @@ if (mainInventorySnapshot.exists()) {
         )}
 
         {/* Selected Items Display in Table Format */}
-        <table className="min-w-full border-collapse border border-gray-300 mt-4">
-          <thead>
+        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+          <thead className="text-md bg-slate-200">
             <tr>
-              <th className="border border-gray-300 p-2">Item Name</th>
-              <th className="border border-gray-300 p-2">Quantity</th>
-              <th className="border border-gray-300 p-2">Actions</th>
+              <th className="px-6 py-3">Item Name</th>
+              <th className="px-6 py-3">Quantity</th>
+              <th className="px-6 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {selectedItems.map((item, index) => (
-              <tr key={index}>
-                <td className="border border-gray-300 p-2">{item.itemName}</td>
-                <td className="border border-gray-300 p-2">
+              <tr key={index} className="bg-white border-b hover:bg-slate-100">
+                <td className="px-6 py-3">{item.itemName}</td>
+                <td className="px-6 py-3">
                   <input
                     type="number"
                     min="1"
@@ -336,9 +336,9 @@ if (mainInventorySnapshot.exists()) {
                     className="border rounded w-16 text-center"
                   />
                 </td>
-                <td className="border border-gray-300 p-2">
+                <td className="px-6 py-3">
                   <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
+                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
                     onClick={() => removeItem(item)}
                   >
                     Remove
