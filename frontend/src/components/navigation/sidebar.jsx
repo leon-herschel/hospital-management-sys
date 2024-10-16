@@ -14,7 +14,12 @@ import {
   CreditCardIcon,
   ArchiveBoxIcon,
   ChevronDownIcon,
-  BuildingOffice2Icon,
+  CubeIcon,
+  ClipboardDocumentIcon,
+  ArchiveBoxArrowDownIcon,
+  ArrowPathRoundedSquareIcon,
+  PaperAirplaneIcon,
+  ClipboardDocumentCheckIcon,
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -24,7 +29,6 @@ import LogoutConfirmationModal from "./LogoutConfirmationModal";
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
-  const [departmentsDropdownOpen, setDepartmentsDropdownOpen] = useState(false);
   const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,10 +52,6 @@ const Sidebar = () => {
 
   const toggleInventoryDropdown = () => {
     setInventoryDropdownOpen(!inventoryDropdownOpen);
-  };
-
-  const toggleDepartmentsDropdown = () => {
-    setDepartmentsDropdownOpen(!departmentsDropdownOpen);
   };
 
   const toggleHistoryDropdown = () => {
@@ -82,9 +82,7 @@ const Sidebar = () => {
 
   let currentTitle = "Overview";
 
-  if (location.pathname.startsWith("/patients")) {
-    currentTitle = "Patient Management System";
-  } else if (titles[location.pathname]) {
+  if (titles[location.pathname]) {
     currentTitle = titles[location.pathname];
   }
 
@@ -132,7 +130,7 @@ const Sidebar = () => {
                 className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
                 onClick={toggleInventoryDropdown}
               >
-                <ClipboardDocumentListIcon className="w-6 h-6 mr-3" />
+                <ClipboardDocumentIcon className="w-6 h-6 mr-3" />
                 <span>Inventory</span>
                 <ChevronDownIcon
                   className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${inventoryDropdownOpen ? "rotate-180" : ""
@@ -141,7 +139,7 @@ const Sidebar = () => {
               </div>
 
               <div
-                className={`ml-8 overflow-hidden transition-all duration-300 ease-in-out ${inventoryDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                className={`ml-2 overflow-hidden transition-all duration-300 ease-in-out ${inventoryDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                   }`}
               >
                 <Link
@@ -159,66 +157,69 @@ const Sidebar = () => {
 
                 {/* Adding Overall Inventory */}
                 <Link
-                  to="/OverallInventory"
+                  to="/OverAllInventory"
                   className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
                     ? "bg-slate-800 text-white shadow-sm"
                     : "text-white"
                     } hover:bg-slate-800`}
                 >
-                  <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                  <CubeIcon className="w-5 h-5 mr-3" />
                   Overall Inventory
                 </Link>
               </div>
             </>
           )}
-          <>
-            <Link to="Transfer"
-              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+          
+          <Link to="Transfer"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/Transfer")
                 ? "bg-slate-800 text-white shadow-sm"
                 : "text-white"
                 } hover:bg-slate-800`}
             >
+              <ArrowPathRoundedSquareIcon className="w-5 h-5 mr-3" />
               Transfer Supply
-            </Link>
+          </Link>
 
-          </>
-          <>
-            <Link to="transferMed" className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+          <Link to="transferMed" className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/transferMed")
               ? "bg-slate-800 text-white shadow-sm"
               : "text-white"
               } hover:bg-slate-800`}
-            >Transfer Medicine</Link>
-          </>
-          <>
-            <Link to="ViewRequest"
-              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+            >
+              <ArrowPathRoundedSquareIcon className="w-5 h-5 mr-3" />
+              Transfer Medicine
+          </Link>
+
+          <Link to="ViewRequest"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/ViewRequest")
                 ? "bg-slate-800 text-white shadow-sm"
                 : "text-white"
                 } hover:bg-slate-800`}
             >
+              <PaperAirplaneIcon className="w-5 h-5 mr-3" />
               View Supply Request
-            </Link>
-          </>
-          <>
-            <Link to="ViewMedReq"
-              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+          </Link>
+
+          <Link to="ViewMedReq"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/ViewMedReq")
                 ? "bg-slate-800 text-white shadow-sm"
                 : "text-white"
                 } hover:bg-slate-800`}
             >
+              <PaperAirplaneIcon className="w-5 h-5 mr-3" />
               View Medicine Request
-            </Link>
-          </>
+          </Link>
 
-          <>
-            <Link to="requestS"
+          <Link to="requestS"
 
-              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/OverAllInventory")
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/requestS")
                 ? "bg-slate-800 text-white shadow-sm"
                 : "text-white"
                 } hover:bg-slate-800`}
-            > Request Stock
-            </Link></>
+            >
+            <ClipboardDocumentCheckIcon className="w-5 h-5 mr-3" />
+            Request Stock
+          </Link>
+
           {permissions?.accessInventoryHistory && (
             <>
               <div
@@ -234,11 +235,8 @@ const Sidebar = () => {
               </div>
 
               <div
-                className={`ml-8 transition-all duration-300 ease-in-out ${historyDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                className={`ml-2 overflow-hidden transition-all duration-300 ease-in-out ${historyDropdownOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                   }`}
-                style={{
-                  maxHeight: historyDropdownOpen ? "160px" : "0", // Control max height
-                }}
               >
                 <div className="overflow-y-auto max-h-40">
                   <Link
@@ -248,6 +246,7 @@ const Sidebar = () => {
                       : "text-white"
                       } hover:bg-slate-800`}
                   >
+                    <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Usage History
                   </Link>
 
@@ -258,34 +257,36 @@ const Sidebar = () => {
                       : "text-white"
                       } hover:bg-slate-800`}
                   >
+                    <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Local History
                   </Link>
 
                   <Link
                     to="PharmacyTransferHistory"
-                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PharmacyTransferHistory")
+                    className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PharmacyTransferHistory")
                       ? "bg-slate-800 text-white shadow-sm"
                       : "text-white"
                       } hover:bg-slate-800`}
                   >
+                    <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Medicine Transfer History
                   </Link>
 
                   <Link
                     to="CsrTransferHistory"
-                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/CsrTransferHistory")
+                    className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/CsrTransferHistory")
                       ? "bg-slate-800 text-white shadow-sm"
                       : "text-white"
                       } hover:bg-slate-800`}
                   >
+                    <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Supply Transfer History
                   </Link>
                 </div>
               </div>
-
             </>
           )}
-          {/* Other Sidebar Links */}
+
           {permissions?.accessPatients && (
             <Link
               to="/patients"

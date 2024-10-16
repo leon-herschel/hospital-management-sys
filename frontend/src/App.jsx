@@ -21,7 +21,6 @@ import RequestStock from "./pages/ICU POV/requestStock";
 import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
-import TransferMed from "./pages/PharmacyPOV/transferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
