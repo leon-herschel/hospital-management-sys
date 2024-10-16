@@ -29,8 +29,8 @@ const RequestS = () => {
     if (user) {
       setFormData((prevData) => ({
         ...prevData,
-        name: user.displayName || user.email,
-      })); // Use displayName or email as fallback
+        name: user.firstname || user.email,
+      })); 
     }
   }, []);
 
@@ -94,6 +94,8 @@ const RequestS = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
+  
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -197,6 +199,7 @@ const RequestS = () => {
           {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
+      
       <div className="mb-4">
         <label htmlFor="department" className="block font-bold mb-1">
           Department
@@ -220,6 +223,7 @@ const RequestS = () => {
           <span className="text-red-500">Please select a department.</span>
         )}
       </div>
+      
       <div className="mb-4">
         <label htmlFor="reason" className="block font-bold mb-1">
           Reason
