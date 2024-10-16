@@ -25,8 +25,8 @@ import TransferMed from "./pages/PharmacyPOV/TransferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
-import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
-import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory"
+import ViewRequest from "./pages/CSR POV/ViewRequest"
+import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
 import { element } from "prop-types";
 
 function App() {
