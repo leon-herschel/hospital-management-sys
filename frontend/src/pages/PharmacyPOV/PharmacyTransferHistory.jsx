@@ -1,30 +1,51 @@
 import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import { getAuth } from "firebase/auth";
 
 const PharmacyTransferHistory = () => {
     const [transferList, setTransferList] = useState([]);
+    const [department, setDepartment] = useState("");
 
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    // Fetch user's department
     useEffect(() => {
-        const PharmacyHistoryRef = ref(database, "medicineTransferHistory")
+        if (user) {
+            const departmentRef = ref(database, `users/${user.uid}/department`);
 
-        const unsubscribePharmacyHistory = onValue(
-            PharmacyHistoryRef,
-            (snapshot) => {
-                const data = snapshot.val()
-                if (data) {
-                    const PharmacyData = Object.keys(data).map((key) => ({
-                        ...data[key],
-                        id: key,
-                    }));
-                    setTransferList(PharmacyData);
-                } else {
-                    setTransferList([])
+            onValue(departmentRef, (snapshot) => {
+                const departmentData = snapshot.val();
+                if (departmentData) {
+                    setDepartment(departmentData);
                 }
-            }
-        );
-        return () => unsubscribePharmacyHistory();
-    }, []);
+            });
+        }
+    }, [user]);
+
+    // Fetch transfer history based on user's department
+    useEffect(() => {
+        if (department) {
+            const PharmacyHistoryRef = ref(database, "medicineTransferHistory");
+
+            const unsubscribePharmacyHistory = onValue(PharmacyHistoryRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const PharmacyData = Object.keys(data)
+                        .map((key) => ({
+                            ...data[key],
+                            id: key,
+                        }))
+                        .filter((medicine) => medicine.recipientDepartment === department);
+
+                    setTransferList(PharmacyData);
+                }
+            });
+
+            return () => unsubscribePharmacyHistory();
+        }
+    }, [department]);
 
     return (
         <div className="relative overflow-x-auto rounded-md shadow-sm">
@@ -53,7 +74,9 @@ const PharmacyTransferHistory = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="5" className="px-6 py-3">No Pharmacy Transfer History found.</td>
+                            <td colSpan="6" className="px-6 py-3">
+                                No {department} Transfer History found.
+                            </td>
                         </tr>
                     )}
                 </tbody>
