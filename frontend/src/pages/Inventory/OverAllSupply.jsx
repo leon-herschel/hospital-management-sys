@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ref, get, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import { calculateStatus } from "./CalculateStatusLogic"; // Import the calculateStatus function
 
 const OverAllSupply = () => {
   const [overallInventory, setOverallInventory] = useState({});
@@ -30,16 +31,19 @@ const OverAllSupply = () => {
           const departmentSupplies = departmentValue.localSupplies || {}; // Ensure you're targeting the correct supplies node within departments
 
           Object.entries(departmentSupplies).forEach(([key, value]) => {
-            const itemName = value.itemName; // Use itemName as the unique identifier
+            const itemName = value.itemName;
+            const maxQuantity = value.maxQuantity || value.quantity; // Default to quantity if maxQuantity is not provided
 
             if (totalInventory[itemName]) {
-              // If the item exists in the main supplies, add the department's quantity
+              // If the item exists, add the department's quantity
               totalInventory[itemName].totalQuantity += value.quantity || 0;
             } else {
-              // If the item is not in the main supplies, create a new entry
+              // Create a new entry for the item
               totalInventory[itemName] = {
                 itemName: itemName,
-                totalQuantity: value.quantity || 0, // Only department's quantity
+                totalQuantity: value.quantity || 0,
+                maxQuantity: maxQuantity,
+                status: calculateStatus(value.quantity || 0, maxQuantity), // Calculate the status
               };
             }
           });
@@ -50,10 +54,7 @@ const OverAllSupply = () => {
     };
 
     fetchOverallInventory();
-    const unsubscribeDepartments = onValue(
-      departmentsRef,
-      fetchOverallInventory
-    );
+    const unsubscribeDepartments = onValue(departmentsRef, fetchOverallInventory);
 
     return () => {
       unsubscribeDepartments();
@@ -82,6 +83,7 @@ const OverAllSupply = () => {
           <tr>
             <th className="px-6 py-3">Item Name</th>
             <th className="px-6 py-3">Total Quantity</th>
+            <th className="px-6 py-3">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -89,14 +91,13 @@ const OverAllSupply = () => {
             filteredInventory.map(([itemName, item]) => (
               <tr key={itemName} className="bg-white border-b hover:bg-slate-100">
                 <td className="px-6 py-3">{item.itemName}</td>
-                <td className="px-6 py-3">
-                  {item.totalQuantity}
-                </td>
+                <td className="px-6 py-3">{item.totalQuantity}</td>
+                <td className="px-6 py-3">{item.status}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="2" className="px-6 py-3">
+              <td colSpan="3" className="px-6 py-3">
                 No supplies found.
               </td>
             </tr>

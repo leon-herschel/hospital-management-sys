@@ -70,12 +70,13 @@ const ConfirmMedRequest = ({ requestToConfirm }) => {
     if (requestToConfirm) {
       setFormData(prevData => ({
         ...prevData,
-        department: requestToConfirm.department,
+        department: requestToConfirm.fromDepartment,  // Set the department that made the request
         reason: requestToConfirm.reason,
       }));
       setSelectedMedications(requestToConfirm.items);
     }
   }, [requestToConfirm]);
+    
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

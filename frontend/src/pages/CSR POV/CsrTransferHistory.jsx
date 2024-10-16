@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import {getAuth} from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 const CsrTransferHistory = () => {
     const [transferList, setTransferList] = useState([]);
@@ -10,37 +10,48 @@ const CsrTransferHistory = () => {
     const auth = getAuth();
     const user = auth.currentUser;
 
+    // Fetch user's department
     useEffect(() => {
         if (user) {
-            const departmentRef = ref(database, `users/${user.uid}/department`)
+            const departmentRef = ref(database, `users/${user.uid}/department`);
 
             onValue(departmentRef, (snapshot) => {
                 const departmentData = snapshot.val();
                 if (departmentData) {
-                    setDepartment(departmentData)
+                    setDepartment(departmentData);
                 }
-            })
+            });
         }
-    }, [user])
+    }, [user]);
 
+    // Fetch transfer history based on user's department
     useEffect(() => {
-        const CsrHistoryRef = ref(database, "supplyHistoryTransfer")
+        if (department) {
+            const CsrHistoryRef = ref(database, "supplyHistoryTransfer");
 
-        const unsubscribeCsrHistory = onValue(
-            CsrHistoryRef,
-            (snapshot) => {
-                const data = snapshot.val()
+            const unsubscribeCsrHistory = onValue(CsrHistoryRef, (snapshot) => {
+                const data = snapshot.val();
                 if (data) {
                     const CsrData = Object.keys(data).map((key) => ({
                         ...data[key],
                         id: key,
-                    }))
-                    .filter((supply) => supply.recipientDepartment === department);
-                    setTransferList(CsrData);
-                } 
-            }
-        );
-        return () => unsubscribeCsrHistory();
+                    }));
+
+                    // If the user's department is not CSR, filter by recipientDepartment
+                    if (department !== "CSR") {
+                        const filteredData = CsrData.filter(
+                            (supply) => supply.recipientDepartment === department
+                        );
+                        setTransferList(filteredData);
+                    } else {
+                        // If the department is CSR, show all data without filtering
+                        setTransferList(CsrData);
+                    }
+                }
+            });
+
+            return () => unsubscribeCsrHistory();
+        }
     }, [department]);
 
     return (
@@ -70,13 +81,15 @@ const CsrTransferHistory = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="6" className="px-6 py-3">No {department} Transfer History found.</td>
+                            <td colSpan="6" className="px-6 py-3">
+                                No {department} Transfer History found.
+                            </td>
                         </tr>
                     )}
                 </tbody>
             </table>
         </div>
     );
-}
+};
 
 export default CsrTransferHistory;

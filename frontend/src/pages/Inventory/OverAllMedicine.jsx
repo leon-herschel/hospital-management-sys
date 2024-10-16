@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { database } from "../../firebase/firebase";
 import { ref, onValue, get } from "firebase/database";
+import { calculateStatus } from "./CalculateStatusLogic"; // Import the calculateStatus function
 
 const OverAllMedicine = () => {
   const [medsList, setMedsList] = useState([]);
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState(null); // Error state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Fetch all departments
     const departmentsRef = ref(database, "departments");
     onValue(
       departmentsRef,
@@ -31,6 +31,7 @@ const OverAllMedicine = () => {
               // Aggregate medicines by itemName
               Object.entries(localMedsData).forEach(([key, value]) => {
                 const itemName = value.itemName;
+                const maxQuantity = value.maxQuantity || value.quantity; // Default to the quantity if no maxQuantity is defined
 
                 if (totalMeds[itemName]) {
                   // If the medicine already exists, add to the quantity
@@ -41,7 +42,8 @@ const OverAllMedicine = () => {
                     id: key,
                     itemName: itemName,
                     quantity: value.quantity || 0,
-                    status: value.status, // Retain status for the medicine
+                    maxQuantity: maxQuantity,
+                    status: calculateStatus(value.quantity || 0, maxQuantity), // Calculate the status
                   };
                 }
               });
@@ -53,21 +55,21 @@ const OverAllMedicine = () => {
         } else {
           setMedsList([]);
         }
-        setLoading(false); // Set loading to false when data is fetched
+        setLoading(false);
       },
       (error) => {
-        setError(error); // Set error if fetching fails
+        setError(error);
         setLoading(false);
       }
     );
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>; // Loading indicator
+    return <div>Loading...</div>;
   }
 
   if (error) {
-    return <div>Error fetching data: {error.message}</div>; // Error message
+    return <div>Error fetching data: {error.message}</div>;
   }
 
   const filteredInventory = medsList.filter((item) =>
@@ -84,7 +86,6 @@ const OverAllMedicine = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full border border-slate-300 px-4 py-2 rounded-md mb-4"
       />
-      
       <table className="w-full text-md text-gray-900 text-center border border-slate-200">
         <thead className="text-md bg-slate-200">
           <tr>
@@ -97,15 +98,9 @@ const OverAllMedicine = () => {
           {filteredInventory.length > 0 ? (
             filteredInventory.map((medicine) => (
               <tr key={medicine.id} className="bg-white border-b hover:bg-slate-100">
-                <td className="px-6 py-3">
-                  {medicine.itemName}
-                </td>
-                <td className="px-6 py-3">
-                  {medicine.quantity}
-                </td>
-                <td className="px-6 py-3">
-                  {medicine.status}
-                </td>
+                <td className="px-6 py-3">{medicine.itemName}</td>
+                <td className="px-6 py-3">{medicine.quantity}</td>
+                <td className="px-6 py-3">{medicine.status}</td>
               </tr>
             ))
           ) : (
