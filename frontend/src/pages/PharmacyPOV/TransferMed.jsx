@@ -10,7 +10,6 @@ const TransferMed = () => {
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
-    status: 'Draft',
     reason: '',
     timestamp: new Date().toLocaleString() // Add current timestamp on initial load
   });
@@ -25,7 +24,6 @@ const TransferMed = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
-    statusError: false,
     reasonError: false,
   });
 
@@ -114,13 +112,12 @@ useEffect(() => {
   };
 
   const validateInputs = () => {
-    const { department, status, reason } = formData;
+    const { department, reason } = formData;
     setErrorMessages({
       departmentError: !department,
-      statusError: !status,
       reasonError: !reason,
     });
-    return department && status && reason;
+    return department && reason;
   };
 
 
@@ -138,7 +135,6 @@ useEffect(() => {
   
     const transferData = {
       name: formData.name,
-      status: formData.status,
       reason: formData.reason,
       timestamp: formData.timestamp,
       recipientDepartment: formData.department, // Ensure recipientDepartment is included
@@ -161,7 +157,6 @@ useEffect(() => {
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        status: formData.status, // You can keep other fields like status if needed
         timestamp: formData.timestamp, // Timestamp remains here
       });
   
@@ -177,7 +172,6 @@ useEffect(() => {
         reason: formData.reason, // Include reason in the history
       });
   
-      // Update the main inventory (deduct quantity)
       // Update the main inventory (deduct quantity)
 const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${item.itemKey}`);
 const mainInventorySnapshot = await get(mainInventoryRef);
@@ -199,7 +193,7 @@ if (mainInventorySnapshot.exists()) {
     }
   
     alert('Transfer successful!');
-    setFormData({ ...formData, reason: '', status: 'Draft' });
+    setFormData({ ...formData, reason: '' });
     setSelectedItems([]);
     setSubmitting(false);
   };
@@ -260,20 +254,6 @@ if (mainInventorySnapshot.exists()) {
             </select>
             {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
           </div>
-
-          <div>
-            <label className="block font-semibold mb-1">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
-            >
-              <option value="Draft">Draft</option>
-              <option value="Final">Final</option>
-            </select>
-            {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
-          </div>
         </div>
 
         {/* Reason Input */}
@@ -284,78 +264,86 @@ if (mainInventorySnapshot.exists()) {
             value={formData.reason}
             onChange={handleInputChange}
             className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-          ></textarea>
-          {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
-        </div>
-      </div>
-
-      {/* Items Section */}
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Items</h2>
-        <div className="flex justify-between items-center mb-2">
-          <input
-            type="text"
-            placeholder="Search Item"
-            value={searchRef.current}
-            onChange={handleSearchChange}
-            className="border border-slate-300 px-4 py-2 rounded-md mb-4 w-1/2"
           />
+          {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason for transfer.</p>}
         </div>
-
-        {/* Show Filtered Items */}
-        {searchRef.current && (
-          <div className="max-h-40 overflow-y-auto border border-gray-300 rounded mb-4">
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item, index) => (
-                <div key={index} className="flex justify-between p-2 border-b hover:bg-gray-100 cursor-pointer"
-                  onClick={() => addItem(item)}
-                >
-                  <span>{item.itemName}</span>
-                  <span className="text-gray-500">{item.quantity}</span>
-                </div>
-              ))
-            ) : (
-              <div className="p-2 text-gray-500">No items found.</div>
-            )}
-          </div>
-        )}
-
-        {/* Selected Items Display in Table Format */}
-        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
-          <thead className="text-md bg-slate-200">
-            <tr>
-              <th className="px-6 py-3">Item Name</th>
-              <th className="px-6 py-3">Quantity</th>
-              <th className="px-6 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {selectedItems.map((item, index) => (
-              <tr key={index} className="bg-white border-b hover:bg-slate-100">
-                <td className="px-6 py-3">{item.itemName}</td>
-                <td className="px-6 py-3">
-                  <input
-                    type="number"
-                    min="1"
-                    max={item.quantity}
-                    value={item.quantity}
-                    onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                    className="border rounded w-16 text-center"
-                  />
-                </td>
-                <td className="px-6 py-3">
-                  <button
-                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
+
+      {/* Search Medicine */}
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Search Medicine:</label>
+        <input
+          type="text"
+          value={searchRef.current}
+          onChange={handleSearchChange}
+          className="border p-2 w-full rounded"
+        />
+        <p className="text-gray-500 text-sm">Search for medicine to add to the transfer list.</p>
+      </div>
+
+      {/* Filtered Items */}
+      {filteredItems.length > 0 && (
+        <div className="mb-4">
+          <h3 className="font-semibold mb-1">Results:</h3>
+          <ul className="border rounded p-2">
+            {filteredItems.map((item, index) => (
+              <li key={index} className="mb-2">
+                <div className="flex justify-between">
+                  <span>{item.itemName}</span>
+                  <span>Available: {item.quantity}</span>
+                  <button
+                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                    onClick={() => addItem(item)}
+                  >
+                    Add
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+{/* Selected Items */}
+{selectedItems.length > 0 && (
+  <div className="mb-4">
+    <h3 className="font-semibold mb-1">Selected Items:</h3>
+    <table className="border rounded w-full">
+      <thead>
+        <tr className="bg-gray-200">
+          <th className="border px-4 py-2">Name</th>
+          <th className="border px-4 py-2">Quantity</th>
+          <th className="border px-4 py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {selectedItems.map((item, index) => (
+          <tr key={index} className="border-b">
+            <td className="border px-4 py-2">{item.itemName}</td>
+            <td className="border px-4 py-2">
+              <input
+                type="number"
+                value={item.quantity}
+                min={1}
+                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
+                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                className="border p-1 w-20 rounded"
+              />
+            </td>
+            <td className="border px-4 py-2">
+              <button
+                className="bg-red-500 text-white px-2 py-1 rounded"
+                onClick={() => removeItem(item)}
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+      )}
     </div>
   );
 };

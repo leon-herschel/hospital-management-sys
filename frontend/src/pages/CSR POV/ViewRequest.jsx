@@ -11,14 +11,14 @@ const ViewRequest = () => {
   const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
   const [requestToTransfer, setRequestToTransfer] = useState(null); // Store selected request for transfer
 
-  // Fetch data from Firebase in real-time
   useEffect(() => {
     const csrRequestRef = ref(database, 'departments/CSR/Request');
 
     const handleRequestUpdates = (snapshot, department) => {
       if (snapshot.exists()) {
-        const requestsData = Object.values(snapshot.val()).map(request => ({
+        const requestsData = Object.entries(snapshot.val()).map(([key, request]) => ({
           ...request,
+          requestId: key, // Include the Firebase key in the request data
           department,
         }));
         return requestsData;
@@ -26,56 +26,29 @@ const ViewRequest = () => {
       return [];
     };
 
-    // Listen for updates in CSR requests
     const csrListener = onValue(csrRequestRef, (snapshot) => {
       const csrRequests = handleRequestUpdates(snapshot, 'CSR');
-
-      // Sort the requests by timestamp (ascending order)
-      csrRequests.sort((a, b) => {
-        const timestampA = new Date(a.timestamp).getTime();
-        const timestampB = new Date(b.timestamp).getTime();
-        return timestampA - timestampB;
-      });
-
-      // Set the requests state with real-time updates
+      csrRequests.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       setRequests(csrRequests);
     });
 
-    // Cleanup listener when component unmounts
-    return () => {
-      csrListener();
-    };
+    return () => csrListener();
   }, []);
 
-  // Toggle details for a specific request
-  const toggleDetails = (index) => {
-    setExpandedRequests((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }));
-  };
-
-  // Handle confirm action (trigger transfer logic)
   const handleConfirm = (request) => {
-    console.log("Confirmed request:", request);
-    // Set the request to transfer
     setRequestToTransfer(request);
-    // Optionally, expand the request details when confirmed
     setExpandedRequests((prev) => ({
       ...prev,
-      [requests.indexOf(request)]: true, // Set the corresponding request to expanded
+      [requests.indexOf(request)]: true,
     }));
   };
 
-  // Handle decline action
-  const handleDecline = (request) => {
-    console.log("Declined request:", request);
-    // Add your decline logic here (e.g., update database)
+  const handleConfirmSuccess = () => {
+    setRequestToTransfer(null); // Reset transfer request after successful confirmation
   };
 
-  // Handle exit action to go back to the request page
   const handleExit = () => {
-    setRequestToTransfer(null); // Reset the transfer request
+    setRequestToTransfer(null);
   };
 
   if (department !== "CSR" && department !== "Admin") {
@@ -86,16 +59,18 @@ const ViewRequest = () => {
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg">
       {requestToTransfer ? (
         <div>
-          {/* Exit button to return to the requests page */}
           <button 
             onClick={handleExit} 
             className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
           >
             Exit
           </button>
-          {/* Show the ConfirmRequest component if a request is confirmed */}
-          <ConfirmRequest requestToConfirm={requestToTransfer} />
-          </div>
+          <ConfirmRequest 
+            requestToConfirm={requestToTransfer} 
+            currentDepartment={requestToTransfer.currentDepartment}
+            onConfirmSuccess={handleConfirmSuccess} // Pass success callback
+          />
+        </div>
       ) : (
         <>
           {requests.length === 0 ? (
@@ -107,24 +82,15 @@ const ViewRequest = () => {
                   <p className="font-bold text-lg">
                     A stock transfer requested by <span className="text-primary">{request.name}</span>
                   </p>
-                  <button onClick={() => toggleDetails(index)} className="focus:outline-none">
-                    {expandedRequests[index] ? (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    )}
+                  <button onClick={() => handleConfirm(request)} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    View
                   </button>
                 </div>
-
                 {expandedRequests[index] && (
                   <div className="p-4 bg-gray-100">
                     <ul className="list-disc pl-5">
                       <li><strong>Requested by:</strong> {request.name || 'N/A'}</li>
-                      {/* Map through items and display each one */}
+                      <li><strong>Requested Department:</strong> {request.currentDepartment || 'N/A'}</li>
                       {request.items && request.items.length > 0 ? (
                         request.items.map((item, i) => (
                           <li key={i}>
