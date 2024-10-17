@@ -12,7 +12,7 @@ export const calculateStatus = (quantity, maxQuantity) => {
     } else if (percentage >= 50) {
       return "Moderate";
     } else if (percentage >= 49) {
-        return "Low";
+        return "Low Stock";
       } else {
         return "Very Low";  // New status for below 30%
       }
