@@ -9,7 +9,7 @@ const RequestS = () => {
     name: "", // Default name
     department: "Pharmacy", // Default department
     reason: "",
-    timestamp: "", // Timestamp to track transfer creation
+    timestamp: "",
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // To store medicines or supplies data
@@ -22,15 +22,33 @@ const RequestS = () => {
   const [reasonError, setReasonError] = useState(false);
   const [submitting, setSubmitting] = useState(false); // For submission state
 
-  // Fetch user name from Firebase Auth
+  // New state to store the user's department
+  const [userDepartment, setUserDepartment] = useState("");
+
+  // Fetch user name and department from Firebase Auth and database
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
+      // Set the user's name
       setFormData((prevData) => ({
         ...prevData,
-        name: user.firstname || user.email,
-      })); 
+        name: user.firstName || user.email,
+      }));
+
+      // Fetch the user's department from the Firebase database (assuming you store it in users/{uid}/department)
+      const userDepartmentRef = ref(database, `users/${user.uid}/department`);
+      get(userDepartmentRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            setUserDepartment(snapshot.val()); // Set the user's department
+          } else {
+            console.log("No department found for the user.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching user department:", error);
+        });
     }
   }, []);
 
@@ -57,7 +75,13 @@ const RequestS = () => {
   // Fetch medicines or supplies based on selected department
   useEffect(() => {
     const fetchItems = async () => {
-      const itemRef = ref(database, formData.department === 'Pharmacy' ? 'departments/Pharmacy/localMeds' : 'departments/CSR/localSupplies');
+      let itemRef;
+      if (formData.department === "Pharmacy") {
+        itemRef = ref(database, "departments/Pharmacy/localMeds");
+      } else if (formData.department === "CSR") {
+        itemRef = ref(database, "departments/CSR/localSupplies");
+      }
+
       try {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
@@ -67,11 +91,14 @@ const RequestS = () => {
             ...data[key], // Spread the item data
           }));
           setItems(itemsList); // Set the items state
+          setFilteredItems(itemsList); // Initially set filteredItems to all items
         } else {
           console.log("No data available");
+          setItems([]); // Ensure items are reset if no data
         }
       } catch (error) {
         console.error("Error fetching items:", error);
+        setItems([]); // Reset items if error occurs
       }
     };
     fetchItems();
@@ -95,8 +122,6 @@ const RequestS = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  
-
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -109,9 +134,9 @@ const RequestS = () => {
   };
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: '' }]); // Default quantity is set to 1
-      setSearchTerm(''); // Clear search term after adding
+    if (!selectedItems.find((item) => item.itemName === itemToAdd.itemName)) {
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: "" }]); // Default quantity is set to 1
+      setSearchTerm(""); // Clear search term after adding
       setFilteredItems([]); // Clear filtered items
     }
   };
@@ -128,9 +153,11 @@ const RequestS = () => {
       return; // Stop execution if quantity exceeds
     }
 
-    const newQuantity = Math.min(Math.max(value, ''), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
-    const updatedItems = selectedItems.map(selectedItem =>
-      selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: newQuantity } : selectedItem
+    const newQuantity = Math.min(Math.max(value, ""), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
+    const updatedItems = selectedItems.map((selectedItem) =>
+      selectedItem.itemName === item.itemName
+        ? { ...selectedItem, quantity: newQuantity }
+        : selectedItem
     );
     setSelectedItems(updatedItems);
   };
@@ -150,8 +177,8 @@ const RequestS = () => {
       return; // Stop execution if validation fails
     }
 
-    if (selectedItems.length === '') {
-      alert('Please select items to request.');
+    if (selectedItems.length === "") {
+      alert("Please select items to request.");
       return; // Stop execution if no items are selected
     }
 
@@ -162,6 +189,7 @@ const RequestS = () => {
       reason: formData.reason,
       items: selectedItems,
       timestamp: formData.timestamp,
+      currentDepartment: userDepartment
     };
 
     // Define the path for the selected department and create a "Request" node
@@ -172,7 +200,7 @@ const RequestS = () => {
 
     set(newRequestRef, handleTransfer)
       .then(() => {
-        alert('Request successful!');
+        alert("Request successful!");
         // Optionally, reset formData and selectedItems here
         setFormData({ ...formData, reason: "" }); // Reset formData
         setSelectedItems([]); // Clear selected items
@@ -184,9 +212,7 @@ const RequestS = () => {
         setSubmitting(false); // Re-enable the button
       });
   };
-  // Add any additional functions or logic if needed
 
-  // Render the selected items in a structured format
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -199,7 +225,7 @@ const RequestS = () => {
           {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
-      
+
       <div className="mb-4">
         <label htmlFor="department" className="block font-bold mb-1">
           Department
@@ -223,7 +249,15 @@ const RequestS = () => {
           <span className="text-red-500">Please select a department.</span>
         )}
       </div>
-      
+
+      {/* Display user's department */}
+      {userDepartment && (
+        <div className="mb-4">
+          <label className="block font-bold mb-1">Your Department</label>
+          <p className="text-gray-700">{userDepartment}</p>
+        </div>
+      )}
+
       <div className="mb-4">
         <label htmlFor="reason" className="block font-bold mb-1">
           Reason
@@ -233,11 +267,16 @@ const RequestS = () => {
           name="reason"
           value={formData.reason}
           onChange={handleInputChange}
-          className={`border ${reasonError ? 'border-red-500' : 'border-gray-300'} rounded p-2 w-full`}
+          className={`border ${
+            reasonError ? "border-red-500" : "border-gray-300"
+          } rounded p-2 w-full`}
           placeholder="Enter reason for request"
         />
-        {reasonError && <span className="text-red-500">Please enter a reason.</span>}
+        {reasonError && (
+          <span className="text-red-500">Please enter a reason.</span>
+        )}
       </div>
+
       <div className="mb-4">
         <label className="block font-bold mb-1">Search Items</label>
         <input
@@ -248,22 +287,26 @@ const RequestS = () => {
           placeholder="Search items..."
         />
       </div>
+
       <div className="grid grid-cols-2 gap-4 mb-4">
-        {filteredItems.length > 0 ? filteredItems.map((item) => (
-          <div key={item.itemKey} className="border rounded p-2 shadow">
-            <h3 className="font-bold">{item.itemName}</h3>
-            <p>Max Quantity: {item.quantity}</p>
-            <button
-              onClick={() => addItem(item)}
-              className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
-            >
-              Add Item
-            </button>
-          </div>
-        )) : (
+        {filteredItems.length > 0 ? (
+          filteredItems.map((item) => (
+            <div key={item.itemKey} className="border rounded p-2 shadow">
+              <h3 className="font-bold">{item.itemName}</h3>
+              <p>Max Quantity: {item.quantity}</p>
+              <button
+                onClick={() => addItem(item)}
+                className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
+              >
+                Add Item
+              </button>
+            </div>
+          ))
+        ) : (
           <p>No items found</p>
         )}
       </div>
+
       <div>
         <h2 className="font-bold mb-2">Selected Items</h2>
         {selectedItems.length > 0 ? (

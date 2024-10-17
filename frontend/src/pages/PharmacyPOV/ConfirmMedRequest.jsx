@@ -3,23 +3,20 @@ import { ref, get, set, push, onValue, update } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
-const ConfirmMedRequest = ({ requestToConfirm }) => {
+const ConfirmMedRequest = ({ requestToConfirm, currentDepartment }) => {
   const [formData, setFormData] = useState({
     name: '',
-    department: 'Pharmacy',
+    department: currentDepartment || '', // Set currentDepartment from props
     reason: '',
     timestamp: new Date().toLocaleString(),
   });
-  const [departments, setDepartments] = useState([]);
   const [medications, setMedications] = useState([]); // Store all items from 'medications'
   const [selectedMedications, setSelectedMedications] = useState([]); // Selected medications by the user
   const [filteredMedications, setFilteredMedications] = useState([]);
 
   const searchRef = useRef('');
-  const departmentRef = useRef();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
-    departmentError: false,
     reasonError: false,
   });
 
@@ -30,20 +27,6 @@ const ConfirmMedRequest = ({ requestToConfirm }) => {
     if (user) {
       setFormData(prevData => ({ ...prevData, name: user.displayName || user.email }));
     }
-  }, []);
-
-  // Fetch department data from Firebase
-  useEffect(() => {
-    departmentRef.current = ref(database, 'departments');
-    get(departmentRef.current)
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const departmentNames = Object.keys(data);
-          setDepartments(departmentNames);
-        }
-      })
-      .catch(error => console.error('Error fetching departments:', error));
   }, []);
 
   // Real-time update of medications using onValue
@@ -68,12 +51,12 @@ const ConfirmMedRequest = ({ requestToConfirm }) => {
     if (requestToConfirm) {
       setFormData(prevData => ({
         ...prevData,
-        department: requestToConfirm.department,
+        department: currentDepartment, // Set currentDepartment as department
         reason: requestToConfirm.reason,
       }));
       setSelectedMedications(requestToConfirm.items);
     }
-  }, [requestToConfirm]);
+  }, [requestToConfirm, currentDepartment]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -126,77 +109,79 @@ const ConfirmMedRequest = ({ requestToConfirm }) => {
   };
 
   const validateInputs = () => {
-    const { department, reason } = formData;
+    const { reason } = formData;
     setErrorMessages({
-      departmentError: !department,
       reasonError: !reason,
     });
-    return department && reason;
+    return reason;
   };
 
-  const handleConfirm = async () => {
+const handleConfirm = async () => {
     if (!validateInputs()) {
-      alert('Please fill in all required fields.');
-      return;
+        alert('Please fill in all required fields.');
+        return;
     }
     if (selectedMedications.length === 0) {
-      alert('Please select medications to confirm.');
-      return;
+        alert('Please select medications to confirm.');
+        return;
     }
 
     setSubmitting(true);
 
-    const confirmationData = {
-      name: formData.name,
-      reason: formData.reason,
-      timestamp: formData.timestamp,
-      recipientDepartment: formData.department,
-    };
-
-    // Push the confirmation data to history
-    const historyPath = `medicineHistoryTransfer`; // Update the path for confirmation history
-    const newHistoryRef = push(ref(database, historyPath));
-    await set(newHistoryRef, confirmationData);
-
-    // Iterate over selected medications and update local and main inventory
+    // Iterate over each selected medication and store each separately
     for (const med of selectedMedications) {
-      const departmentPath = `departments/${formData.department}/localMeds/${med.itemKey}`;
+        const confirmationData = {
+            itemName: med.itemName,  // Store the item name
+            quantity: med.quantity,  // Store the quantity
+            reason: formData.reason, // Store the reason
+            recipientDepartment: formData.department, // Store the department
+            sender: formData.name, // Store the sender (current user)
+            timestamp: formData.timestamp // Store the timestamp
+        };
 
-      // Fetch the existing quantity in the local inventory
-      const localMedSnapshot = await get(ref(database, departmentPath));
-      let newQuantity = med.quantity;
+        // Push each confirmation data entry as a separate record to history
+        const historyPath = `medicineTransferHistory`; // Update the path for confirmation history
+        const newHistoryRef = push(ref(database, historyPath));
+        await set(newHistoryRef, confirmationData);
 
-      if (localMedSnapshot.exists()) {
-        const existingData = localMedSnapshot.val();
-        newQuantity += existingData.quantity;
-      }
+        // Update inventory
+        const departmentPath = `departments/${formData.department}/localMeds/${med.itemKey}`;
 
-      // Update the local inventory with the new quantity
-      await set(ref(database, departmentPath), {
-        ...med,
-        itemKey: med.itemKey,
-        quantity: newQuantity,
-        timestamp: formData.timestamp,
-      });
+        // Fetch the existing quantity in the local inventory
+        const localMedSnapshot = await get(ref(database, departmentPath));
+        let newQuantity = med.quantity;
 
-      // Deduct the quantity from the main inventory in 'localMeds'
-      const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${med.itemKey}`);
-      const mainInventorySnapshot = await get(mainInventoryRef);
+        if (localMedSnapshot.exists()) {
+            const existingData = localMedSnapshot.val();
+            newQuantity += existingData.quantity;
+        }
 
-      if (mainInventorySnapshot.exists()) {
-        const currentData = mainInventorySnapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - med.quantity, 0); // Deduct the medicine quantity
-        await update(mainInventoryRef, { quantity: updatedQuantity }); // Update the new quantity in the database
-      } else {
-        console.error(`Medicine ${med.itemName} does not exist in the main inventory.`);
-      }
+        // Update the local inventory with the new quantity
+        await set(ref(database, departmentPath), {
+            ...med,
+            itemKey: med.itemKey,
+            quantity: newQuantity,
+            timestamp: formData.timestamp,
+        });
+
+        // Deduct the quantity from the main inventory in 'localMeds'
+        const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${med.itemKey}`);
+        const mainInventorySnapshot = await get(mainInventoryRef);
+
+        if (mainInventorySnapshot.exists()) {
+            const currentData = mainInventorySnapshot.val();
+            const updatedQuantity = Math.max(currentData.quantity - med.quantity, 0); // Deduct the medicine quantity
+            await update(mainInventoryRef, { quantity: updatedQuantity }); // Update the new quantity in the database
+        } else {
+            console.error(`Medicine ${med.itemName} does not exist in the main inventory.`);
+        }
     }
 
     alert('Confirmation successful!');
     setFormData({ ...formData, reason: '' });
     setSelectedMedications([]);
     setSubmitting(false);
-  };
+};
 
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
@@ -230,42 +215,34 @@ const ConfirmMedRequest = ({ requestToConfirm }) => {
         <p>{formData.timestamp}</p>
       </div>
 
+      {/* To Department Display (Read-Only) */}
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">To Department</label>
+        <input
+          type="text"
+          name="department"
+          value={formData.department}
+          readOnly
+          className="border p-2 w-full rounded bg-gray-200 text-gray-700"
+        />
+      </div>
+
       {/* General Input Fields */}
       <div className="mb-4">
         <h2 className="font-semibold text-lg mb-2">General</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block font-semibold mb-1">To Department</label>
-            <select
-              name="department"
-              value={formData.department}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.departmentError ? 'border-red-500' : ''}`}
-            >
-              {departments.map((dept, index) => (
-                <option key={index} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-            {errorMessages.departmentError && (
-              <p className="text-red-500 text-sm">Please select a department.</p>
-            )}
-          </div>
 
-          <div>
-            <label className="block font-semibold mb-1">Reason</label>
-            <input
-              type="text"
-              name="reason"
-              value={formData.reason}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-            />
-            {errorMessages.reasonError && (
-              <p className="text-red-500 text-sm">Please provide a reason.</p>
-            )}
-          </div>
+        <div>
+          <label className="block font-semibold mb-1">Reason</label>
+          <input
+            type="text"
+            name="reason"
+            value={formData.reason}
+            onChange={handleInputChange}
+            className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
+          />
+          {errorMessages.reasonError && (
+            <p className="text-red-500 text-sm">Please provide a reason.</p>
+          )}
         </div>
       </div>
 

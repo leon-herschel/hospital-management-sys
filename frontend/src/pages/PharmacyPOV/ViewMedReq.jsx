@@ -82,7 +82,8 @@ const ViewMedReq = () => {
             Exit
           </button>
           {/* Show the ConfirmRequest component if a request is confirmed */}
-          <ConfirmMedRequest requestToConfirm={requestToTransfer} />
+          <ConfirmMedRequest requestToConfirm={requestToTransfer} 
+            currentDepartment={requestToTransfer.currentDepartment}/>
         </div>
       ) : (
         <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg">
@@ -138,6 +139,7 @@ const ViewMedReq = () => {
                   <div className="p-4 bg-gray-100">
                     <ul className="list-disc pl-5">
                       <li><strong>Requested by:</strong> {request.name || 'N/A'}</li>
+                      <li><strong>Requested Department:</strong> {request.currentDepartment || 'N/A'}</li>
                       {/* Map through items and display each one */}
                       {request.items && request.items.length > 0 ? (
                         request.items.map((item, i) => (

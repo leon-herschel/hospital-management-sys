@@ -69,11 +69,16 @@ const Transfer = () => {
 
   const handleSearchChange = (e) => {
     searchRef.current = e.target.value;
+    const searchQuery = searchRef.current.toLowerCase(); // Save the lowercase search query
+  
     const filtered = items.filter(item =>
-      item.itemName.toLowerCase().includes(searchRef.current.toLowerCase())
+      item.itemName && item.itemName.toLowerCase().includes(searchQuery) // Check if itemName exists
     );
+    
     setFilteredItems(filtered);
   };
+  
+  
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
@@ -275,7 +280,7 @@ const Transfer = () => {
       <tbody>
         {selectedItems.map((item, index) => (
           <tr key={index} className="border-b">
-            <td className="p-2">{item.itemName} (Available: {item.quantity})</td>
+            <td className="p-2">{item.itemName}</td>
             <td className="p-2">
               <input
                 type="number"
