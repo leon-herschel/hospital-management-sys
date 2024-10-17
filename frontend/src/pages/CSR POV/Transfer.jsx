@@ -158,6 +158,7 @@ const Transfer = () => {
       await set(newHistoryRef, {
         itemKey: item.itemKey,
         itemName: item.itemName,
+        itemBrand: item.brand, // Include itemBrand here
         quantity: item.quantity,
         timestamp: formData.timestamp,
         sender: formData.name,
