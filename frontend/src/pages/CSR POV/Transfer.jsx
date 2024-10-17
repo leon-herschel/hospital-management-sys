@@ -10,9 +10,8 @@ const Transfer = () => {
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
-    status: 'Draft',
     reason: '',
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toLocaleString() 
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
@@ -21,7 +20,6 @@ const Transfer = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
-    statusError: false,
     reasonError: false,
   });
 
@@ -82,6 +80,8 @@ const Transfer = () => {
   
     setFilteredItems(filtered);
   };
+  
+  
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
@@ -111,13 +111,12 @@ const Transfer = () => {
   };
 
   const validateInputs = () => {
-    const { department, status, reason } = formData;
+    const { department, reason } = formData;
     setErrorMessages({
       departmentError: !department,
-      statusError: !status,
       reasonError: !reason,
     });
-    return department && status && reason;
+    return department && reason;
   };
 
   const handleTransfer = async () => {
@@ -148,7 +147,6 @@ const Transfer = () => {
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        status: formData.status,
         timestamp: formData.timestamp,
       });
 
@@ -180,7 +178,7 @@ const Transfer = () => {
     }
 
     alert('Transfer successful!');
-    setFormData({ ...formData, reason: '', status: '' });
+    setFormData({ ...formData, reason: '' });
     setSelectedItems([]);
     setSubmitting(false);
   };
@@ -238,20 +236,6 @@ const Transfer = () => {
             </select>
             {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
           </div>
-
-          <div>
-            <label className="block font-semibold mb-1">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
-            >
-              <option value="Draft">Draft</option>
-              <option value="Final">Final</option>
-            </select>
-            {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
-          </div>
         </div>
 
         <div className="mb-4">
@@ -286,39 +270,54 @@ const Transfer = () => {
                 {item.itemName} (Available: {item.quantity})
               </li>
             ))}
-          </ul>
-        )}
-
-        {selectedItems.length > 0 && (
-          <div className="mt-4">
-            <h3 className="font-semibold text-lg mb-2">Selected Items</h3>
-            <ul>
-              {selectedItems.map((item, index) => (
-                <li key={index} className="flex justify-between items-center mb-2">
-                  <span>{item.itemName} (Available: {items.find(i => i.itemKey === item.itemKey)?.quantity || 0})</span>
-                  <div className="flex items-center">
-                    <input
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item, Number(e.target.value))}
-                      className="border p-1 w-16 rounded mr-2"
-                    />
-                    <button
-                      className="bg-red-500 text-white px-2 py-1 rounded"
-                      onClick={() => removeItem(item)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </li>
-              ))}
             </ul>
-          </div>
-        )}
+          )}
+        </div>
+        <div>
+          
+  <h2 className="font-semibold text-lg mb-2">Selected Items for Transfer</h2>
+  {selectedItems.length > 0 ? (
+    <table className="border rounded w-full mb-4">
+      <thead>
+        <tr className="bg-gray-200">
+          <th className="text-left p-2">Name</th>
+          <th className="text-left p-2">Quantity</th>
+          <th className="text-left p-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {selectedItems.map((item, index) => (
+          <tr key={index} className="border-b">
+            <td className="p-2">{item.itemName}</td>
+            <td className="p-2">
+              <input
+                type="number"
+                min="1"
+                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
+                value={item.quantity}
+                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                className="border p-1 w-20 rounded"
+              />
+            </td>
+            <td className="p-2">
+              <button
+                className="bg-red-500 text-white px-2 py-1 rounded"
+                onClick={() => removeItem(item)}
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <p className="text-gray-500 mb-4">No items selected.</p>
+  )}
+</div>
       </div>
-    </div>
-  );
-};
-
-export default Transfer;
+    );
+  };
+  
+  export default Transfer;
+  
