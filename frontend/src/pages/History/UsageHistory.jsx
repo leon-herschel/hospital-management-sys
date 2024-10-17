@@ -106,7 +106,7 @@ const UsageHistory = () => {
           ) : (
             <tr>
               <td colSpan="6" className="px-6 py-3">
-                No {role === "admin" ? "Global" : department} Usage History found.
+                No {role === "admin" ? "" : department} Usage History found.
               </td>
             </tr>
           )}
