@@ -22,8 +22,6 @@ const OverAllInventory = () => {
     return <OverAllSupply />;
   }
 
-  console.log(department)
-
   return (
     <div> 
       <button

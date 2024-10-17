@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ref, onValue } from 'firebase/database'; // Use onValue for real-time updates
 import { database } from '../../firebase/firebase'; // Import Firebase configuration
 import ConfirmRequest from './ConfirmRequest'; // Import ConfirmRequest
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAuth } from "../../context/authContext/authContext";
 
 const ViewRequest = () => {
+  const { department } = useAuth(); 
   const [requests, setRequests] = useState([]); // Store fetched requests
   const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
   const [requestToTransfer, setRequestToTransfer] = useState(null); // Store selected request for transfer
@@ -75,6 +78,10 @@ const ViewRequest = () => {
     setRequestToTransfer(null); // Reset the transfer request
   };
 
+  if (department !== "CSR" && department !== "Admin") {
+    return <AccessDenied />;
+  }
+
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg">
       {requestToTransfer ? (
@@ -82,7 +89,7 @@ const ViewRequest = () => {
           {/* Exit button to return to the requests page */}
           <button 
             onClick={handleExit} 
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
           >
             Exit
           </button>
@@ -134,13 +141,13 @@ const ViewRequest = () => {
                     <div className="flex space-x-4 mt-4">
                       <button 
                         onClick={() => handleConfirm(request)} 
-                        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                        className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
                       >
                         Confirm
                       </button>
                       <button 
                         onClick={() => handleDecline(request)} 
-                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                        className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
                       >
                         Decline
                       </button>

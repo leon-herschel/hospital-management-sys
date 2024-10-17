@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { ref, get, set } from 'firebase/database';
-import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { XMarkIcon } from "@heroicons/react/24/solid";
 import { database } from '../../../firebase/firebase';
 
-const EditUserModal = ({ showModal, setShowModal, userId, onClose }) => {
+const EditUserModal = ({ showModal, setShowModal, userId }) => {
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [firstName, setFirstName] = useState('');

@@ -41,7 +41,7 @@ const UserProfileDropdown = () => {
           </div>
           <div>{userData.email}</div>
           <div>{userData.department}</div>
-          <div>{userData.role}</div>
+          <div>{userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}</div>
         </div>
       )}
     </div>

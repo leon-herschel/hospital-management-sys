@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import { getAuth } from "firebase/auth";
+import AccessDenied from "../ErrorPages/AccessDenied";
 
 const CsrTransferHistory = () => {
     const [transferList, setTransferList] = useState([]);
@@ -53,6 +54,10 @@ const CsrTransferHistory = () => {
             return () => unsubscribeCsrHistory();
         }
     }, [department]);
+
+    if (department !== "CSR" && department !== "Admin") {
+        return <AccessDenied />;
+    }
 
     return (
         <div className="relative overflow-x-auto rounded-md shadow-sm">
