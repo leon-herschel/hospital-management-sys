@@ -76,7 +76,7 @@ const ViewRequest = () => {
   };
 
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg">
       {requestToTransfer ? (
         <div>
           {/* Exit button to return to the requests page */}
