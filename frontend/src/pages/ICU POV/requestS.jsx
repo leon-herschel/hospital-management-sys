@@ -223,7 +223,7 @@ const RequestS = () => {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Create a new Request Stock.</h1>
         <button
-          className="bg-green-500 text-white px-2 py-1 rounded"
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           onClick={handleTransfer}
           disabled={submitting}
         >

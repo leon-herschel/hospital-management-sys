@@ -4,7 +4,6 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { doSignOut } from "../../firebase/auth";
 import {
   HomeIcon,
-  UserIcon,
   ClipboardDocumentListIcon,
   ChartBarIcon,
   PowerIcon,
@@ -23,16 +22,17 @@ import {
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
-import { useAuth } from "../../context/authContext/authContext";
 import LogoutConfirmationModal from "./LogoutConfirmationModal";
+import UserProfileDropdown from "./UserProfile";
+import { useAuth } from "../../context/authContext/authContext";
 
 const Sidebar = () => {
+  const { department } = useAuth(); 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
   const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { role } = useAuth();
   const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
@@ -173,6 +173,7 @@ const Sidebar = () => {
             </>
           )}
           
+          {(department === "CSR" || department === "Admin") && (
           <Link to="Transfer"
               className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/Transfer")
                 ? "bg-slate-800 text-white shadow-sm"
@@ -182,7 +183,9 @@ const Sidebar = () => {
               <ArrowPathRoundedSquareIcon className="w-5 h-5 mr-3" />
               Transfer Supply
           </Link>
+          )}
 
+          {(department === "Pharmacy" || department === "Admin") && (
           <Link to="transferMed" className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/transferMed")
               ? "bg-slate-800 text-white shadow-sm"
               : "text-white"
@@ -191,7 +194,9 @@ const Sidebar = () => {
               <ArrowPathRoundedSquareIcon className="w-5 h-5 mr-3" />
               Transfer Medicine
           </Link>
+          )}
 
+          {(department === "CSR" || department === "Admin") && (
           <Link to="ViewRequest"
               className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/ViewRequest")
                 ? "bg-slate-800 text-white shadow-sm"
@@ -201,7 +206,9 @@ const Sidebar = () => {
               <PaperAirplaneIcon className="w-5 h-5 mr-3" />
               View Supply Request
           </Link>
+          )}
 
+          {(department === "Pharmacy" || department === "Admin") && (
           <Link to="ViewMedReq"
               className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/ViewMedReq")
                 ? "bg-slate-800 text-white shadow-sm"
@@ -211,7 +218,8 @@ const Sidebar = () => {
               <PaperAirplaneIcon className="w-5 h-5 mr-3" />
               View Medicine Request
           </Link>
-
+          )}
+          
           <Link to="requestS"
 
               className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/requestS")
@@ -263,7 +271,8 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Local History
                   </Link>
-
+                  
+                  {(department === "Pharmacy" || department === "Admin") && (
                   <Link
                     to="PharmacyTransferHistory"
                     className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PharmacyTransferHistory")
@@ -274,7 +283,9 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Medicine Transfer History
                   </Link>
+                  )}
 
+                  {(department === "CSR" || department === "Admin") && (
                   <Link
                     to="CsrTransferHistory"
                     className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/CsrTransferHistory")
@@ -285,6 +296,7 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Supply Transfer History
                   </Link>
+                  )}
                 </div>
               </div>
             </>
@@ -363,8 +375,7 @@ const Sidebar = () => {
             {currentTitle}
           </h1>
           <div className="flex items-center space-x-2">
-            <UserIcon className="w-6 h-6 text-gray-800" />
-            <span className="text-gray-800 font-semibold">{role}</span>
+            <UserProfileDropdown />
           </div>
         </header>
 
