@@ -39,13 +39,13 @@ const CsrTransferHistory = () => {
                     }));
 
                     // If the user's department is not CSR, filter by recipientDepartment
-                    if (department !== "CSR") {
+                    if (department !== "CSR" && department !== "Admin") {
                         const filteredData = CsrData.filter(
                             (supply) => supply.recipientDepartment === department
                         );
                         setTransferList(filteredData);
                     } else {
-                        // If the department is CSR, show all data without filtering
+                        // If the department is CSR or Admin, show all data without filtering
                         setTransferList(CsrData);
                     }
                 }
@@ -65,6 +65,7 @@ const CsrTransferHistory = () => {
                 <thead className="text-md bg-slate-200">
                     <tr>
                         <th className="px-6 py-3">Supply Name</th>
+                        <th className="px-6 py-3">Brand</th>
                         <th className="px-6 py-3">Quantity</th>
                         <th className="px-6 py-3">Sender</th>
                         <th className="px-6 py-3">Timestamp</th>
@@ -77,6 +78,7 @@ const CsrTransferHistory = () => {
                         transferList.map((csr) => (
                             <tr key={csr.id}>
                                 <td className="px-6 py-3">{csr.itemName}</td>
+                                <td className="px-y py-3">{csr.itemBrand}</td>
                                 <td className="px-6 py-3">{csr.quantity}</td>
                                 <td className="px-6 py-3">{csr.sender}</td>
                                 <td className="px-6 py-3">{csr.timestamp}</td>
