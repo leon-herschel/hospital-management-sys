@@ -53,7 +53,7 @@ const RequestS = () => {
         });
     }
   }, []);
-
+  
   // Fetch departments from Firebase
   useEffect(() => {
     const departmentRef = ref(database, "departments");
@@ -177,31 +177,28 @@ const RequestS = () => {
   const handleTransfer = () => {
     if (!validateInputs()) {
       alert("Please fill in all required fields.");
-      return; // Stop execution if validation fails
+      return;
     }
 
     if (selectedItems.length === "") {
       alert("Please select items to request.");
       return; // Stop execution if no items are selected
     }
-
-    setSubmitting(true); // Disable the button and show loading
-
-    const handleTransfer = {
+  
+    setSubmitting(true);
+  
+    const requestData = {
       name: formData.name,
       reason: formData.reason,
       items: selectedItems,
       timestamp: formData.timestamp,
       currentDepartment: userDepartment
     };
-
-    // Define the path for the selected department and create a "Request" node
+  
     const requestNodePath = `departments/${formData.department}/Request`;
-
-    // Create a new child node under the "Request" node
     const newRequestRef = push(ref(database, requestNodePath));
-
-    set(newRequestRef, handleTransfer)
+  
+    set(newRequestRef, requestData)
       .then(() => {
         alert("Request successful!");
         // Optionally, reset formData and selectedItems here
@@ -212,16 +209,17 @@ const RequestS = () => {
       .catch((error) => {
         console.error("Error transferring data:", error);
         alert("Error transferring data. Please try again.");
-        setSubmitting(false); // Re-enable the button
+        setSubmitting(false);
       });
   };
+  
 
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Create a new Request Stock</h1>
         <button
-          className="bg-green-500 text-white px-2 py-1 rounded"
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           onClick={handleTransfer}
           disabled={submitting}
         >

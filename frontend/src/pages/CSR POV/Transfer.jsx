@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ref, get, set, push, update, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAuth } from "../../context/authContext/authContext";
 
 const Transfer = () => {
+  const { department } = useAuth(); 
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
@@ -74,7 +77,7 @@ const Transfer = () => {
     const filtered = items.filter(item =>
       item.itemName && item.itemName.toLowerCase().includes(searchQuery) // Check if itemName exists
     );
-    
+  
     setFilteredItems(filtered);
   };
   
@@ -153,6 +156,7 @@ const Transfer = () => {
       await set(newHistoryRef, {
         itemKey: item.itemKey,
         itemName: item.itemName,
+        itemBrand: item.brand, // Include itemBrand here
         quantity: item.quantity,
         timestamp: formData.timestamp,
         sender: formData.name,
@@ -178,13 +182,17 @@ const Transfer = () => {
     setSelectedItems([]);
     setSubmitting(false);
   };
-  
+
+  if (department !== "CSR" && department !== "Admin") {
+    return <AccessDenied />;
+  }
+
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Create a new stock transfer.</h1>
         <button
-          className="bg-green-500 text-white px-2 py-1 rounded"
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           onClick={handleTransfer} // Call handleTransfer directly
           disabled={submitting}
         >

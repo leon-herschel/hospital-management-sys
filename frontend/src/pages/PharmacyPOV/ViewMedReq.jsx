@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { ref, onValue } from 'firebase/database';
-import { database } from '../../firebase/firebase';
-import ConfirmMedRequest from './ConfirmMedRequest';
+import { useState, useEffect } from 'react';
+import { ref, onValue } from 'firebase/database'; // Use onValue for real-time updates
+import { database } from '../../firebase/firebase'; // Import Firebase configuration
+import ConfirmMedRequest from './ConfirmMedRequest'; // Import ConfirmMedRequest component
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAuth } from "../../context/authContext/authContext";
 
 const ViewMedReq = () => {
-  const [requests, setRequests] = useState([]);
-  const [expandedRequests, setExpandedRequests] = useState({});
-  const [requestToTransfer, setRequestToTransfer] = useState(null);
+  const { department } = useAuth(); 
+  const [requests, setRequests] = useState([]); // Store fetched requests
+  const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
+  const [requestToTransfer, setRequestToTransfer] = useState(null); // Track selected request for confirmation
 
   useEffect(() => {
     const pharmacyRequestRef = ref(database, 'departments/Pharmacy/Request');
@@ -48,13 +51,17 @@ const ViewMedReq = () => {
     setRequestToTransfer(null);
   };
 
+  if (department !== "Pharmacy" && department !== "Admin") {
+    return <AccessDenied />;
+  }
+
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg">
       {requestToTransfer ? (
         <div>
           <button
             onClick={handleExit}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           >
             Exit
           </button>
@@ -98,6 +105,20 @@ const ViewMedReq = () => {
                       <li><strong>Request Date:</strong> {request.timestamp || 'N/A'}</li>
                       <li><strong>Reason for Request:</strong> {request.reason || 'N/A'}</li>
                     </ul>
+                    <div className="flex space-x-4 mt-4">
+                      <button
+                        onClick={() => handleConfirm(request)}
+                        className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => handleDecline(request)}
+                        className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                      >
+                        Decline
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
