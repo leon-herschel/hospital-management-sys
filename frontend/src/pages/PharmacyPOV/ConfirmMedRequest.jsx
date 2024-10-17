@@ -1,26 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, onValue, update } from 'firebase/database';
+import { ref, get, set, push, onValue, update, remove } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
-const ConfirmMedRequest = ({ requestToConfirm, currentDepartment }) => {
+const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
-    department: currentDepartment || '', // Set currentDepartment from props
+    department: currentDepartment || '',
     reason: '',
     timestamp: new Date().toLocaleString(),
   });
-  const [medications, setMedications] = useState([]); // Store all items from 'medications'
-  const [selectedMedications, setSelectedMedications] = useState([]); // Selected medications by the user
+  const [medications, setMedications] = useState([]);
+  const [selectedMedications, setSelectedMedications] = useState([]);
   const [filteredMedications, setFilteredMedications] = useState([]);
-
   const searchRef = useRef('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     reasonError: false,
   });
 
-  // Fetch authenticated user data
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -29,7 +27,6 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment }) => {
     }
   }, []);
 
-  // Real-time update of medications using onValue
   useEffect(() => {
     const medicationsRef = ref(database, 'departments/Pharmacy/localMeds');
     const unsubscribe = onValue(medicationsRef, (snapshot) => {
@@ -39,19 +36,18 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment }) => {
             ...value,
             itemKey: key,
           }));
-        setMedications(meds); // Set medications from 'localMeds'
+        setMedications(meds);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Set form data and selected medications based on requestToConfirm prop
   useEffect(() => {
     if (requestToConfirm) {
       setFormData(prevData => ({
         ...prevData,
-        department: currentDepartment, // Set currentDepartment as department
+        department: currentDepartment,
         reason: requestToConfirm.reason,
       }));
       setSelectedMedications(requestToConfirm.items);
@@ -78,10 +74,9 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment }) => {
       return;
     }
 
-    // Check available quantity from 'medications'
     const mainInventoryMed = medications.find(m => m.itemKey === medToAdd.itemKey);
     if (mainInventoryMed && mainInventoryMed.quantity > 0) {
-      setSelectedMedications([...selectedMedications, { ...medToAdd, quantity: 1 }]); // Add with default quantity
+      setSelectedMedications([...selectedMedications, { ...medToAdd, quantity: 1 }]);
       searchRef.current = '';
       setFilteredMedications([]);
     } else {
@@ -116,72 +111,80 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment }) => {
     return reason;
   };
 
-const handleConfirm = async () => {
+  const handleConfirm = async () => {
     if (!validateInputs()) {
-        alert('Please fill in all required fields.');
-        return;
+      alert('Please fill in all required fields.');
+      return;
     }
     if (selectedMedications.length === 0) {
-        alert('Please select medications to confirm.');
-        return;
+      alert('Please select medications to confirm.');
+      return;
     }
 
     setSubmitting(true);
 
-    // Iterate over each selected medication and store each separately
-    for (const med of selectedMedications) {
+    try {
+      for (const med of selectedMedications) {
         const confirmationData = {
-            itemName: med.itemName,  // Store the item name
-            quantity: med.quantity,  // Store the quantity
-            reason: formData.reason, // Store the reason
-            recipientDepartment: formData.department, // Store the department
-            sender: formData.name, // Store the sender (current user)
-            timestamp: formData.timestamp // Store the timestamp
+          itemName: med.itemName,
+          quantity: med.quantity,
+          reason: formData.reason,
+          recipientDepartment: formData.department,
+          sender: formData.name,
+          timestamp: formData.timestamp
         };
 
-        // Push each confirmation data entry as a separate record to history
-        const historyPath = `medicineTransferHistory`; // Update the path for confirmation history
+        const historyPath = `medicineTransferHistory`;
         const newHistoryRef = push(ref(database, historyPath));
         await set(newHistoryRef, confirmationData);
 
-        // Update inventory
         const departmentPath = `departments/${formData.department}/localMeds/${med.itemKey}`;
-
-        // Fetch the existing quantity in the local inventory
         const localMedSnapshot = await get(ref(database, departmentPath));
         let newQuantity = med.quantity;
 
         if (localMedSnapshot.exists()) {
-            const existingData = localMedSnapshot.val();
-            newQuantity += existingData.quantity;
+          const existingData = localMedSnapshot.val();
+          newQuantity += existingData.quantity;
         }
 
-        // Update the local inventory with the new quantity
         await set(ref(database, departmentPath), {
-            ...med,
-            itemKey: med.itemKey,
-            quantity: newQuantity,
-            timestamp: formData.timestamp,
+          ...med,
+          itemKey: med.itemKey,
+          quantity: newQuantity,
+          timestamp: formData.timestamp,
         });
 
-        // Deduct the quantity from the main inventory in 'localMeds'
         const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${med.itemKey}`);
         const mainInventorySnapshot = await get(mainInventoryRef);
 
         if (mainInventorySnapshot.exists()) {
-            const currentData = mainInventorySnapshot.val();
-            const updatedQuantity = Math.max(currentData.quantity - med.quantity, 0); // Deduct the medicine quantity
-            await update(mainInventoryRef, { quantity: updatedQuantity }); // Update the new quantity in the database
+          const currentData = mainInventorySnapshot.val();
+          const updatedQuantity = Math.max(currentData.quantity - med.quantity, 0);
+          await update(mainInventoryRef, { quantity: updatedQuantity });
         } else {
-            console.error(`Medicine ${med.itemName} does not exist in the main inventory.`);
+          console.error(`Medicine ${med.itemName} does not exist in the main inventory.`);
         }
+      }
+
+      // Remove the confirmed request from Firebase
+      const requestRef = ref(database, `departments/Pharmacy/Request/${requestToConfirm.requestId}`);
+      await remove(requestRef);
+
+      alert('Confirmation successful!');
+      setFormData({ ...formData, reason: '' });
+      setSelectedMedications([]);
+
+      if (onConfirmSuccess) {
+        onConfirmSuccess();
+      }
+
+    } catch (error) {
+      console.error('Error confirming request:', error);
     }
 
-    alert('Confirmation successful!');
-    setFormData({ ...formData, reason: '' });
-    setSelectedMedications([]);
     setSubmitting(false);
-};
+  };
+
 
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">

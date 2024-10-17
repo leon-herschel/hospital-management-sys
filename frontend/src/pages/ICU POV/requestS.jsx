@@ -10,6 +10,8 @@ const RequestS = () => {
     department: "Pharmacy", // Default department
     reason: "",
     timestamp: "",
+    currentDepartment: "",
+
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // To store medicines or supplies data
@@ -125,13 +127,14 @@ const RequestS = () => {
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-
-    // Filter items based on search term
-    const filtered = items.filter((item) =>
-      item.itemName.toLowerCase().includes(value.toLowerCase())
+  
+    // Filter items based on search term, adding a check for itemName existence
+    const filtered = items.filter(
+      (item) => item.itemName && item.itemName.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredItems(filtered);
   };
+  
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find((item) => item.itemName === itemToAdd.itemName)) {

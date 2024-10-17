@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, onValue, update } from 'firebase/database';
+import { ref, get, set, push, onValue, remove, update } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
-const ConfirmRequest = ({ requestToConfirm, currentDepartment }) => {  // Accept currentDepartment as a prop
+const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
-    department: currentDepartment || '', 
+    department: currentDepartment || '',
     reason: '',
     timestamp: new Date().toLocaleString(),
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // Store all items from 'supplies'
-  const [selectedItems, setSelectedItems] = useState([]); // Selected items by the user
+  const [items, setItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-
   const searchRef = useRef('');
   const departmentRef = useRef();
   const [submitting, setSubmitting] = useState(false);
@@ -23,7 +22,6 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment }) => {  // Accept
     reasonError: false,
   });
 
-  // Fetch authenticated user data
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -32,7 +30,6 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment }) => {  // Accept
     }
   }, []);
 
-  // Fetch department data from Firebase
   useEffect(() => {
     departmentRef.current = ref(database, 'departments');
     get(departmentRef.current)
@@ -46,7 +43,6 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment }) => {  // Accept
       .catch(error => console.error('Error fetching departments:', error));
   }, []);
 
-  // Real-time update of supplies using onValue
   useEffect(() => {
     const suppliesRef = ref(database, 'departments/CSR/localSupplies');
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
@@ -56,19 +52,18 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment }) => {  // Accept
             ...value,
             itemKey: key,
           }));
-        setItems(supplies); // Set items from 'supplies'
+        setItems(supplies);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Set form data and selected items based on requestToConfirm prop
   useEffect(() => {
     if (requestToConfirm) {
       setFormData(prevData => ({
         ...prevData,
-        department: currentDepartment, // Ensure currentDepartment is set as department
+        department: currentDepartment,
         reason: requestToConfirm.reason,
       }));
       setSelectedItems(requestToConfirm.items);
@@ -95,10 +90,9 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment }) => {  // Accept
       return;
     }
 
-    // Check available quantity from 'supplies'
     const mainInventoryItem = items.find(i => i.itemKey === itemToAdd.itemKey);
     if (mainInventoryItem && mainInventoryItem.quantity > 0) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]); // Add with default quantity
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
       searchRef.current = '';
       setFilteredItems([]);
     } else {
@@ -143,61 +137,68 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment }) => {  // Accept
       alert('Please select items to confirm.');
       return;
     }
-  
+
     setSubmitting(true);
-  
-    // Iterate over each selected item and store each separately
-    for (const item of selectedItems) {
-      const confirmationData = {
-        itemName: item.itemName,  // Store the item name
-        quantity: item.quantity,  // Store the quantity
-        reason: formData.reason, // Store the reason for the transfer
-        recipientDepartment: formData.department, // Store the selected department
-        sender: formData.name, // Store the sender (current user)
-        timestamp: formData.timestamp // Store the timestamp
-      };
-  
-      // Push each confirmation data entry as a separate record to history
-      const historyPath = `supplyHistoryTransfer`; // Update the path for confirmation history
-      const newHistoryRef = push(ref(database, historyPath));
-      await set(newHistoryRef, confirmationData);
-  
-      // Update inventory
-      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
-  
-      // Fetch the existing quantity in the local supplies
-      const localSupplySnapshot = await get(ref(database, departmentPath));
-      let newQuantity = item.quantity;
-  
-      if (localSupplySnapshot.exists()) {
-        const existingData = localSupplySnapshot.val();
-        newQuantity += existingData.quantity;
+
+    try {
+      for (const item of selectedItems) {
+        const confirmationData = {
+          itemName: item.itemName,
+          quantity: item.quantity,
+          reason: formData.reason,
+          recipientDepartment: formData.department,
+          sender: formData.name,
+          timestamp: formData.timestamp
+        };
+
+        const historyPath = `supplyHistoryTransfer`;
+        const newHistoryRef = push(ref(database, historyPath));
+        await set(newHistoryRef, confirmationData);
+
+        const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
+        const localSupplySnapshot = await get(ref(database, departmentPath));
+        let newQuantity = item.quantity;
+
+        if (localSupplySnapshot.exists()) {
+          const existingData = localSupplySnapshot.val();
+          newQuantity += existingData.quantity;
+        }
+
+        await set(ref(database, departmentPath), {
+          ...item,
+          itemKey: item.itemKey,
+          quantity: newQuantity,
+          timestamp: formData.timestamp,
+        });
+
+        const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
+        const mainInventorySnapshot = await get(mainInventoryRef);
+
+        if (mainInventorySnapshot.exists()) {
+          const currentData = mainInventorySnapshot.val();
+          const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
+          await update(mainInventoryRef, { quantity: updatedQuantity });
+        } else {
+          console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        }
       }
-  
-      // Update the local supplies with the new quantity
-      await set(ref(database, departmentPath), {
-        ...item,
-        itemKey: item.itemKey,
-        quantity: newQuantity,
-        timestamp: formData.timestamp,
-      });
-  
-      // Deduct the quantity from main inventory in 'supplies'
-      const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
-      const mainInventorySnapshot = await get(mainInventoryRef);
-  
-      if (mainInventorySnapshot.exists()) {
-        const currentData = mainInventorySnapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0); // Deduct the item quantity
-        await update(mainInventoryRef, { quantity: updatedQuantity }); // Updates the new quantity in the database
-      } else {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+
+      // Remove the confirmed request from Firebase
+      const requestRef = ref(database, `departments/CSR/Request/${requestToConfirm.requestId}`);
+      await remove(requestRef);
+
+      alert('Confirmation successful!');
+      setFormData({ ...formData, reason: '' });
+      setSelectedItems([]);
+
+      if (onConfirmSuccess) {
+        onConfirmSuccess();
       }
+
+    } catch (error) {
+      console.error('Error confirming request:', error);
     }
-  
-    alert('Confirmation successful!');
-    setFormData({ ...formData, reason: '' });
-    setSelectedItems([]);
+
     setSubmitting(false);
   };
 

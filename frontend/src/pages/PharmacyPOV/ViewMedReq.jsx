@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { ref, onValue } from 'firebase/database'; // Use onValue for real-time updates
-import { database } from '../../firebase/firebase'; // Import Firebase configuration
-import ConfirmMedRequest from './ConfirmMedRequest'; // Import ConfirmMedRequest component
+import { ref, onValue } from 'firebase/database';
+import { database } from '../../firebase/firebase';
+import ConfirmMedRequest from './ConfirmMedRequest';
 
 const ViewMedReq = () => {
-  const [requests, setRequests] = useState([]); // Store fetched requests
-  const [expandedRequests, setExpandedRequests] = useState({}); // Track expanded state for each request
-  const [requestToTransfer, setRequestToTransfer] = useState(null); // Track selected request for confirmation
+  const [requests, setRequests] = useState([]);
+  const [expandedRequests, setExpandedRequests] = useState({});
+  const [requestToTransfer, setRequestToTransfer] = useState(null);
 
-  // Fetch Pharmacy data from Firebase in real-time
   useEffect(() => {
     const pharmacyRequestRef = ref(database, 'departments/Pharmacy/Request');
 
     const handleRequestUpdates = (snapshot) => {
       if (snapshot.exists()) {
-        const requestsData = Object.values(snapshot.val()).map(request => ({
+        const requestsData = Object.entries(snapshot.val()).map(([key, request]) => ({
           ...request,
+          requestId: key, // Include the Firebase key in the request data
           department: 'Pharmacy',
         }));
         return requestsData;
@@ -23,70 +23,49 @@ const ViewMedReq = () => {
       return [];
     };
 
-    // Listen for updates in Pharmacy requests
-    const pharmacyListener = onValue(pharmacyRequestRef, (pharmacySnapshot) => {
-      const pharmacyRequests = handleRequestUpdates(pharmacySnapshot);
-
-      // Sort the pharmacy requests by timestamp (ascending order)
-      pharmacyRequests.sort((a, b) => {
-        const timestampA = new Date(a.timestamp).getTime();
-        const timestampB = new Date(b.timestamp).getTime();
-        return timestampA - timestampB;
-      });
-
-      // Set the requests state with real-time updates
+    const pharmacyListener = onValue(pharmacyRequestRef, (snapshot) => {
+      const pharmacyRequests = handleRequestUpdates(snapshot);
+      pharmacyRequests.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       setRequests(pharmacyRequests);
     });
 
-    // Cleanup listener when component unmounts
-    return () => {
-      pharmacyListener();
-    };
+    return () => pharmacyListener();
   }, []);
 
-  // Toggle details for a specific request
-  const toggleDetails = (index) => {
+  const handleConfirm = (request) => {
+    setRequestToTransfer(request);
     setExpandedRequests((prev) => ({
       ...prev,
-      [index]: !prev[index],
+      [requests.indexOf(request)]: true,
     }));
   };
 
-  // Handle confirm action (trigger transfer logic)
-  const handleConfirm = (request) => {
-    console.log("Confirmed request:", request);
-    // Set the request to transfer
-    setRequestToTransfer(request);
+  const handleConfirmSuccess = () => {
+    setRequestToTransfer(null); // Reset transfer request after successful confirmation
   };
 
-  // Handle decline action
-  const handleDecline = (request) => {
-    console.log("Declined request:", request);
-    // Add your decline logic here (e.g., update the database to mark the request as declined)
-  };
-
-  // Handle exit action to go back to the request list
   const handleExit = () => {
-    setRequestToTransfer(null); // Reset the transfer request
+    setRequestToTransfer(null);
   };
 
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg">
       {requestToTransfer ? (
         <div>
-          {/* Exit button to return to the requests page */}
           <button
             onClick={handleExit}
             className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
           >
             Exit
           </button>
-          {/* Show the ConfirmRequest component if a request is confirmed */}
-          <ConfirmMedRequest requestToConfirm={requestToTransfer} 
-            currentDepartment={requestToTransfer.currentDepartment}/>
+          <ConfirmMedRequest
+            requestToConfirm={requestToTransfer}
+            currentDepartment={requestToTransfer.currentDepartment}
+            onConfirmSuccess={handleConfirmSuccess} // Pass success callback
+          />
         </div>
       ) : (
-        <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg">
+        <>
           {requests.length === 0 ? (
             <p className="p-4 text-center">No requests found.</p>
           ) : (
@@ -94,53 +73,18 @@ const ViewMedReq = () => {
               <div key={index} className="border-b p-4">
                 <div className="flex justify-between items-center">
                   <p className="font-bold text-lg">
-                    A stock transfer requested by{' '}
+                    A medicine transfer requested by{' '}
                     <span className="text-primary">{request.name}</span>
                   </p>
-                  <button
-                    onClick={() => toggleDetails(index)}
-                    className="focus:outline-none"
-                  >
-                    {expandedRequests[index] ? (
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 15l7-7 7 7"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    )}
+                  <button onClick={() => handleConfirm(request)} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    View
                   </button>
                 </div>
-
                 {expandedRequests[index] && (
                   <div className="p-4 bg-gray-100">
                     <ul className="list-disc pl-5">
                       <li><strong>Requested by:</strong> {request.name || 'N/A'}</li>
                       <li><strong>Requested Department:</strong> {request.currentDepartment || 'N/A'}</li>
-                      {/* Map through items and display each one */}
                       {request.items && request.items.length > 0 ? (
                         request.items.map((item, i) => (
                           <li key={i}>
@@ -154,26 +98,12 @@ const ViewMedReq = () => {
                       <li><strong>Request Date:</strong> {request.timestamp || 'N/A'}</li>
                       <li><strong>Reason for Request:</strong> {request.reason || 'N/A'}</li>
                     </ul>
-                    <div className="flex space-x-4 mt-4">
-                      <button
-                        onClick={() => handleConfirm(request)}
-                        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => handleDecline(request)}
-                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                      >
-                        Decline
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>
             ))
           )}
-        </div>
+        </>
       )}
     </div>
   );
