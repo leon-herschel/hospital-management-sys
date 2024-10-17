@@ -32,14 +32,21 @@ const PharmacyTransferHistory = () => {
             const unsubscribePharmacyHistory = onValue(PharmacyHistoryRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    const PharmacyData = Object.keys(data)
-                        .map((key) => ({
-                            ...data[key],
-                            id: key,
-                        }))
-                        .filter((medicine) => medicine.recipientDepartment === department);
+                    const PharmacyData = Object.keys(data).map((key) => ({
+                        ...data[key],
+                        id: key,
+                    }));
 
-                    setTransferList(PharmacyData);
+                    // If the user's department is not Pharmacy, filter by recipientDepartment
+                    if (department !== "Pharmacy") {
+                        const filteredData = PharmacyData.filter(
+                            (medicine) => medicine.recipientDepartment === department
+                        );
+                        setTransferList(filteredData);
+                    } else {
+                        // If the department is Pharmacy, show all data without filtering
+                        setTransferList(PharmacyData);
+                    }
                 }
             });
 
@@ -83,6 +90,6 @@ const PharmacyTransferHistory = () => {
             </table>
         </div>
     );
-}
+};
 
 export default PharmacyTransferHistory;
