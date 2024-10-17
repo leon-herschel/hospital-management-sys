@@ -74,9 +74,12 @@ const Transfer = () => {
 
   const handleSearchChange = (e) => {
     searchRef.current = e.target.value;
+    const searchQuery = searchRef.current.toLowerCase(); // Save the lowercase search query
+  
     const filtered = items.filter(item =>
-      item.itemName.toLowerCase().includes(searchRef.current.toLowerCase())
+      item.itemName && item.itemName.toLowerCase().includes(searchQuery) // Check if itemName exists
     );
+  
     setFilteredItems(filtered);
   };
 
