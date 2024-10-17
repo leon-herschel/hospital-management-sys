@@ -4,7 +4,6 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { doSignOut } from "../../firebase/auth";
 import {
   HomeIcon,
-  UserIcon,
   ClipboardDocumentListIcon,
   ChartBarIcon,
   PowerIcon,
@@ -23,8 +22,8 @@ import {
 } from "@heroicons/react/16/solid";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
-import { useAuth } from "../../context/authContext/authContext";
 import LogoutConfirmationModal from "./LogoutConfirmationModal";
+import UserProfileDropdown from "./UserProfile";
 
 const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -32,7 +31,6 @@ const Sidebar = () => {
   const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { role } = useAuth();
   const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
@@ -363,8 +361,7 @@ const Sidebar = () => {
             {currentTitle}
           </h1>
           <div className="flex items-center space-x-2">
-            <UserIcon className="w-6 h-6 text-gray-800" />
-            <span className="text-gray-800 font-semibold">{role}</span>
+            <UserProfileDropdown />
           </div>
         </header>
 
