@@ -6,6 +6,8 @@ import AddInventory from "./AddInventory";
 import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
 import Notification from "./Notification";
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAccessControl } from "../../components/roles/accessControl";
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
@@ -30,6 +32,7 @@ function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [department, setDepartment] = useState("");
   const [role, setRole] = useState("");
+  const permissions = useAccessControl();
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -120,6 +123,13 @@ function Inventory() {
           if (departmentData) {
             setDepartment(departmentData.department);
             setRole(departmentData.role);
+            
+            // specific controls
+            if (departmentData.department === "CSR") {
+              setSelectedTab("supplies");
+            } else if (departmentData.department === "Pharmacy") {
+              setSelectedTab("medicine");
+            }
           }
         },
         (error) => {
@@ -239,31 +249,37 @@ function Inventory() {
             supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
+  if (!permissions?.accessInventory) {
+    return <AccessDenied />;
+  }
+
+  console.log(department)
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center">
-        <div className="flex">
-          <button
-            onClick={() => setSelectedTab("medicine")}
-            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
-              selectedTab === "medicine"
-                ? "bg-slate-900 text-white text-bold"
-                : "bg-slate-200 text-gray-900"
-            }`}
-          >
-            Medicine Inventory
-          </button>
-          <button
-            onClick={() => setSelectedTab("supplies")}
-            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
-              selectedTab === "supplies"
-                ? "bg-slate-900 text-white text-bold"
-                : "bg-slate-200 text-gray-900"
-            }`}
-          >
-            Supplies Inventory
-          </button>
-        </div>
+      <div className="flex">
+        <button
+          onClick={() => {setSelectedTab("medicine")}}
+          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+            selectedTab === "medicine"
+              ? "bg-slate-900 text-white text-bold"
+              : "bg-slate-200 text-gray-900"
+          } ${department === "CSR" || department === "Pharmacy" ? "cursor-default pointer-events-none opacity-0" : ""}`}
+        >
+          Medicine Inventory
+        </button>
+        <button
+          onClick={() => {setSelectedTab("supplies")}}
+          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+            selectedTab === "supplies"
+              ? "bg-slate-900 text-white text-bold"
+              : "bg-slate-200 text-gray-900"
+          } ${department === "CSR" || department === "Pharmacy" ? "cursor-default pointer-events-none opacity-0" : ""}`}
+        >
+          Supplies Inventory
+        </button>
+      </div>
         <Notification />
       </div>
 
@@ -344,7 +360,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-3">
+                    <td colSpan="8" className="px-6 py-3">
                       No items in inventory.
                     </td>
                   </tr>
@@ -354,7 +370,7 @@ function Inventory() {
           </div>
           <AddInventory isOpen={modal} toggleModal={toggleModal} />
         </>
-      )}
+        )}
 
       {selectedTab === "supplies" && (
         <div>
@@ -433,7 +449,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-3">
+                    <td colSpan="8" className="px-6 py-3">
                       No supplies in inventory.
                     </td>
                   </tr>
@@ -443,7 +459,7 @@ function Inventory() {
           </div>
           <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
         </div>
-      )}
+        )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (
@@ -545,4 +561,3 @@ function Inventory() {
 }
 
 export default Inventory;
-
