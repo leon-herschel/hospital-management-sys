@@ -79,6 +79,7 @@ const Sidebar = () => {
     "/PharmacyTransferHistory": "Transfer History",
     "/CsrTransferHistory": "Transfer History",
     "/UsageHistory": "Usage History",
+    "/PaidSection": "PaidSection",
   };
 
   let currentTitle = "Overview";
@@ -261,16 +262,6 @@ const Sidebar = () => {
                     Usage History
                   </Link>
 
-                  <Link
-                    to="/local-history"
-                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/local-history")
-                      ? "bg-slate-800 text-white shadow-sm"
-                      : "text-white"
-                      } hover:bg-slate-800`}
-                  >
-                    <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
-                    Local History
-                  </Link>
                   
                   <Link
                     to="PharmacyTransferHistory"
@@ -320,6 +311,17 @@ const Sidebar = () => {
           >
             <CreditCardIcon className="w-6 h-6 mr-3" />
             Billing
+          </Link>
+
+          <Link
+            to="/PaidSection"
+            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/billing")
+              ? "bg-slate-800 text-white shadow-sm"
+              : "text-white"
+              } hover:bg-slate-800`}
+          >
+            <CreditCardIcon className="w-6 h-6 mr-3" />
+            Billing Paid Section
           </Link>
 
 
