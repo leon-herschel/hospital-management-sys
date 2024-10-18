@@ -6,7 +6,6 @@ const AddBill = ({ onClose }) => {
   const [patientList, setPatientList] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState("");
   const [billingAmount, setBillingAmount] = useState(0);
-  const [billingStatus, setBillingStatus] = useState("");
   const [selectedPatientName, setSelectedPatientName] = useState("");
   const [medsUsed, setMedsUsed] = useState([]);
   const [suppliesUsed, setSuppliesUsed] = useState([]);
@@ -82,7 +81,6 @@ const AddBill = ({ onClose }) => {
   
           // Set the total billing amount and items used
           setBillingAmount(totalAmount);
-          console.log("Total Billing Amount:", totalAmount);
           setMedsUsed(meds);
           setSuppliesUsed(supplies);
         } else {
@@ -95,24 +93,18 @@ const AddBill = ({ onClose }) => {
   
     fetchBillingItems();
   }, [selectedPatient]);
-  
 
   // Handle patient selection
   const handlePatientChange = (e) => {
     setSelectedPatient(e.target.value);
   };
 
-  // Handle billing status change
-  const handleBillingStatusChange = (e) => {
-    setBillingStatus(e.target.value);
-  };
-
   // Submit the bill for the selected patient
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedPatient || !billingStatus) {
-      alert("Please select a patient, and choose a billing status.");
+    if (!selectedPatient) {
+      alert("Please select a patient.");
       return;
     }
 
@@ -120,7 +112,7 @@ const AddBill = ({ onClose }) => {
 
     const billingData = {
       amount: billingAmount,
-      status: billingStatus,
+      status: "unpaid", // Automatically set status to "unpaid"
       patientName: selectedPatientName,
       medsUsed: medsUsed.map((med) => ({
         id: med.id, // Unique key
@@ -139,7 +131,7 @@ const AddBill = ({ onClose }) => {
     // Update billing data in Firebase
     await update(billingRef, billingData);
 
-    alert(`Bill of ₱${billingAmount.toFixed(2)} with status "${billingStatus}" added for patient: ${selectedPatientName}`);
+    alert(`Bill of ₱${billingAmount.toFixed(2)} added for patient: ${selectedPatientName} with status "unpaid"`);
     
     // Close modal after successful submission
     onClose();
@@ -161,20 +153,6 @@ const AddBill = ({ onClose }) => {
             {patientList.map((patient) => (
               <option key={patient.id} value={patient.id}>{patient.firstName}</option>
             ))}
-          </select>
-        </div>
-
-        <div className="mt-4">
-          <label htmlFor="status" className="block text-gray-700 mb-2">Status</label>
-          <select
-            id="status"
-            value={billingStatus}
-            onChange={handleBillingStatusChange}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-          >
-            <option value="">Select Status</option>
-            <option value="Unpaid">Unpaid</option>
-            <option value="Paid">Paid</option>
           </select>
         </div>
 
