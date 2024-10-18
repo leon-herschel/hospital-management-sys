@@ -88,7 +88,7 @@ const PharmacyTransferHistory = () => {
               ))
             ) : (
               <tr className="bg-white border-b hover:bg-slate-100">
-                <td colSpan="6" className="px-6 py-3">
+                <td colSpan="7" className="px-6 py-3">
                   No {department} Transfer History found.
                 </td>
               </tr>
