@@ -81,6 +81,7 @@ const AddBill = ({ onClose }) => {
   
           // Set the total billing amount and items used
           setBillingAmount(totalAmount);
+          console.log("Total Billing Amount:", totalAmount);
           setMedsUsed(meds);
           setSuppliesUsed(supplies);
         } else {
@@ -93,6 +94,7 @@ const AddBill = ({ onClose }) => {
   
     fetchBillingItems();
   }, [selectedPatient]);
+  
 
   // Handle patient selection
   const handlePatientChange = (e) => {
@@ -103,8 +105,8 @@ const AddBill = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedPatient) {
-      alert("Please select a patient.");
+    if (!selectedPatient || !billingStatus) {
+      alert("Please select a patient, and choose a billing status.");
       return;
     }
 
