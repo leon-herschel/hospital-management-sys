@@ -272,7 +272,6 @@ const Sidebar = () => {
                     Local History
                   </Link>
                   
-                  {(department === "Pharmacy" || department === "Admin") && (
                   <Link
                     to="PharmacyTransferHistory"
                     className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PharmacyTransferHistory")
@@ -283,9 +282,7 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Medicine Transfer History
                   </Link>
-                  )}
 
-                  {(department === "CSR" || department === "Admin") && (
                   <Link
                     to="CsrTransferHistory"
                     className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/CsrTransferHistory")
@@ -296,7 +293,6 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Supply Transfer History
                   </Link>
-                  )}
                 </div>
               </div>
             </>
