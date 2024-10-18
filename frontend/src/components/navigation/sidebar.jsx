@@ -251,9 +251,11 @@ const Sidebar = () => {
                   }`}
               >
                 <div className="overflow-y-auto max-h-40">
+                  
+                  {(department !== "CSR" && department !== "Pharmacy") && (
                   <Link
                     to="/UsageHistory"
-                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/usage-history")
+                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/UsageHistory")
                       ? "bg-slate-800 text-white shadow-sm"
                       : "text-white"
                       } hover:bg-slate-800`}
@@ -261,9 +263,8 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Usage History
                   </Link>
-
+                  )}
                   
-                  {(department === "Pharmacy" || department === "Admin") && (
                   <Link
                     to="PharmacyTransferHistory"
                     className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PharmacyTransferHistory")
@@ -274,9 +275,7 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Medicine Transfer History
                   </Link>
-                  )}
 
-                  {(department === "CSR" || department === "Admin") && (
                   <Link
                     to="CsrTransferHistory"
                     className={`flex text-sm items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/CsrTransferHistory")
@@ -287,7 +286,6 @@ const Sidebar = () => {
                     <ArchiveBoxArrowDownIcon className="w-5 h-5 mr-3" />
                     Supply Transfer History
                   </Link>
-                  )}
                 </div>
               </div>
             </>
@@ -319,7 +317,7 @@ const Sidebar = () => {
 
           <Link
             to="/PaidSection"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/billing")
+            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PaidSection")
               ? "bg-slate-800 text-white shadow-sm"
               : "text-white"
               } hover:bg-slate-800`}
