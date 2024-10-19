@@ -8,6 +8,7 @@ import QRCode from "react-qr-code";
 import Notification from "./Notification";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAccessControl } from "../../components/roles/accessControl";
+import StockInModal from "./StockInModal"; // Import the StockInModal
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
@@ -27,6 +28,7 @@ function Inventory() {
   const [supplyModal, setSupplyModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
+  const [stockInModal, setStockInModal] = useState(false); // New state for StockInModal
   const [currentItem, setCurrentItem] = useState(null);
   const [selectedTab, setSelectedTab] = useState("medicine");
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,6 +49,15 @@ function Inventory() {
 
   const toggleEditModal = () => {
     setEditModal(!editModal);
+  };
+
+  const toggleStockInModal = () => {
+    setStockInModal(!stockInModal);
+  };
+
+  const handleStockIn = (item) => {
+    setCurrentItem(item); // Set current item for stock in
+    toggleStockInModal(); // Open the StockInModal
   };
 
   const toggleDeleteModal = () => {
@@ -355,6 +366,12 @@ function Inventory() {
                         >
                           Delete
                         </button>
+                        <button
+                          onClick={() => handleStockIn(item)} // Trigger the StockIn modal
+                          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+                        >
+                          Stock In
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -369,8 +386,16 @@ function Inventory() {
             </table>
           </div>
           <AddInventory isOpen={modal} toggleModal={toggleModal} />
+          <StockInModal
+            isOpen={stockInModal}
+            toggleModal={toggleStockInModal}
+            currentItem={currentItem}
+            department={department}
+            role={role}
+            selectedTab={selectedTab} // Pass the selectedTab for dynamic handling
+          />
         </>
-        )}
+      )}
 
       {selectedTab === "supplies" && (
         <div>
@@ -444,6 +469,12 @@ function Inventory() {
                         >
                           Delete
                         </button>
+                        <button
+                          onClick={() => handleStockIn(item)} // Trigger the StockIn modal
+                          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+                        >
+                          Stock In
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -458,8 +489,16 @@ function Inventory() {
             </table>
           </div>
           <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
+          <StockInModal
+            isOpen={stockInModal}
+            toggleModal={toggleStockInModal}
+            currentItem={currentItem}
+            department={department}
+            role={role}
+            selectedTab={selectedTab} // Pass the selectedTab for dynamic handling
+          />
         </div>
-        )}
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (

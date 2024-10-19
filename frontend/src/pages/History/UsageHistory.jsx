@@ -3,11 +3,15 @@ import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import { getAuth } from "firebase/auth";
 import AccessDenied from "../ErrorPages/AccessDenied";
+import DateRangePicker from "../../components/DateRangePicker/DateRangePicker"; // Import DateRangePicker
 
 const UsageHistory = () => {
   const [usageList, setUsageList] = useState([]);
   const [department, setDepartment] = useState("");
   const [role, setRole] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -77,13 +81,71 @@ const UsageHistory = () => {
     }
   }, [role, department]);
 
-  
+  // Filter the usage list based on the search term and date range
+  const filteredUsageList = usageList.filter((usage) => {
+    const usageTimestamp = new Date(usage.timestamp);
+
+    // If only startDate is selected (single-day selection)
+    if (startDate && !endDate) {
+      const startOfDay = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        0, 0, 0
+      );
+      const endOfDay = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        23, 59, 59
+      );
+      const withinSingleDay = usageTimestamp >= startOfDay && usageTimestamp <= endOfDay;
+
+      const matchesSearchTerm =
+        usage.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        usage.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        usage.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return withinSingleDay && matchesSearchTerm;
+    }
+
+    // If both startDate and endDate are selected (range selection)
+    const withinDateRange =
+      (!startDate || usageTimestamp >= startDate) &&
+      (!endDate || usageTimestamp <= endDate);
+
+    const matchesSearchTerm =
+      usage.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      usage.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      usage.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return withinDateRange && matchesSearchTerm;
+  });
+
   if (department === "CSR" || department === "Pharmacy") {
     return <AccessDenied />;
   }
 
   return (
     <div className="w-full">
+      {/* Date Range Picker and Search Bar */}
+      <div className="flex items-center justify-between mb-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+        />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search by Item Name, First Name, or Last Name"
+          className="border rounded-md px-4 py-2"
+        />
+      </div>
+
+      {/* Usage History Table */}
       <div className="relative overflow-x-auto rounded-md shadow-sm">
         <table className="w-full text-md text-gray-900 text-center border border-slate-200">
           <thead className="text-md bg-slate-200">
@@ -97,9 +159,9 @@ const UsageHistory = () => {
             </tr>
           </thead>
           <tbody>
-            {usageList.length > 0 ? (
-              usageList.map((usage) => (
-                <tr key={usage.id} className="bg-white border-b hover:bg-slate-100">>
+            {filteredUsageList.length > 0 ? (
+              filteredUsageList.map((usage) => (
+                <tr key={usage.id} className="bg-white border-b hover:bg-slate-100">
                   <td className="px-6 py-3">{usage.itemName}</td>
                   <td className="px-6 py-3">{usage.firstName}</td>
                   <td className="px-6 py-3">{usage.lastName}</td>
