@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ref, get, set, push, update, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAuth } from "../../context/authContext/authContext";
 
 const Transfer = () => {
+  const { department } = useAuth(); 
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
-    status: 'Draft',
     reason: '',
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toLocaleString() 
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
-    statusError: false,
     reasonError: false,
   });
 
@@ -72,11 +72,16 @@ const Transfer = () => {
 
   const handleSearchChange = (e) => {
     searchRef.current = e.target.value;
+    const searchQuery = searchRef.current.toLowerCase(); // Save the lowercase search query
+  
     const filtered = items.filter(item =>
-      item.itemName.toLowerCase().includes(searchRef.current.toLowerCase())
+      item.itemName && item.itemName.toLowerCase().includes(searchQuery) // Check if itemName exists
     );
+  
     setFilteredItems(filtered);
   };
+  
+  
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
@@ -106,13 +111,12 @@ const Transfer = () => {
   };
 
   const validateInputs = () => {
-    const { department, status, reason } = formData;
+    const { department, reason } = formData;
     setErrorMessages({
       departmentError: !department,
-      statusError: !status,
       reasonError: !reason,
     });
-    return department && status && reason;
+    return department && reason;
   };
 
   const handleTransfer = async () => {
@@ -126,14 +130,6 @@ const Transfer = () => {
     }
 
     setSubmitting(true);
-
-    const transferData = {
-      name: formData.name,
-      status: formData.status,
-      reason: formData.reason,
-      timestamp: formData.timestamp,
-      recipientDepartment: formData.department,
-    };
 
     for (const item of selectedItems) {
       const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
@@ -151,16 +147,16 @@ const Transfer = () => {
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        status: formData.status,
         timestamp: formData.timestamp,
       });
 
       // Push transfer details to InventoryHistoryTransfer
-      const historyPath = `departments/CSR/InventoryHistoryTransfer`;
+      const historyPath = `supplyHistoryTransfer`;
       const newHistoryRef = push(ref(database, historyPath));
       await set(newHistoryRef, {
         itemKey: item.itemKey,
         itemName: item.itemName,
+        itemBrand: item.brand, // Include itemBrand here
         quantity: item.quantity,
         timestamp: formData.timestamp,
         sender: formData.name,
@@ -182,30 +178,25 @@ const Transfer = () => {
     }
 
     alert('Transfer successful!');
-    setFormData({ ...formData, reason: '', status: '' });
+    setFormData({ ...formData, reason: '' });
     setSelectedItems([]);
     setSubmitting(false);
-    setIsModalOpen(false); // Close modal after transfer
   };
 
-  const openModal = () => {
-    if (validateInputs()) {
-      setIsModalOpen(true);
-    } else {
-      alert('Please fill in all required fields before proceeding.');
-    }
-  };
+  if (department !== "CSR" && department !== "Admin") {
+    return <AccessDenied />;
+  }
 
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Create a new stock transfer.</h1>
         <button
-          className="bg-green-500 text-white px-2 py-1 rounded"
-          onClick={openModal} // Open modal on click
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+          onClick={handleTransfer} // Call handleTransfer directly
           disabled={submitting}
         >
-          Proceed
+          {submitting ? 'Processing...' : 'Transfer'}
         </button>
       </div>
 
@@ -245,20 +236,6 @@ const Transfer = () => {
             </select>
             {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
           </div>
-
-          <div>
-            <label className="block font-semibold mb-1">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
-            >
-              <option value="Draft">Draft</option>
-              <option value="Final">Final</option>
-            </select>
-            {errorMessages.statusError && <p className="text-red-500 text-sm">Please select a status.</p>}
-          </div>
         </div>
 
         <div className="mb-4">
@@ -269,101 +246,78 @@ const Transfer = () => {
             onChange={handleInputChange}
             className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
           />
-          {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason.</p>}
+          {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason for the transfer.</p>}
         </div>
       </div>
 
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Select Items to Transfer</h2>
+      <div>
+        <label className="block font-semibold mb-1">Search for Items to Transfer</label>
         <input
           type="text"
-          placeholder="Search items..."
-          onChange={handleSearchChange}
           value={searchRef.current}
-          className="border p-2 w-full rounded mb-2"
+          onChange={handleSearchChange}
+          className="border p-2 w-full rounded mb-4"
+          placeholder="Search by item name"
         />
-        <ul className="border rounded">
-          {filteredItems.length === 0
-            ? items.map(item => (
-                <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
-                  {item.itemName} (Available: {item.quantity})
-                  <button
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                    onClick={() => addItem(item)}
-                  >
-                    Add
-                  </button>
-                </li>
-              ))
-            : filteredItems.map(item => (
-                <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
-                  {item.itemName} (Available: {item.quantity})
-                  <button
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                    onClick={() => addItem(item)}
-                  >
-                    Add
-                  </button>
-                </li>
-              ))}
-        </ul>
-      </div>
-
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
-        {selectedItems.length === 0 ? (
-          <p>No items selected.</p>
-        ) : (
-          <ul className="border rounded">
-            {selectedItems.map(item => (
-              <li key={item.itemKey} className="border-b last:border-b-0 p-2 flex justify-between items-center">
-                {item.itemName} (Quantity: {item.quantity})
-                <div className="flex items-center">
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    min="1"
-                    onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                    className="border rounded w-16 text-center mr-2"
-                  />
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </div>
+        {filteredItems.length > 0 && (
+          <ul className="border rounded p-2 max-h-40 overflow-y-auto">
+            {filteredItems.map(item => (
+              <li
+                key={item.itemKey}
+                className="cursor-pointer hover:bg-gray-200 p-2 rounded"
+                onClick={() => addItem(item)}
+              >
+                {item.itemName} (Available: {item.quantity})
               </li>
             ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Modal for final confirmation */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 relative">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-2 right-2 text-gray-500">✖️</button>
-            <h2 className="text-lg font-semibold">Confirm Transfer</h2>
-            <p>Are you sure you want to proceed with the transfer?</p>
-            <div className="mt-4">
-              <h3 className="font-semibold">Items to Transfer:</h3>
-              <ul>
-                {selectedItems.map(item => (
-                  <li key={item.itemKey}>
-                    {item.itemName} (Quantity: {item.quantity})
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <button onClick={handleTransfer} className="bg-green-500 text-white px-4 py-2 mt-4 rounded" disabled={submitting}>
-              {submitting ? 'Processing...' : 'Confirm Transfer'}
-            </button>
-          </div>
+            </ul>
+          )}
         </div>
-      )}
-    </div>
-  );
-};
-
-export default Transfer;
+        <div>
+          
+  <h2 className="font-semibold text-lg mb-2">Selected Items for Transfer</h2>
+  {selectedItems.length > 0 ? (
+    <table className="border rounded w-full mb-4">
+      <thead>
+        <tr className="bg-gray-200">
+          <th className="text-left p-2">Name</th>
+          <th className="text-left p-2">Quantity</th>
+          <th className="text-left p-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {selectedItems.map((item, index) => (
+          <tr key={index} className="border-b">
+            <td className="p-2">{item.itemName}</td>
+            <td className="p-2">
+              <input
+                type="number"
+                min="1"
+                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
+                value={item.quantity}
+                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                className="border p-1 w-20 rounded"
+              />
+            </td>
+            <td className="p-2">
+              <button
+                className="bg-red-500 text-white px-2 py-1 rounded"
+                onClick={() => removeItem(item)}
+              >
+                Remove
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <p className="text-gray-500 mb-4">No items selected.</p>
+  )}
+</div>
+      </div>
+    );
+  };
+  
+  export default Transfer;
+  

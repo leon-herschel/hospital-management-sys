@@ -6,6 +6,8 @@ import AddInventory from "./AddInventory";
 import AddSupply from "./AddSupplies";
 import QRCode from "react-qr-code";
 import Notification from "./Notification";
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAccessControl } from "../../components/roles/accessControl";
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
@@ -29,6 +31,8 @@ function Inventory() {
   const [selectedTab, setSelectedTab] = useState("medicine");
   const [searchTerm, setSearchTerm] = useState("");
   const [department, setDepartment] = useState("");
+  const [role, setRole] = useState("");
+  const permissions = useAccessControl();
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -72,10 +76,11 @@ function Inventory() {
       status: updatedStatus,
     };
 
-    await update(
-      ref(database, `departments/${department}/localMeds/${currentItem.id}`),
-      updatedInventory
-    );
+    const updatePath =
+      role === "admin"
+        ? `departments/Pharmacy/localMeds/${currentItem.id}`
+        : `departments/${department}/localMeds/${currentItem.id}`;
+    await update(ref(database, updatePath), updatedInventory);
     toggleEditModal();
   };
 
@@ -110,86 +115,104 @@ function Inventory() {
   // Fetch user department
   useEffect(() => {
     if (user) {
-      const userDepartmentRef = ref(database, `users/${user.uid}/department`);
-      onValue(userDepartmentRef, (snapshot) => {
-        const departmentData = snapshot.val();
-        if (departmentData) {
-          setDepartment(departmentData);
+      const userDepartmentRef = ref(database, `users/${user.uid}`);
+      onValue(
+        userDepartmentRef,
+        (snapshot) => {
+          const departmentData = snapshot.val();
+          if (departmentData) {
+            setDepartment(departmentData.department);
+            setRole(departmentData.role);
+            
+            // specific controls
+            if (departmentData.department === "CSR") {
+              setSelectedTab("supplies");
+            } else if (departmentData.department === "Pharmacy") {
+              setSelectedTab("medicine");
+            }
+          }
+        },
+        (error) => {
+          console.error("Error fetching department:", error);
         }
-      });
+      );
     }
   }, [user]);
 
-  // Fetch inventory and supplies based on department
   useEffect(() => {
     if (department) {
-      const inventoryCollection = ref(
-        database,
-        `departments/${department}/localMeds`
-      );
-      const suppliesCollection = ref(
-        database,
-        `departments/${department}/localSupplies`
-      );
+      const inventoryPath =
+        role === "admin"
+          ? "departments/Pharmacy/localMeds"
+          : `departments/${department}/localMeds`;
+      const suppliesPath =
+        role === "admin"
+          ? "departments/CSR/localSupplies"
+          : `departments/${department}/localSupplies`;
 
-      const unsubscribeInventory = onValue(inventoryCollection, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const inventoryData = Object.keys(data).map((key) => {
-            const item = data[key];
-            const maxQuantity = item.maxQuantity || item.quantity;
-            const updatedStatus = calculateStatus(item.quantity, maxQuantity);
+      const inventoryCollection = ref(database, inventoryPath);
+      const suppliesCollection = ref(database, suppliesPath);
 
-            return {
-              ...item,
-              id: key,
-              status: updatedStatus,
-              itemName: item.itemName || "", // Ensure itemName is defined
-            };
-          });
-          inventoryData.sort((a, b) => {
-            const nameA = a.itemName || "";
-            const nameB = b.itemName || "";
-            return nameA.localeCompare(nameB);
-          });
+      const unsubscribeInventory = onValue(
+        inventoryCollection,
+        (snapshot) => {
+          const data = snapshot.val();
+          const inventoryData = data
+            ? Object.keys(data)
+                .map((key) => {
+                  const item = data[key];
+                  const maxQuantity = item.maxQuantity || item.quantity;
+                  return {
+                    ...item,
+                    id: key,
+                    status: calculateStatus(item.quantity, maxQuantity),
+                    itemName: item.itemName || "",
+                  };
+                })
+                .sort((a, b) => a.itemName.localeCompare(b.itemName))
+            : [];
+
           setInventoryList(inventoryData);
-        } else {
+        },
+        (error) => {
+          console.error("Error fetching inventory:", error);
           setInventoryList([]);
         }
-      });
+      );
 
-      const unsubscribeSupplies = onValue(suppliesCollection, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const suppliesData = Object.keys(data).map((key) => {
-            const item = data[key];
-            const maxQuantity = item.maxQuantity || item.quantity;
-            const updatedStatus = calculateStatus(item.quantity, maxQuantity);
+      const unsubscribeSupplies = onValue(
+        suppliesCollection,
+        (snapshot) => {
+          const data = snapshot.val();
+          const suppliesData = data
+            ? Object.keys(data)
+                .map((key) => {
+                  const item = data[key];
+                  const maxQuantity = item.maxQuantity || item.quantity;
+                  return {
+                    ...item,
+                    id: key,
+                    status: calculateStatus(item.quantity, maxQuantity),
+                    itemName: item.itemName || "",
+                  };
+                })
+                .sort((a, b) => a.itemName.localeCompare(b.itemName))
+            : [];
 
-            return {
-              ...item,
-              id: key,
-              status: updatedStatus,
-              itemName: item.itemName || "",
-            };
-          });
-          suppliesData.sort((a, b) => {
-            const nameA = a.itemName || "";
-            const nameB = b.itemName || "";
-            return nameA.localeCompare(nameB);
-          });
           setSuppliesList(suppliesData);
-        } else {
+        },
+        (error) => {
+          console.error("Error fetching supplies:", error);
           setSuppliesList([]);
         }
-      });
+      );
 
       return () => {
         unsubscribeInventory();
         unsubscribeSupplies();
       };
     }
-  }, [department]); // Dependency on department to ensure it's set first
+  }, [role, department]);
 
   const confirmDelete = (item) => {
     setCurrentItem(item);
@@ -197,10 +220,18 @@ function Inventory() {
   };
 
   const handleDelete = async () => {
-    const deletePath =
-      selectedTab === "medicine"
-        ? `departments/${department}/localMeds/${currentItem.id}`
-        : `departments/${department}/localSupplies/${currentItem.id}`;
+    let deletePath;
+    if (role === "admin") {
+      deletePath =
+        selectedTab === "medicine"
+          ? `departments/Pharmacy/localMeds/${currentItem.id}`
+          : `departments/CSR/localSupplies/${currentItem.id}`;
+    } else {
+      deletePath =
+        selectedTab === "medicine"
+          ? `departments/${department}/localMeds/${currentItem.id}`
+          : `departments/${department}/localSupplies/${currentItem.id}`;
+    }
     await remove(ref(database, deletePath));
     toggleDeleteModal();
   };
@@ -218,31 +249,37 @@ function Inventory() {
             supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
+  if (!permissions?.accessInventory) {
+    return <AccessDenied />;
+  }
+
+  console.log(department)
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center">
-        <div className="flex">
-          <button
-            onClick={() => setSelectedTab("medicine")}
-            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
-              selectedTab === "medicine"
-                ? "bg-slate-900 text-white text-bold"
-                : "bg-slate-200 text-gray-900"
-            }`}
-          >
-            Medicine Inventory
-          </button>
-          <button
-            onClick={() => setSelectedTab("supplies")}
-            className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
-              selectedTab === "supplies"
-                ? "bg-slate-900 text-white text-bold"
-                : "bg-slate-200 text-gray-900"
-            }`}
-          >
-            Supplies Inventory
-          </button>
-        </div>
+      <div className="flex">
+        <button
+          onClick={() => {setSelectedTab("medicine")}}
+          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+            selectedTab === "medicine"
+              ? "bg-slate-900 text-white text-bold"
+              : "bg-slate-200 text-gray-900"
+          } ${department === "CSR" || department === "Pharmacy" ? "cursor-default pointer-events-none opacity-0" : ""}`}
+        >
+          Medicine Inventory
+        </button>
+        <button
+          onClick={() => {setSelectedTab("supplies")}}
+          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+            selectedTab === "supplies"
+              ? "bg-slate-900 text-white text-bold"
+              : "bg-slate-200 text-gray-900"
+          } ${department === "CSR" || department === "Pharmacy" ? "cursor-default pointer-events-none opacity-0" : ""}`}
+        >
+          Supplies Inventory
+        </button>
+      </div>
         <Notification />
       </div>
 
@@ -271,6 +308,7 @@ function Inventory() {
                 <tr>
                   <th className="px-6 py-3">Medicine Name</th>
                   <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Brand</th>
                   <th className="px-6 py-3">Cost Price (₱)</th>
                   <th className="px-6 py-3">Retail Price (₱)</th>
                   <th className="px-6 py-3">Status</th>
@@ -287,6 +325,7 @@ function Inventory() {
                     >
                       <td className="px-6 py-3">{item.itemName}</td>
                       <td className="px-6 py-3">{item.quantity}</td>
+                      <td className="px-6 py-3">{item.brand}</td>
                       <td className="px-6 py-3">
                         {(item.costPrice !== undefined
                           ? item.costPrice
@@ -321,7 +360,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-3">
+                    <td colSpan="8" className="px-6 py-3">
                       No items in inventory.
                     </td>
                   </tr>
@@ -331,7 +370,7 @@ function Inventory() {
           </div>
           <AddInventory isOpen={modal} toggleModal={toggleModal} />
         </>
-      )}
+        )}
 
       {selectedTab === "supplies" && (
         <div>
@@ -358,6 +397,7 @@ function Inventory() {
                 <tr>
                   <th className="px-6 py-3">Supply Name</th>
                   <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Brand</th>
                   <th className="px-6 py-3">Cost Price (₱)</th>
                   <th className="px-6 py-3">Retail Price (₱)</th>
                   <th className="px-6 py-3">Status</th>
@@ -374,6 +414,7 @@ function Inventory() {
                     >
                       <td className="px-6 py-3">{item.itemName}</td>
                       <td className="px-6 py-3">{item.quantity}</td>
+                      <td className="px-6 py-3">{item.brand}</td>
                       <td className="px-6 py-3">
                         {(item.costPrice !== undefined
                           ? item.costPrice
@@ -408,7 +449,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-3">
+                    <td colSpan="8" className="px-6 py-3">
                       No supplies in inventory.
                     </td>
                   </tr>
@@ -418,7 +459,7 @@ function Inventory() {
           </div>
           <AddSupply isOpen={supplyModal} toggleModal={toggleSupplyModal} />
         </div>
-      )}
+        )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (

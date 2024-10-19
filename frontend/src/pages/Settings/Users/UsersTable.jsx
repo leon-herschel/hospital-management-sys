@@ -92,7 +92,7 @@ const UsersTable = () => {
                 <td className="px-6 py-4">{`${user.firstName} ${user.lastName}`}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">{user.department}</td>
-                <td className="px-6 py-4">{user.role}</td>
+                <td className="px-6 py-4">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</td>
                 <td className="px-6 py-4 flex justify-center space-x-4">
                   <button
                     className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
@@ -102,6 +102,7 @@ const UsersTable = () => {
                   </button>
                   <button
                     className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                    disabled={user.role === 'admin' && user.department === 'Admin'}
                     onClick={() => confirmDeleteUser(user)}
                   >
                     Delete
@@ -135,7 +136,8 @@ const UsersTable = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
             <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
-            <p className="text-gray-700 mb-6">Are you sure you want to delete this user? Note: Delete function is not complete yet and will not delete a user from Firebase Authentication.</p>
+            <p className="text-gray-700">Are you sure you want to delete this user?</p>
+            <p className="mb-6 text-sm text-red-600">Delete function is not complete yet and will not delete a user from Firebase Authentication.</p>
             <div className="flex justify-center space-x-4">
               <button
                 onClick={handleDeleteUser}

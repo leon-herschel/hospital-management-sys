@@ -17,18 +17,20 @@ import AccessDenied from "./pages/ErrorPages/AccessDenied";
 import ViewPatient from "./pages/Patients/ViewPatient";
 import StockTransfer from "./pages/CSR POV/stockTransfer";
 import Transfer from "./pages/CSR POV/Transfer";
-import Request from "./pages/CSR POV/ViewRequest";
 import RequestStock from "./pages/ICU POV/requestStock";
 import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
-import ViewRequest from "./pages/CSR POV/ViewRequest";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
-import TransferMed from "./pages/PharmacyPOV/transferMed";
+import TransferMed from "./pages/PharmacyPOV/TransferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
+import ViewRequest from "./pages/CSR POV/ViewRequest"
+import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
+import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory";
 import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
-import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory"
+import UsageHistory from "./pages/History/UsageHistory";
+import PaidSection from "./pages/Billing/PaidSection";
 import { element } from "prop-types";
 
 function App() {
@@ -62,16 +64,18 @@ function App() {
         { path: "Request", element: <Request /> },
         { path: "requestS", element: <RequestS /> },
         { path: "inventoryStock", element: <InventoryStock /> },
-        { path: "ViewRequest", element: <ViewRequest /> },
         { path: "requestStock", element: <RequestStock /> },
         { path: "icuLocalInventory", element: <IcuLocalInventory /> },
-        { path: "transferMed", element: <TransferMed /> },
-
+        { path: "TransferMed", element: <TransferMed /> },
+        { path: "ViewRequest", element: <ViewRequest/> },
         { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
         { path: "OverallInventory", element: <OverallInventory /> },
-        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
-        { path: "PharmacyTransferHistory", element: <PharmacyTransferHistory /> },
+        { path: "ConfirmRequest", element: <ConfirmRequest /> },
+        { path: "PharmacyTransferHistory", element: < PharmacyTransferHistory/>},
+        { path: "CsrTransferHistory", element: <CsrTransferHistory/>},
+        { path: "UsageHistory", element: <UsageHistory/>},
+        { path: "PaidSection", element: <PaidSection/>},
       ],
     },
     {

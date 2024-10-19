@@ -139,6 +139,7 @@ const DepartmentsTable = () => {
             <tr>
               <th scope="col" className="px-6 py-3">Department</th>
               <th scope="col" className="px-6 py-3">Access Inventory</th>
+              <th scope="col" className="px-6 py-3">Access Overall Inventory</th>
               <th scope="col" className="px-6 py-3">Access Inventory History</th>
               <th scope="col" className="px-6 py-3">Access Patients</th>
               <th scope="col" className="px-6 py-3">Access Settings</th>
@@ -154,6 +155,11 @@ const DepartmentsTable = () => {
                 <td className="px-6 py-4">
                   <span className={department.permissions?.accessInventory ? 'text-green-600' : 'text-red-600'}>
                     {department.permissions?.accessInventory ? 'Yes' : 'No'}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={department.permissions?.accessOverallInventory ? 'text-green-600' : 'text-red-600'}>
+                    {department.permissions?.accessOverallInventory ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className="px-6 py-4">
@@ -211,7 +217,7 @@ const DepartmentsTable = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
               <h2 className="text-xl font-bold mb-4">Delete Department</h2>
-              <p>Are you sure you want to delete the department "{departmentToDelete?.id}"?</p>
+              <p>Are you sure you want to delete the department <b>{departmentToDelete?.id}</b>?</p>
               <div className="flex justify-center space-x-4 mt-4">
                 <button
                   onClick={handleDeleteDepartment}

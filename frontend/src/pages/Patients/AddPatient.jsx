@@ -98,6 +98,20 @@ function AddPatient({ isOpen, toggleModal }) {
     }
   }, []);
 
+  // Function to format the date as "MM/DD/YYYY, HH:mm:ss AM/PM"
+  const formatTimestamp = (date) => {
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    };
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+  };
+
   const handleSubmit = () => {
     // Reset error states
     setFirstNameError(false);
@@ -160,8 +174,8 @@ function AddPatient({ isOpen, toggleModal }) {
     const newPatientRef = push(patientRef);
     const uniqueKey = newPatientRef.key;
 
-    const dateTimeObject = new Date(dateTime);
-    const timestamp = dateTimeObject.getTime();
+    // Get the current date as a timestamp string
+    const timestamp = formatTimestamp(new Date());
 
     const patientInfo = {
       firstName,
@@ -173,7 +187,7 @@ function AddPatient({ isOpen, toggleModal }) {
       status,
       roomType,
       qrData: uniqueKey,
-      dateTime: timestamp,
+      dateTime: timestamp,  // Use formatted timestamp
     };
 
     set(newPatientRef, patientInfo)
@@ -430,6 +444,7 @@ function AddPatient({ isOpen, toggleModal }) {
             <p className="text-red-500 mt-1">Date and time is required</p>
           )}
         </div>
+
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handleSubmit}

@@ -8,9 +8,10 @@ const RequestS = () => {
   const [formData, setFormData] = useState({
     name: "", // Default name
     department: "Pharmacy", // Default department
-    status: "Draft",
     reason: "",
-    timestamp: "", // Timestamp to track transfer creation
+    timestamp: "",
+    currentDepartment: "",
+
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // To store medicines or supplies data
@@ -20,22 +21,39 @@ const RequestS = () => {
 
   // Error states
   const [departmentError, setDepartmentError] = useState(false);
-  const [statusError, setStatusError] = useState(false);
   const [reasonError, setReasonError] = useState(false);
   const [submitting, setSubmitting] = useState(false); // For submission state
 
-  // Fetch user name from Firebase Auth
+  // New state to store the user's department
+  const [userDepartment, setUserDepartment] = useState("");
+
+  // Fetch user name and department from Firebase Auth and database
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
+      // Set the user's name
       setFormData((prevData) => ({
         ...prevData,
-        name: user.displayName || user.email,
-      })); // Use displayName or email as fallback
+        name: user.firstName || user.email,
+      }));
+
+      // Fetch the user's department from the Firebase database (assuming you store it in users/{uid}/department)
+      const userDepartmentRef = ref(database, `users/${user.uid}/department`);
+      get(userDepartmentRef)
+        .then((snapshot) => {
+          if (snapshot.exists()) {
+            setUserDepartment(snapshot.val()); // Set the user's department
+          } else {
+            console.log("No department found for the user.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching user department:", error);
+        });
     }
   }, []);
-
+  
   // Fetch departments from Firebase
   useEffect(() => {
     const departmentRef = ref(database, "departments");
@@ -59,18 +77,30 @@ const RequestS = () => {
   // Fetch medicines or supplies based on selected department
   useEffect(() => {
     const fetchItems = async () => {
-      const itemRef = ref(database, "departments/Pharmacy/localSupplies");
+      let itemRef;
+      if (formData.department === "Pharmacy") {
+        itemRef = ref(database, "departments/Pharmacy/localMeds");
+      } else if (formData.department === "CSR") {
+        itemRef = ref(database, "departments/CSR/localSupplies");
+      }
+
       try {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const itemsList = Object.values(data); // Extract the items from the selected node
+          const itemsList = Object.keys(data).map((key) => ({
+            itemKey: key, // Store the item key
+            ...data[key], // Spread the item data
+          }));
           setItems(itemsList); // Set the items state
+          setFilteredItems(itemsList); // Initially set filteredItems to all items
         } else {
           console.log("No data available");
+          setItems([]); // Ensure items are reset if no data
         }
       } catch (error) {
         console.error("Error fetching items:", error);
+        setItems([]); // Reset items if error occurs
       }
     };
     fetchItems();
@@ -97,17 +127,18 @@ const RequestS = () => {
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-
-    // Filter items based on search term
-    const filtered = items.filter((item) =>
-      item.itemName.toLowerCase().includes(value.toLowerCase())
+  
+    // Filter items based on search term, adding a check for itemName existence
+    const filtered = items.filter(
+      (item) => item.itemName && item.itemName.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredItems(filtered);
   };
+  
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find((item) => item.itemName === itemToAdd.itemName)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]); // Default quantity is set to 1
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: "" }]); // Default quantity is set to 1
       setSearchTerm(""); // Clear search term after adding
       setFilteredItems([]); // Clear filtered items
     }
@@ -125,7 +156,7 @@ const RequestS = () => {
       return; // Stop execution if quantity exceeds
     }
 
-    const newQuantity = Math.min(Math.max(value, 1), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
+    const newQuantity = Math.min(Math.max(value, ""), item.maxQuantity); // Ensure quantity is between 1 and maxQuantity
     const updatedItems = selectedItems.map((selectedItem) =>
       selectedItem.itemName === item.itemName
         ? { ...selectedItem, quantity: newQuantity }
@@ -137,67 +168,65 @@ const RequestS = () => {
   // Validate inputs before submission
   const validateInputs = () => {
     setDepartmentError(!formData.department);
-    setStatusError(!formData.status);
     setReasonError(!formData.reason);
 
-    return formData.department && formData.status && formData.reason;
+    return formData.department && formData.reason;
   };
 
-  // Handle the transfer of data
+  // Handle the request of data
   const handleTransfer = () => {
     if (!validateInputs()) {
       alert("Please fill in all required fields.");
-      return; // Stop execution if validation fails
+      return;
     }
 
-    if (selectedItems.length === 0) {
-      alert("Please select items to transfer.");
+    if (selectedItems.length === "") {
+      alert("Please select items to request.");
       return; // Stop execution if no items are selected
     }
-
-    setSubmitting(true); // Disable the button and show loading
-
-    const transferData = {
+  
+    setSubmitting(true);
+  
+    const requestData = {
       name: formData.name,
-      status: formData.status,
       reason: formData.reason,
       items: selectedItems,
       timestamp: formData.timestamp,
+      currentDepartment: userDepartment
     };
-
-    // Define the path for the selected department and create a "Request" node
+  
     const requestNodePath = `departments/${formData.department}/Request`;
-
-    // Create a new child node under the "Request" node
     const newRequestRef = push(ref(database, requestNodePath));
-
-    set(newRequestRef, transferData)
+  
+    set(newRequestRef, requestData)
       .then(() => {
-        alert("Transfer successful!");
+        alert("Request successful!");
         // Optionally, reset formData and selectedItems here
-        setFormData({ ...formData, reason: "", status: "Draft" }); // Reset formData
+        setFormData({ ...formData, reason: "" }); // Reset formData
         setSelectedItems([]); // Clear selected items
         setSubmitting(false); // Re-enable the button
       })
       .catch((error) => {
         console.error("Error transferring data:", error);
         alert("Error transferring data. Please try again.");
-        setSubmitting(false); // Re-enable the button
+        setSubmitting(false);
       });
   };
+  
 
   return (
-    <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
+    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Create a new Request Stock.</h1>
+        <h1 className="text-xl font-bold">Create a new Request Stock</h1>
         <button
-          className="bg-green-500 text-white px-2 py-1 rounded"
+          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           onClick={handleTransfer}
           disabled={submitting}
         >
           {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
+
       <div className="mb-4">
         <label htmlFor="department" className="block font-bold mb-1">
           Department
@@ -221,28 +250,15 @@ const RequestS = () => {
           <span className="text-red-500">Please select a department.</span>
         )}
       </div>
-      <div className="mb-4">
-        <label htmlFor="status" className="block font-bold mb-1">
-          Status
-        </label>
-        <select
-          id="status"
-          name="status"
-          value={formData.status}
-          onChange={handleInputChange}
-          className={`border ${
-            statusError ? "border-red-500" : "border-gray-300"
-          } rounded p-2`}
-        >
-          <option value="Draft">Draft</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-        {statusError && (
-          <span className="text-red-500">Please select a status.</span>
-        )}
-      </div>
+
+      {/* Display user's department */}
+      {userDepartment && (
+        <div className="mb-4">
+          <label className="block font-bold mb-1">Your Department</label>
+          <p className="text-gray-700">{userDepartment}</p>
+        </div>
+      )}
+
       <div className="mb-4">
         <label htmlFor="reason" className="block font-bold mb-1">
           Reason
@@ -255,81 +271,67 @@ const RequestS = () => {
           className={`border ${
             reasonError ? "border-red-500" : "border-gray-300"
           } rounded p-2 w-full`}
+          placeholder="Enter reason for request"
         />
         {reasonError && (
-          <span className="text-red-500">Please provide a reason.</span>
+          <span className="text-red-500">Please enter a reason.</span>
         )}
       </div>
 
-      {/* Items Search and Selection */}
       <div className="mb-4">
-        <label htmlFor="search" className="block font-bold mb-1">
-          Search Items
-        </label>
+        <label className="block font-bold mb-1">Search Items</label>
         <input
-          id="search"
-          name="search"
+          type="text"
           value={searchTerm}
           onChange={handleSearchChange}
           className="border border-gray-300 rounded p-2 w-full"
-          placeholder="Search for items..."
+          placeholder="Search items..."
         />
-        <div className="mt-2">
-          {filteredItems.map((item) => (
-            <div
-              key={item.itemName}
-              className="flex justify-between items-center border-b py-2"
-            >
-              <div>
-                {item.itemName} (Max: {item.maxQuantity})
-              </div>
-              <button
-                className="bg-blue-500 text-white px-2 py-1 rounded"
-                onClick={() => addItem(item)}
-              >
-                Add
-              </button>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Selected Items */}
-      {selectedItems.length > 0 && (
-        <div className="mb-4">
-          <h2 className="font-bold mb-2">Selected Items</h2>
-          <ul className="space-y-2">
-            {selectedItems.map((item) => (
-              <li
-                key={item.itemName}
-                className="flex justify-between items-center"
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        {filteredItems.length > 0 ? (
+          filteredItems.map((item) => (
+            <div key={item.itemKey} className="border rounded p-2 shadow">
+              <h3 className="font-bold">{item.itemName}</h3>
+              <p>Max Quantity: {item.quantity}</p>
+              <button
+                onClick={() => addItem(item)}
+                className="bg-blue-500 text-white px-2 py-1 rounded mt-2"
               >
-                <span>
-                  {item.itemName} (Quantity: {item.quantity})
-                </span>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    min="1"
-                    max={item.maxQuantity}
-                    onChange={(e) =>
-                      handleQuantityChange(item, parseInt(e.target.value))
-                    }
-                    className="border border-gray-300 rounded p-1 w-16"
-                  />
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => removeItem(item)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                Add Item
+              </button>
+            </div>
+          ))
+        ) : (
+          <p>No items found</p>
+        )}
+      </div>
+
+      <div>
+        <h2 className="font-bold mb-2">Selected Items</h2>
+        {selectedItems.length > 0 ? (
+          selectedItems.map((item) => (
+            <div key={item.itemKey} className="border rounded p-2 mb-2 shadow">
+              <h3 className="font-bold">{item.itemName}</h3>
+              <input
+                type="number"
+                value={item.quantity}
+                onChange={(e) => handleQuantityChange(item, e.target.value)}
+                className="border border-gray-300 rounded p-1 w-1/3"
+              />
+              <button
+                onClick={() => removeItem(item)}
+                className="bg-red-500 text-white px-2 py-1 rounded ml-2"
+              >
+                Remove
+              </button>
+            </div>
+          ))
+        ) : (
+          <p>No items selected</p>
+        )}
+      </div>
     </div>
   );
 };
