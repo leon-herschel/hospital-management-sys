@@ -4,8 +4,11 @@ import { database } from '../../firebase/firebase';
 import ViewBill from './ViewBill';
 import DeleteConfirmationModal from './DeleteConfirmationModalBilling';
 import AddBill from './AddBill';
+import AccessDenied from "../ErrorPages/AccessDenied";
+import { useAuth } from "../../context/authContext/authContext";
 
 const Billing = () => {
+  const { department } = useAuth(); 
   const [billings, setBillings] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,6 +87,10 @@ const Billing = () => {
     setIsViewModalOpen(false);
     setViewBilling(null);
   };
+
+  if (department !== "Billing" && department !== "Admin") {
+    return <AccessDenied />;
+  }
 
   return (
     <div className="w-full">

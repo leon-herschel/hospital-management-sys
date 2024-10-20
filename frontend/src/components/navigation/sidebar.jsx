@@ -304,27 +304,32 @@ const Sidebar = () => {
             </Link>
           )}
 
-          <Link
-            to="/billing"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/billing")
-              ? "bg-slate-800 text-white shadow-sm"
-              : "text-white"
-              } hover:bg-slate-800`}
-          >
-            <CreditCardIcon className="w-6 h-6 mr-3" />
-            Billing
-          </Link>
+          {(department === "Billing" || department === "Admin") && (
+            <>
+              <Link
+                to="/billing"
+                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/billing")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+                  } hover:bg-slate-800`}
+              >
+                <CreditCardIcon className="w-6 h-6 mr-3" />
+                Billing
+              </Link>
+      
+              <Link
+                to="/PaidSection"
+                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PaidSection")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+                  } hover:bg-slate-800`}
+              >
+                <CreditCardIcon className="w-6 h-6 mr-3" />
+                Billing Paid Section
+              </Link>
+          </>
+          )}
 
-          <Link
-            to="/PaidSection"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${isActive("/PaidSection")
-              ? "bg-slate-800 text-white shadow-sm"
-              : "text-white"
-              } hover:bg-slate-800`}
-          >
-            <CreditCardIcon className="w-6 h-6 mr-3" />
-            Billing Paid Section
-          </Link>
 
 
           <Link
