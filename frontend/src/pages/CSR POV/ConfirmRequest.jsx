@@ -1,31 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, onValue, update } from 'firebase/database';
+import { ref, get, set, push, onValue, remove, update } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
-const ConfirmRequest = ({ requestToConfirm }) => {
+const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
-    department: 'Pharmacy',
-    status: 'Draft',
+    department: currentDepartment || '',
     reason: '',
     timestamp: new Date().toLocaleString(),
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // Store all items from 'supplies'
-  const [selectedItems, setSelectedItems] = useState([]); // Selected items by the user
+  const [items, setItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-
   const searchRef = useRef('');
   const departmentRef = useRef();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
-    statusError: false,
     reasonError: false,
   });
 
-  // Fetch authenticated user data
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -34,7 +30,6 @@ const ConfirmRequest = ({ requestToConfirm }) => {
     }
   }, []);
 
-  // Fetch department data from Firebase
   useEffect(() => {
     departmentRef.current = ref(database, 'departments');
     get(departmentRef.current)
@@ -48,7 +43,6 @@ const ConfirmRequest = ({ requestToConfirm }) => {
       .catch(error => console.error('Error fetching departments:', error));
   }, []);
 
-  // Real-time update of supplies using onValue
   useEffect(() => {
     const suppliesRef = ref(database, 'departments/CSR/localSupplies');
     const unsubscribe = onValue(suppliesRef, (snapshot) => {
@@ -58,24 +52,23 @@ const ConfirmRequest = ({ requestToConfirm }) => {
             ...value,
             itemKey: key,
           }));
-        setItems(supplies); // Set items from 'supplies'
+        setItems(supplies);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Set form data and selected items based on requestToConfirm prop
   useEffect(() => {
     if (requestToConfirm) {
       setFormData(prevData => ({
         ...prevData,
-        department: requestToConfirm.department,
+        department: currentDepartment,
         reason: requestToConfirm.reason,
       }));
       setSelectedItems(requestToConfirm.items);
     }
-  }, [requestToConfirm]);
+  }, [requestToConfirm, currentDepartment]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -97,10 +90,9 @@ const ConfirmRequest = ({ requestToConfirm }) => {
       return;
     }
 
-    // Check available quantity from 'supplies'
     const mainInventoryItem = items.find(i => i.itemKey === itemToAdd.itemKey);
     if (mainInventoryItem && mainInventoryItem.quantity > 0) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]); // Add with default quantity
+      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
       searchRef.current = '';
       setFilteredItems([]);
     } else {
@@ -117,7 +109,7 @@ const ConfirmRequest = ({ requestToConfirm }) => {
     const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
 
     if (value > maxAvailableQuantity) {
-      alert(`Cannot be edited`);
+      alert(`Cannot exceed available quantity of ${maxAvailableQuantity}`);
       return;
     }
 
@@ -128,13 +120,12 @@ const ConfirmRequest = ({ requestToConfirm }) => {
   };
 
   const validateInputs = () => {
-    const { department, status, reason } = formData;
+    const { department, reason } = formData;
     setErrorMessages({
       departmentError: !department,
-      statusError: !status,
       reasonError: !reason,
     });
-    return department && status && reason;
+    return department && reason;
   };
 
   const handleConfirm = async () => {
@@ -149,57 +140,65 @@ const ConfirmRequest = ({ requestToConfirm }) => {
 
     setSubmitting(true);
 
-    const confirmationData = {
-      name: formData.name,
-      status: formData.status,
-      reason: formData.reason,
-      timestamp: formData.timestamp,
-      recipientDepartment: formData.department,
-    };
+    try {
+      for (const item of selectedItems) {
+        const confirmationData = {
+          itemName: item.itemName,
+          quantity: item.quantity,
+          reason: formData.reason,
+          recipientDepartment: formData.department,
+          sender: formData.name,
+          timestamp: formData.timestamp
+        };
 
-    // Push the confirmation data to history
-    const historyPath = `departments/CSR/InventoryHistoryTransfer`; // Update the path for confirmation history
-    const newHistoryRef = push(ref(database, historyPath));
-    await set(newHistoryRef, confirmationData);
+        const historyPath = `supplyHistoryTransfer`;
+        const newHistoryRef = push(ref(database, historyPath));
+        await set(newHistoryRef, confirmationData);
 
-    // Iterate over selected items and update local supplies and main inventory
-    for (const item of selectedItems) {
-      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
+        const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
+        const localSupplySnapshot = await get(ref(database, departmentPath));
+        let newQuantity = item.quantity;
 
-      // Fetch the existing quantity in the local supplies
-      const localSupplySnapshot = await get(ref(database, departmentPath));
-      let newQuantity = item.quantity;
+        if (localSupplySnapshot.exists()) {
+          const existingData = localSupplySnapshot.val();
+          newQuantity += existingData.quantity;
+        }
 
-      if (localSupplySnapshot.exists()) {
-        const existingData = localSupplySnapshot.val();
-        newQuantity += existingData.quantity;
+        await set(ref(database, departmentPath), {
+          ...item,
+          itemKey: item.itemKey,
+          quantity: newQuantity,
+          timestamp: formData.timestamp,
+        });
+
+        const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
+        const mainInventorySnapshot = await get(mainInventoryRef);
+
+        if (mainInventorySnapshot.exists()) {
+          const currentData = mainInventorySnapshot.val();
+          const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
+          await update(mainInventoryRef, { quantity: updatedQuantity });
+        } else {
+          console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        }
       }
 
-      // Update the local supplies with the new quantity
-      await set(ref(database, departmentPath), {
-        ...item,
-        itemKey: item.itemKey,
-        quantity: newQuantity,
-        status: formData.status,
-        timestamp: formData.timestamp,
-      });
+      // Remove the confirmed request from Firebase
+      const requestRef = ref(database, `departments/CSR/Request/${requestToConfirm.requestId}`);
+      await remove(requestRef);
 
-      // Deduct the quantity from main inventory in 'supplies'
-      const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`); // Corrected the reference path
-      const mainInventorySnapshot = await get(mainInventoryRef);
+      alert('Confirmation successful!');
+      setFormData({ ...formData, reason: '' });
+      setSelectedItems([]);
 
-      if (mainInventorySnapshot.exists()) {
-        const currentData = mainInventorySnapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0); // Deduct the item quantity
-        await update(mainInventoryRef, { quantity: updatedQuantity }); // Updates the new quantity in the database
-      } else {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+      if (onConfirmSuccess) {
+        onConfirmSuccess();
       }
+
+    } catch (error) {
+      console.error('Error confirming request:', error);
     }
 
-    alert('Confirmation successful!');
-    setFormData({ ...formData, reason: '', status: '' });
-    setSelectedItems([]);
     setSubmitting(false);
   };
 
@@ -235,59 +234,37 @@ const ConfirmRequest = ({ requestToConfirm }) => {
         <p>{formData.timestamp}</p>
       </div>
 
-      {/* General Input Fields */}
+      {/* Department (Non-editable) */}
       <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">General</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block font-semibold mb-1">To Department</label>
-            <select
-              name="department"
-              value={formData.department}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.departmentError ? 'border-red-500' : ''}`}
-            >
-              {departments.map((dept, index) => (
-                <option key={index} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-            {errorMessages.departmentError && <p className="text-red-500 text-sm">Department is required.</p>}
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-1">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.statusError ? 'border-red-500' : ''}`}
-            >
-              <option value="">Select Status</option>
-              <option value="Draft">Draft</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Denied">Denied</option>
-            </select>
-            {errorMessages.statusError && <p className="text-red-500 text-sm">Status is required.</p>}
-          </div>
-        </div>
+        <label className="block font-semibold mb-1">To Department</label>
+        <input
+          type="text"
+          name="department"
+          value={formData.department}
+          readOnly
+          className="border p-2 w-full rounded"
+        />
       </div>
 
+      {/* General Input Fields */}
       <div className="mb-4">
+        <div className="grid grid-cols-2 gap-4">
+        <div className="mb-4">
         <label className="block font-semibold mb-1">Reason</label>
-        <textarea
-          name="reason"
+        <input
+          type="text"
+          name="department"
           value={formData.reason}
-          onChange={handleInputChange}
-          className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-        ></textarea>
-        {errorMessages.reasonError && <p className="text-red-500 text-sm">Reason is required.</p>}
+          readOnly
+          className="border p-2 w-full rounded"
+        />
+      </div>
+        </div>
       </div>
 
       {/* Item Selection Section */}
       <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Items</h2>
+        <h2 className="font-semibold text-lg mb-2">Search Items</h2>
         <input
           type="text"
           placeholder="Search items..."
