@@ -9,42 +9,76 @@ const AddBill = ({ onClose }) => {
   const [selectedPatientName, setSelectedPatientName] = useState("");
   const [medsUsed, setMedsUsed] = useState([]);
   const [suppliesUsed, setSuppliesUsed] = useState([]);
+  const [presentDate, setPresentDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // Search term state
+  const [showDropdown, setShowDropdown] = useState(false); // Control dropdown visibility
 
   // Fetch patient list on component mount
   useEffect(() => {
     const patientRef = ref(database, "patient");
-    const unsubscribePatientRef = onValue(patientRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const patientData = Object.keys(data).map((key) => ({
-          ...data[key],
-          id: key,
-        }));
-        setPatientList(patientData);
+    const unsubscribePatientRef = onValue(
+      patientRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const patientData = Object.keys(data).map((key) => ({
+            ...data[key],
+            id: key,
+            fullName: `${data[key].firstName || ""} ${
+              data[key].lastName || ""
+            }`,
+          }));
+          setPatientList(patientData);
+        }
+      },
+      (error) => {
+        console.error("Error fetching patients: ", error);
       }
-    }, (error) => {
-      console.error("Error fetching patients: ", error);
-    });
+    );
 
     return () => unsubscribePatientRef(); // Cleanup listener
+  }, []);
+
+  // Function for setting the current date in Hong Kong timezone
+  useEffect(() => {
+    const today = new Date();
+
+    // Convert to Hong Kong timezone and format as YYYY-MM-DD
+    const formattedDate = today.toLocaleString("en-US", {
+      timeZone: "Asia/Hong_Kong",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    // Convert to YYYY-MM-DD format
+    const [month, day, year] = formattedDate.split("/");
+    const hkFormattedDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
+      2,
+      "0"
+    )}`;
+
+    setPresentDate(hkFormattedDate);
   }, []);
 
   // Fetch medUse and suppliesUsed when a patient is selected
   useEffect(() => {
     const fetchBillingItems = async () => {
       if (!selectedPatient) return;
-  
+
       const patientRef = ref(database, `patient/${selectedPatient}`);
       try {
         const snapshot = await get(patientRef);
         let totalAmount = 0;
         let meds = [];
         let supplies = [];
-  
+
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setSelectedPatientName(data.name || "");
-  
+          setSelectedPatientName(
+            `${data.firstName || ""} ${data.lastName || ""}`
+          );
+
           // Calculate total from medUse
           if (data.medUse && typeof data.medUse === "object") {
             Object.keys(data.medUse).forEach((key) => {
@@ -52,7 +86,7 @@ const AddBill = ({ onClose }) => {
               const quantity = medicine.quantity || 0;
               const retailPrice = medicine.retailPrice || 0;
               totalAmount += quantity * retailPrice;
-  
+
               meds.push({
                 id: push(ref(database, "temp")).key, // Use a temporary ref to generate a unique key
                 name: medicine.name || "Unknown Medicine",
@@ -61,7 +95,7 @@ const AddBill = ({ onClose }) => {
               });
             });
           }
-  
+
           // Calculate total from suppliesUsed
           if (data.suppliesUsed && typeof data.suppliesUsed === "object") {
             Object.keys(data.suppliesUsed).forEach((key) => {
@@ -69,7 +103,7 @@ const AddBill = ({ onClose }) => {
               const quantity = supply.quantity || 0;
               const retailPrice = supply.retailPrice || 0;
               totalAmount += quantity * retailPrice;
-  
+
               supplies.push({
                 id: push(ref(database, "temp")).key, // Use a temporary ref to generate a unique key
                 name: supply.name || "Unknown Supply",
@@ -78,7 +112,7 @@ const AddBill = ({ onClose }) => {
               });
             });
           }
-  
+
           // Set the total billing amount and items used
           setBillingAmount(totalAmount);
           console.log("Total Billing Amount:", totalAmount);
@@ -91,22 +125,29 @@ const AddBill = ({ onClose }) => {
         console.error("Error fetching billing items: ", error);
       }
     };
-  
+
     fetchBillingItems();
   }, [selectedPatient]);
-  
 
-  // Handle patient selection
-  const handlePatientChange = (e) => {
-    setSelectedPatient(e.target.value);
+  // Handle input change for search term
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setShowDropdown(true); // Show dropdown when typing
+  };
+
+  // Handle selecting a patient from the dropdown
+  const handlePatientSelect = (patient) => {
+    setSearchTerm(patient.fullName); // Update the input with the selected patient's name
+    setSelectedPatient(patient.id); // Store the selected patient's ID
+    setShowDropdown(false); // Hide the dropdown
   };
 
   // Submit the bill for the selected patient
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedPatient || !billingStatus) {
-      alert("Please select a patient, and choose a billing status.");
+    if (!selectedPatient) {
+      alert("Please select a patient.");
       return;
     }
 
@@ -114,7 +155,7 @@ const AddBill = ({ onClose }) => {
 
     const billingData = {
       amount: billingAmount,
-      status: "unpaid", // Automatically set status to "unpaid"
+      status: "Unpaid",
       patientName: selectedPatientName,
       medsUsed: medsUsed.map((med) => ({
         id: med.id, // Unique key
@@ -128,42 +169,82 @@ const AddBill = ({ onClose }) => {
         quantity: supply.quantity,
         retailPrice: supply.retailPrice,
       })),
+      dateAdded: presentDate,
     };
 
     // Update billing data in Firebase
     await update(billingRef, billingData);
 
-    alert(`Bill of ₱${billingAmount.toFixed(2)} added for patient: ${selectedPatientName} with status "unpaid"`);
-    
+    alert(
+      `Bill of ₱${billingAmount.toFixed(
+        2
+      )} with status "Unpaid" added for patient: ${selectedPatientName}`
+    );
+
     // Close modal after successful submission
     onClose();
   };
+
+  // Filter patient list based on search term
+  const filteredPatients = patientList.filter((patient) =>
+    patient.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Add New Billing</h2>
       <form onSubmit={handleSubmit}>
-        <div className="mt-4">
-          <label htmlFor="patientId" className="block text-gray-700 mb-2">Patient</label>
-          <select
-            id="patientId"
-            value={selectedPatient}
-            onChange={handlePatientChange}
+        {/* Search and select patient */}
+        <div className="mt-4 relative">
+          <label htmlFor="searchTerm" className="block text-gray-700 mb-2">
+            Patient
+          </label>
+          <input
+            type="text"
+            id="searchTerm"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="Search a patient"
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-          >
-            <option value="">Select Patient</option>
-            {patientList.map((patient) => (
-              <option key={patient.id} value={patient.id}>{patient.firstName}</option>
-            ))}
-          </select>
+            onFocus={() => setShowDropdown(true)} // Show dropdown on focus
+          />
+          {/* Dropdown to show filtered patients */}
+          {showDropdown && searchTerm && (
+            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md max-h-48 overflow-y-auto">
+              {filteredPatients.map((patient) => (
+                <li
+                  key={patient.id}
+                  className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                  onClick={() => handlePatientSelect(patient)}
+                >
+                  {patient.fullName}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="mt-4">
-          <label htmlFor="billingAmount" className="block text-gray-700 mb-2">Total Billing Amount</label>
+          <label htmlFor="billingAmount" className="block text-gray-700 mb-2">
+            Total Billing Amount
+          </label>
           <input
             type="text"
             id="billingAmount"
-            value={`₱${billingAmount ? billingAmount.toFixed(2) : '0.00'}`}
+            value={`₱${billingAmount ? billingAmount.toFixed(2) : "0.00"}`}
+            readOnly
+            className="w-full px-3 py-2 border rounded-lg"
+          />
+        </div>
+
+        <div className="mt-4">
+          <label htmlFor="dateAdded" className="block text-gray-700 mb-2">
+            Date Added
+          </label>
+          <input
+            type="text"
+            id="dateAdded"
+            value={presentDate}
             readOnly
             className="w-full px-3 py-2 border rounded-lg"
           />
@@ -173,8 +254,16 @@ const AddBill = ({ onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="mr-2 bg-slate-300 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg">Add Billing</button>
+            className="mr-2 bg-slate-300 text-gray-700 px-4 py-2 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+          >
+            Add Billing
+          </button>
         </div>
       </form>
     </div>

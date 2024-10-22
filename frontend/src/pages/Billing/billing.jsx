@@ -1,25 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { ref, onValue, remove, update, query, orderByChild, equalTo } from 'firebase/database';
-import { database } from '../../firebase/firebase';
-import ViewBill from './ViewBill';
-import DeleteConfirmationModal from './DeleteConfirmationModalBilling';
-import AddBill from './AddBill';
-import DateRangePicker from '../../components/DateRangePicker/DateRangePicker'; // Import DateRangePicker
+import React, { useState, useEffect } from "react";
+import {
+  ref,
+  onValue,
+  remove,
+  update,
+  query,
+  orderByChild,
+  equalTo,
+} from "firebase/database";
+import { database } from "../../firebase/firebase";
+import ViewBill from "./ViewBill";
+import DeleteConfirmationModal from "./DeleteConfirmationModalBilling";
+import AddBill from "./AddBill";
+import DateRangePicker from "../../components/DateRangePicker/DateRangePicker"; // Import DateRangePicker
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [viewBilling, setViewBilling] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [billingToDelete, setBillingToDelete] = useState(null);
   const [startDate, setStartDate] = useState(null); // State for start date
-  const [endDate, setEndDate] = useState(null);     // State for end date
+  const [endDate, setEndDate] = useState(null); // State for end date
 
   // Fetch billings from Firebase and listen for updates
   useEffect(() => {
-    const billingsRef = query(ref(database, "billing"), orderByChild('status'), equalTo('unpaid'));
+    const billingsRef = query(
+      ref(database, "billing"),
+      orderByChild("status"),
+      equalTo("Unpaid")
+    );
 
     const unsubscribe = onValue(billingsRef, (snapshot) => {
       const billingList = [];
@@ -37,9 +49,24 @@ const Billing = () => {
     return () => unsubscribe();
   }, []);
 
+  // Handle changing the present date
+  const handlePresentDateChange = async (billingId, newPresentDate) => {
+    try {
+      const billingRef = ref(database, `billing/${billingId}`);
+      await update(billingRef, { presentDate: newPresentDate });
+      setBillings((prevBillings) =>
+        prevBillings.map((b) =>
+          b.id === billingId ? { ...b, presentDate: newPresentDate } : b
+        )
+      );
+    } catch (error) {
+      console.error("Error updating present date: ", error.message);
+    }
+  };
+
   // Filter billings based on search term and date range
   const filteredBillings = billings.filter((billing) => {
-    const billingDate = new Date(billing.timestamp); // Assuming the billing has a timestamp field
+    const billingDate = new Date(billing.dateAdded); // Assuming the billing has a timestamp field
 
     // Filter by date range
     const withinDateRange =
@@ -47,7 +74,9 @@ const Billing = () => {
       (!endDate || billingDate <= endDate);
 
     // Filter by search term
-    const matchesSearchTerm = billing.patientName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearchTerm = billing.patientName
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
 
     return withinDateRange && matchesSearchTerm;
   });
@@ -62,7 +91,7 @@ const Billing = () => {
         setIsDeleteModalOpen(false);
         setBillingToDelete(null);
       } catch (error) {
-        alert('Error deleting billing: ' + error.message);
+        alert("Error deleting billing: " + error.message);
       }
     }
   };
@@ -77,10 +106,10 @@ const Billing = () => {
   const handleMarkAsPaid = async (billing) => {
     try {
       const billingRef = ref(database, `billing/${billing.id}`);
-      await update(billingRef, { status: 'paid' });
+      await update(billingRef, { status: "Paid" });
       setBillings(billings.filter((b) => b.id !== billing.id)); // Remove from list once marked as paid
     } catch (error) {
-      alert('Error updating billing status: ' + error.message);
+      alert("Error updating billing status: " + error.message);
     }
   };
 
@@ -104,17 +133,11 @@ const Billing = () => {
         <h1 className="text-3xl font-bold mb-4">Billing List</h1>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search by patient name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border px-4 py-2 rounded-lg w-full max-w-xs"
-        />
+      <div className="flex justify-end mb-4">
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg">
+          className="ml-4 bg-blue-500 text-white px-4 py-2 rounded-lg"
+        >
           Add New Billing
         </button>
       </div>
@@ -128,6 +151,15 @@ const Billing = () => {
           onEndDateChange={setEndDate}
         />
       </div>
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by patient name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border px-4 py-2 rounded-lg w-full max-w-xs"
+        />
+      </div>
 
       <table className="min-w-full border-collapse border border-gray-300 bg-white">
         <thead>
@@ -135,26 +167,61 @@ const Billing = () => {
             <th className="border-b px-4 py-2 text-left">Patient</th>
             <th className="border-b px-4 py-2 text-left">Amount</th>
             <th className="border-b px-4 py-2 text-left">Status</th>
+            <th className="border-b px-4 py-2 text-left">From</th>
+            <th className="border-b px-4 py-2 text-left">To</th>
             <th className="border-b px-4 py-2 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
           {filteredBillings.length > 0 ? (
-            filteredBillings.map(billing => (
+            filteredBillings.map((billing) => (
               <tr key={billing.id} className="hover:bg-gray-100">
                 <td className="border-b px-4 py-2">{billing.patientName}</td>
-                <td className="border-b px-4 py-2">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
-                <td className="border-b px-4 py-2">{billing.status}</td>
                 <td className="border-b px-4 py-2">
-                  <button onClick={() => handleViewBilling(billing)} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md">View</button>
-                  <button onClick={() => handleMarkAsPaid(billing)} className="ml-4 bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-md">Mark as Paid</button>
-                  <button onClick={() => openDeleteModal(billing)} className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md">Delete</button>
+                  ₱{" "}
+                  {new Intl.NumberFormat("en-PH", {
+                    minimumFractionDigits: 2,
+                  }).format(billing.amount)}
+                </td>
+                <td className="border-b px-4 py-2">{billing.status}</td>
+                <td className="border-b px-4 py-2">{billing.dateAdded}</td>
+                <td className="border-b px-4 py-2">
+                  <input
+                    type="date"
+                    value={billing.presentDate || ""}
+                    onChange={(e) =>
+                      handlePresentDateChange(billing.id, e.target.value)
+                    }
+                    className="border rounded-md px-2 py-1"
+                  />
+                </td>
+                <td className="border-b px-4 py-2">
+                  <button
+                    onClick={() => handleViewBilling(billing)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleMarkAsPaid(billing)}
+                    className="ml-4 bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-md"
+                  >
+                    Mark as Paid
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(billing)}
+                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="border-b px-4 py-2 text-center">No billings found.</td>
+              <td colSpan="6" className="border-b px-4 py-2 text-center">
+                No billings found.
+              </td>
             </tr>
           )}
         </tbody>
