@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { database } from "../../firebase/firebase";
 import { ref, onValue, get } from "firebase/database";
 import { calculateStatus } from "./CalculateStatusLogic"; // Import the calculateStatus function
+import DepartmentBreakdown from "./DepartmentBreakdown"; // Import DepartmentBreakdown component
 
 const OverAllMedicine = () => {
   const [medsList, setMedsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItem, setSelectedItem] = useState(null); // State to manage selected item for breakdown
 
   useEffect(() => {
     const departmentsRef = ref(database, "departments");
@@ -31,26 +33,23 @@ const OverAllMedicine = () => {
               // Aggregate medicines by itemName
               Object.entries(localMedsData).forEach(([key, value]) => {
                 const itemName = value.itemName;
-                const maxQuantity = value.maxQuantity || value.quantity; // Default to the quantity if no maxQuantity is defined
+                const maxQuantity = value.maxQuantity || value.quantity;
 
                 if (totalMeds[itemName]) {
-                  // If the medicine already exists, add to the quantity
                   totalMeds[itemName].quantity += value.quantity || 0;
                 } else {
-                  // If it doesn't exist, create a new entry
                   totalMeds[itemName] = {
                     id: key,
                     itemName: itemName,
                     quantity: value.quantity || 0,
                     maxQuantity: maxQuantity,
-                    status: calculateStatus(value.quantity || 0, maxQuantity), // Calculate the status
+                    status: calculateStatus(value.quantity || 0, maxQuantity),
                   };
                 }
               });
             }
           }
 
-          // Convert the object to an array for rendering
           setMedsList(Object.values(totalMeds));
         } else {
           setMedsList([]);
@@ -92,6 +91,7 @@ const OverAllMedicine = () => {
             <th className="px-6 py-3">Item Name</th>
             <th className="px-6 py-3">Quantity</th>
             <th className="px-6 py-3">Status</th>
+            <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -101,17 +101,33 @@ const OverAllMedicine = () => {
                 <td className="px-6 py-3">{medicine.itemName}</td>
                 <td className="px-6 py-3">{medicine.quantity}</td>
                 <td className="px-6 py-3">{medicine.status}</td>
+                <td className="px-6 py-3">
+                  <button
+                    onClick={() => setSelectedItem(medicine.itemName)} // Open modal for selected item
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                  >
+                    View
+                  </button>
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="3" className="px-6 py-3">
+              <td colSpan="4" className="px-6 py-3">
                 No medicines found.
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Render DepartmentBreakdown modal if an item is selected */}
+      {selectedItem && (
+        <DepartmentBreakdown
+          itemName={selectedItem}
+          onClose={() => setSelectedItem(null)} // Close modal
+        />
+      )}
     </div>
   );
 };

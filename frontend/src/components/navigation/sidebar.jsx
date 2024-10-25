@@ -58,10 +58,7 @@ const Sidebar = () => {
     setHistoryDropdownOpen(!historyDropdownOpen)
   }
 
-  const toggleHistoryDropdown = () => {
-    setHistoryDropdownOpen(!historyDropdownOpen)
-  }
-
+ 
   // Titles based on route paths
   const titles = {
     "/dashboard": "Overview",
