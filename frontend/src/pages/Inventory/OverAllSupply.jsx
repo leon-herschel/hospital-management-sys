@@ -1,71 +1,54 @@
 import { useEffect, useState } from "react";
 import { ref, get, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import { calculateStatus } from "./CalculateStatusLogic"; // Import the calculateStatus function
+import { calculateStatus } from "./CalculateStatusLogic";
+import DepartmentBreakdown from "./DepartmentBreakdown"; // Import the DepartmentBreakdown component
 
 const OverAllSupply = () => {
   const [overallInventory, setOverallInventory] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItem, setSelectedItem] = useState(null); // State to manage selected item for breakdown
 
   useEffect(() => {
     const departmentsRef = ref(database, "departments");
 
-    const fetchDepartments = async () => {
-      try {
-        const departmentsSnapshot = await get(departmentsRef);
-        return departmentsSnapshot.exists() ? departmentsSnapshot.val() : {};
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-        return {};
-      }
-    };
-
     const fetchOverallInventory = async () => {
-      const departmentsData = await fetchDepartments();
+      const departmentsSnapshot = await get(departmentsRef);
+      const departmentsData = departmentsSnapshot.val() || {};
 
       const totalInventory = {};
 
-      // Process each department's supplies under the 'localSupplies' node
-      Object.entries(departmentsData).forEach(
-        ([departmentKey, departmentValue]) => {
-          const departmentSupplies = departmentValue.localSupplies || {}; // Ensure you're targeting the correct supplies node within departments
+      Object.entries(departmentsData).forEach(([departmentKey, departmentValue]) => {
+        const departmentSupplies = departmentValue.localSupplies || {};
 
-          Object.entries(departmentSupplies).forEach(([key, value]) => {
-            const itemName = value.itemName;
-            const maxQuantity = value.maxQuantity || value.quantity; // Default to quantity if maxQuantity is not provided
+        Object.entries(departmentSupplies).forEach(([key, value]) => {
+          const itemName = value.itemName;
+          const maxQuantity = value.maxQuantity || value.quantity;
 
-            if (totalInventory[itemName]) {
-              // If the item exists, add the department's quantity
-              totalInventory[itemName].totalQuantity += value.quantity || 0;
-            } else {
-              // Create a new entry for the item
-              totalInventory[itemName] = {
-                itemName: itemName,
-                totalQuantity: value.quantity || 0,
-                maxQuantity: maxQuantity,
-                status: calculateStatus(value.quantity || 0, maxQuantity), // Calculate the status
-              };
-            }
-          });
-        }
-      );
+          if (totalInventory[itemName]) {
+            totalInventory[itemName].totalQuantity += value.quantity || 0;
+          } else {
+            totalInventory[itemName] = {
+              itemName: itemName,
+              totalQuantity: value.quantity || 0,
+              maxQuantity: maxQuantity,
+              status: calculateStatus(value.quantity || 0, maxQuantity),
+            };
+          }
+        });
+      });
 
       setOverallInventory(totalInventory);
     };
 
     fetchOverallInventory();
-    const unsubscribeDepartments = onValue(departmentsRef, fetchOverallInventory);
+    const unsubscribeDepartments = onValue(ref(database, "departments"), fetchOverallInventory);
 
-    return () => {
-      unsubscribeDepartments();
-    };
+    return () => unsubscribeDepartments();
   }, []);
 
-  // Filter the inventory based on the search term
   const filteredInventory = Object.entries(overallInventory).filter(
-    ([key, item]) =>
-      item.itemName &&
-      item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+    ([, item]) => item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -84,6 +67,7 @@ const OverAllSupply = () => {
             <th className="px-6 py-3">Item Name</th>
             <th className="px-6 py-3">Total Quantity</th>
             <th className="px-6 py-3">Status</th>
+            <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -93,17 +77,31 @@ const OverAllSupply = () => {
                 <td className="px-6 py-3">{item.itemName}</td>
                 <td className="px-6 py-3">{item.totalQuantity}</td>
                 <td className="px-6 py-3">{item.status}</td>
+                <td className="px-6 py-3">
+                  <button
+                    onClick={() => setSelectedItem(itemName)} // Set selected item
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                  >
+                    View
+                  </button>
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="3" className="px-6 py-3">
-                No supplies found.
-              </td>
+              <td colSpan="4" className="px-6 py-3">No supplies found.</td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Render DepartmentBreakdown if an item is selected */}
+      {selectedItem && (
+        <DepartmentBreakdown
+          itemName={selectedItem}
+          onClose={() => setSelectedItem(null)} // Close breakdown on request
+        />
+      )}
     </div>
   );
 };
