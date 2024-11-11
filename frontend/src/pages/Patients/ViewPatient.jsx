@@ -1,18 +1,22 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Import useNavigate
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ref, onValue, push, set, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import DeleteConfirmationModal from "./DeleteConfirmationModalPrescription"; // Import the modal
+import DeleteConfirmationModal from "./DeleteConfirmationModalPrescription";
 import { generatePDF } from "./GeneratePDF";
+import MedicineTable from "./MedicineTable"; // Import MedicineTable
+import SupplyTable from "./SupplyTable"; // Import SupplyTable
+
 function ViewPatient() {
-  const { id } = useParams(); // Use 'id' as specified in the route "/patients/:id"
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [patient, setPatient] = useState(null);
+  const [activeTab, setActiveTab] = useState("supplies"); // State for active tab
   const [addPrescription, setAddPrescription] = useState(false);
   const [prescriptionName, setPrescriptionName] = useState("");
   const [dosage, setDosage] = useState("");
   const [instruction, setInstruction] = useState("");
-  const [editingId, setEditingId] = useState(null); // To track the prescription being edited
+  const [editingId, setEditingId] = useState(null);
   const [prescriptionList, setPrescriptionList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -23,17 +27,8 @@ function ViewPatient() {
     instruction: "",
   });
 
-  const [removeModalOpen, setRemoveModalOpen] = useState(false); // State to control modal visibility
-  const [prescriptionToRemove, setPrescriptionToRemove] = useState(null); // State to store the prescription to remove
-
-  // Fetch patient data when the component loads
-  const handleGeneratePDF = () => {
-    setTimeout(() => {
-      if (patient) {
-        generatePDF(patient);
-      }
-    }, 100);
-  };
+  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [prescriptionToRemove, setPrescriptionToRemove] = useState(null);
 
   // Fetch patient data and prescriptions when the component loads
   useEffect(() => {
@@ -52,13 +47,13 @@ function ViewPatient() {
               : []
           );
         } else {
-          setPatient(null); // If no patient data, handle it
+          setPatient(null);
         }
-        setLoading(false); // Update loading state after fetching data
+        setLoading(false);
       });
 
       return () => {
-        unsubscribe(); // Clean up the listener
+        unsubscribe();
       };
     }
   }, [id]);
@@ -72,7 +67,7 @@ function ViewPatient() {
     setPrescriptionName("");
     setDosage("");
     setInstruction("");
-    setEditingId(null); // Reset the editing mode
+    setEditingId(null);
   };
 
   const handleSubmit = async () => {
@@ -101,7 +96,6 @@ function ViewPatient() {
 
     try {
       if (editingId) {
-        // If editing, update the existing prescription
         const updateRef = ref(
           database,
           `patient/${id}/prescriptions/${editingId}`
@@ -109,20 +103,17 @@ function ViewPatient() {
         await update(updateRef, patientPrescription);
         setConfirmationMessage("Prescription updated successfully.");
       } else {
-        // If adding a new prescription
         const newPrescriptionRef = push(prescriptionRef);
         await set(newPrescriptionRef, patientPrescription);
         setConfirmationMessage("Prescription added successfully.");
       }
 
-      // Clear form fields and reset editing mode
       setPrescriptionName("");
       setDosage("");
       setInstruction("");
       setAddPrescription(false);
       setEditingId(null);
 
-      // Fetch updated list of prescriptions
       const updatedPrescriptions = await new Promise((resolve) => {
         onValue(prescriptionRef, (snapshot) => {
           const prescriptions = snapshot.val() || {};
@@ -144,7 +135,6 @@ function ViewPatient() {
   };
 
   const handleRemovePrescriptionClick = (prescriptionId) => {
-    // Set the prescription to remove and open the modal
     setPrescriptionToRemove(prescriptionId);
     setRemoveModalOpen(true);
   };
@@ -164,7 +154,6 @@ function ViewPatient() {
     } catch (error) {
       alert("Error removing prescription: ", error);
     } finally {
-      // Close the modal
       setRemoveModalOpen(false);
     }
   };
@@ -173,100 +162,21 @@ function ViewPatient() {
     setPrescriptionName(prescription.prescriptionName);
     setDosage(prescription.dosage);
     setInstruction(prescription.instruction);
-    setEditingId(prescription.id); // Track the prescription being edited
-    setAddPrescription(true); // Show the form in edit mode
+    setEditingId(prescription.id);
+    setAddPrescription(true);
   };
 
-  // Render the list of prescriptions
-  const renderPrescriptions = () => {
-    return prescriptionList.map((prescription) => (
-      <div
-        key={prescription.id}
-        className="border border-gray-300 p-4 mb-4 rounded"
-      >
-        <div>
-          <span className="font-bold">Prescription Name:</span>{" "}
-          {prescription.prescriptionName}
-        </div>
-        <div>
-          <span className="font-bold">Dosage:</span> {prescription.dosage}
-        </div>
-        <div>
-          <span className="font-bold">Instruction:</span>{" "}
-          {prescription.instruction}
-        </div>
-        <div>
-          <span className="font-bold">Timestamp:</span>{" "}
-          {prescription.createdAt}
-        </div>
-        <div className="mt-2 flex gap-2">
-          <button
-            onClick={() => handleEditPrescriptionClick(prescription)}
-            className="bg-yellow-500 text-white py-1 px-2 rounded"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleRemovePrescriptionClick(prescription.id)}
-            className="bg-red-500 text-white py-1 px-2 rounded"
-          >
-            Remove
-          </button>
-        </div>
-      </div>
-    ));
-  };
-
-  const renderMedUse = () => {
-    if (!patient || !patient.medUse) {
-      return <div>No medicines used yet.</div>;
-    }
-
-    return Object.entries(patient.medUse).map(([key, med]) => (
-      <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
-        <div className="">
-          <span className="font-bold">Medicine Name:</span>
-          <span className="ml-2">{med.name}</span>
-        </div>
-        <div className="">
-          <span className="font-bold">Quantity:</span>
-          <span className="ml-2">{med.quantity}</span>
-        </div>
-      </div>
-    ));
-  };
-
-  // Render supplies used by the patient
-  const renderSuppliesUsed = () => {
-    if (!patient || !patient.suppliesUsed) {
-      return <div>No supplies used yet.</div>;
-    }
-
-    return Object.entries(patient.suppliesUsed).map(([key, supp]) => (
-      <div key={key} className="border border-gray-300 p-4 mb-4 rounded">
-        <div className="">
-          <span className="font-bold">Supply Name:</span>
-          <span className="ml-2">{supp.name}</span>
-        </div>
-        <div className="">
-          <span className="font-bold">Quantity:</span>
-          <span className="ml-2">{supp.quantity}</span>
-        </div>
-      </div>
-    ));
-  };
-
-  // Show a loading state until data is fetched
   if (loading) return <div>Loading...</div>;
-
   if (!patient) return <div>Patient not found</div>;
+
+  const medicines = patient.medUse ? Object.values(patient.medUse) : [];
+  const supplies = patient.suppliesUsed ? Object.values(patient.suppliesUsed) : [];
 
   return (
     <div className="container mx-auto p-6">
-      {/* Back Button */}
       <button
         className="mb-4 bg-gray-500 text-white py-2 px-4 rounded"
-        onClick={() => navigate("/patients")} // Navigate back to the patients list
+        onClick={() => navigate("/patients")}
       >
         Back to Patients List
       </button>
@@ -300,23 +210,85 @@ function ViewPatient() {
         ) : null}
       </div>
 
-      {/* Render supplies used */}
+      {/* Tabs for Supplies Used and Medicines Used */}
       <div className="mb-4">
-        <strong>Supplies Used:</strong>
-        {renderSuppliesUsed()}
+        <div className="flex">
+          <button
+            className={`py-2 px-4 ${
+              activeTab === "supplies"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
+            } rounded-tl rounded-tr`}
+            onClick={() => setActiveTab("supplies")}
+          >
+            Supplies Used
+          </button>
+          <button
+            className={`py-2 px-4 ${
+              activeTab === "medicines"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
+            } rounded-tl rounded-tr`}
+            onClick={() => setActiveTab("medicines")}
+          >
+            Medicines Used
+          </button>
+        </div>
+
+        <div className="border-t border-gray-300 p-4">
+          {activeTab === "supplies" ? (
+            supplies.length > 0 ? (
+              <SupplyTable supplies={supplies} />
+            ) : (
+              <div>No supplies used yet.</div>
+            )
+          ) : medicines.length > 0 ? (
+            <MedicineTable medicines={medicines} />
+          ) : (
+            <div>No medicines used yet.</div>
+          )}
+        </div>
       </div>
 
-      {/* Render medicines used */}
-      <div className="mb-4">
-        <strong>Medicines Used:</strong>
-        {renderMedUse()}
-      </div>
-
-      {/* Render prescriptions only if the patient is Outpatient */}
       {patient.status === "Outpatient" && prescriptionList.length > 0 && (
         <div className="mb-4">
           <strong>Prescriptions:</strong>
-          {renderPrescriptions()}
+          {prescriptionList.map((prescription) => (
+            <div
+              key={prescription.id}
+              className="border border-gray-300 p-4 mb-4 rounded"
+            >
+              <div>
+                <span className="font-bold">Prescription Name:</span>{" "}
+                {prescription.prescriptionName}
+              </div>
+              <div>
+                <span className="font-bold">Dosage:</span> {prescription.dosage}
+              </div>
+              <div>
+                <span className="font-bold">Instruction:</span>{" "}
+                {prescription.instruction}
+              </div>
+              <div>
+                <span className="font-bold">Timestamp:</span>{" "}
+                {prescription.createdAt}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => handleEditPrescriptionClick(prescription)}
+                  className="bg-yellow-500 text-white py-1 px-2 rounded"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleRemovePrescriptionClick(prescription.id)}
+                  className="bg-red-500 text-white py-1 px-2 rounded"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -368,7 +340,6 @@ function ViewPatient() {
               <span className="text-red-500 text-sm">{errors.instruction}</span>
             )}
           </div>
-          
 
           <div className="flex justify-between mt-4">
             <button
@@ -399,12 +370,11 @@ function ViewPatient() {
 
       <button
         className="bg-gray-500 text-white py-2 px-4 rounded"
-        onClick={handleGeneratePDF}
+        onClick={() => generatePDF(patient)}
       >
-        {" "}
         Generate PDF
       </button>
-      {/* Confirmation Modal for Removing Prescriptions */}
+
       <DeleteConfirmationModal
         isOpen={removeModalOpen}
         onClose={() => setRemoveModalOpen(false)}
