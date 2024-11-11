@@ -193,6 +193,9 @@ const Transfer = () => {
     return <AccessDenied />;
   }
 
+  
+  
+
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -207,7 +210,7 @@ const Transfer = () => {
       </div>
 
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Name:</label>
+        <label className="block font-semibold mb-1">Transfer from</label>
         <input
           type="text"
           name="name"
@@ -215,7 +218,7 @@ const Transfer = () => {
           readOnly
           className="border p-2 w-full rounded"
         />
-        <p className="text-gray-500 text-sm">The one who processes.</p>
+        
       </div>
 
       <div className="mb-4">
@@ -245,7 +248,7 @@ const Transfer = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block font-semibold mb-1">Reason for Transfer</label>
+          <label className="block font-semibold mb-1">Reason for transfer</label>
           <textarea
             name="reason"
             value={formData.reason}

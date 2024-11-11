@@ -6,7 +6,6 @@ const AddBill = ({ onClose }) => {
   const [patientList, setPatientList] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState("");
   const [billingAmount, setBillingAmount] = useState(0);
-  const [billingStatus, setBillingStatus] = useState("");
   const [selectedPatientName, setSelectedPatientName] = useState("");
   const [medsUsed, setMedsUsed] = useState([]);
   const [suppliesUsed, setSuppliesUsed] = useState([]);
@@ -34,56 +33,55 @@ const AddBill = ({ onClose }) => {
   useEffect(() => {
     const fetchBillingItems = async () => {
       if (!selectedPatient) return;
-
+  
       const patientRef = ref(database, `patient/${selectedPatient}`);
       try {
         const snapshot = await get(patientRef);
         let totalAmount = 0;
         let meds = [];
         let supplies = [];
-
+  
         if (snapshot.exists()) {
           const data = snapshot.val();
-
-          // Set the patient's name
           setSelectedPatientName(data.name || "");
-
+  
           // Calculate total from medUse
-          if (data.medUse) {
+          if (data.medUse && typeof data.medUse === "object") {
             Object.keys(data.medUse).forEach((key) => {
               const medicine = data.medUse[key];
               const quantity = medicine.quantity || 0;
               const retailPrice = medicine.retailPrice || 0;
               totalAmount += quantity * retailPrice;
-
+  
               meds.push({
-                id: push().key, // Generate unique key
+                id: push(ref(database, "temp")).key, // Use a temporary ref to generate a unique key
                 name: medicine.name || "Unknown Medicine",
                 quantity,
                 retailPrice,
               });
             });
           }
-
+  
           // Calculate total from suppliesUsed
-          if (data.suppliesUsed) {
+          if (data.suppliesUsed && typeof data.suppliesUsed === "object") {
             Object.keys(data.suppliesUsed).forEach((key) => {
               const supply = data.suppliesUsed[key];
               const quantity = supply.quantity || 0;
               const retailPrice = supply.retailPrice || 0;
               totalAmount += quantity * retailPrice;
-
+  
               supplies.push({
-                id: push().key, // Generate unique key
+                id: push(ref(database, "temp")).key, // Use a temporary ref to generate a unique key
                 name: supply.name || "Unknown Supply",
                 quantity,
                 retailPrice,
               });
             });
           }
-
+  
           // Set the total billing amount and items used
           setBillingAmount(totalAmount);
+          console.log("Total Billing Amount:", totalAmount);
           setMedsUsed(meds);
           setSuppliesUsed(supplies);
         } else {
@@ -93,18 +91,14 @@ const AddBill = ({ onClose }) => {
         console.error("Error fetching billing items: ", error);
       }
     };
-
+  
     fetchBillingItems();
   }, [selectedPatient]);
+  
 
   // Handle patient selection
   const handlePatientChange = (e) => {
     setSelectedPatient(e.target.value);
-  };
-
-  // Handle billing status change
-  const handleBillingStatusChange = (e) => {
-    setBillingStatus(e.target.value);
   };
 
   // Submit the bill for the selected patient
@@ -112,7 +106,7 @@ const AddBill = ({ onClose }) => {
     e.preventDefault();
 
     if (!selectedPatient || !billingStatus) {
-      alert("Please select a patient, ensure a valid billing amount, and choose a billing status.");
+      alert("Please select a patient, and choose a billing status.");
       return;
     }
 
@@ -120,7 +114,7 @@ const AddBill = ({ onClose }) => {
 
     const billingData = {
       amount: billingAmount,
-      status: billingStatus,
+      status: "unpaid", // Automatically set status to "unpaid"
       patientName: selectedPatientName,
       medsUsed: medsUsed.map((med) => ({
         id: med.id, // Unique key
@@ -139,7 +133,7 @@ const AddBill = ({ onClose }) => {
     // Update billing data in Firebase
     await update(billingRef, billingData);
 
-    alert(`Bill of ₱${billingAmount.toFixed(2)} with status "${billingStatus}" added for patient: ${selectedPatientName}`);
+    alert(`Bill of ₱${billingAmount.toFixed(2)} added for patient: ${selectedPatientName} with status "unpaid"`);
     
     // Close modal after successful submission
     onClose();
@@ -161,20 +155,6 @@ const AddBill = ({ onClose }) => {
             {patientList.map((patient) => (
               <option key={patient.id} value={patient.id}>{patient.firstName}</option>
             ))}
-          </select>
-        </div>
-
-        <div className="mt-4">
-          <label htmlFor="status" className="block text-gray-700 mb-2">Status</label>
-          <select
-            id="status"
-            value={billingStatus}
-            onChange={handleBillingStatusChange}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-          >
-            <option value="">Select Status</option>
-            <option value="Unpaid">Unpaid</option>
-            <option value="Paid">Paid</option>
           </select>
         </div>
 

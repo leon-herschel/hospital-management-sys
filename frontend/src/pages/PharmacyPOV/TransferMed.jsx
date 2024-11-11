@@ -6,7 +6,7 @@ import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAuth } from "../../context/authContext/authContext";
 
 const TransferMed = () => {
-  const { department } = useAuth(); 
+  const { department } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     department: 'Pharmacy',
@@ -56,25 +56,25 @@ const TransferMed = () => {
       });
   }, []);
 
-  
-// Real-time update of medicine supplies using onValue
-useEffect(() => {
-  const medicineRef = ref(database, 'departments/Pharmacy/localMeds');
-  
-  // Real-time listener
-  const unsubscribe = onValue(medicineRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const medicines = Object.entries(snapshot.val())
-        .map(([key, value]) => ({
-          ...value,
-          itemKey: key,
-        }));
-      setItems(medicines);  // Update state with real-time data
-    }
-  });
 
-  return () => unsubscribe();  // Cleanup listener on unmount
-}, []);
+  // Real-time update of medicine supplies using onValue
+  useEffect(() => {
+    const medicineRef = ref(database, 'departments/Pharmacy/localMeds');
+
+    // Real-time listener
+    const unsubscribe = onValue(medicineRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const medicines = Object.entries(snapshot.val())
+          .map(([key, value]) => ({
+            ...value,
+            itemKey: key,
+          }));
+        setItems(medicines);  // Update state with real-time data
+      }
+    });
+
+    return () => unsubscribe();  // Cleanup listener on unmount
+  }, []);
 
 
   const handleInputChange = (e) => {
@@ -136,36 +136,36 @@ useEffect(() => {
       alert('Please select items to transfer.');
       return;
     }
-  
+
     setSubmitting(true);
-  
+
     const transferData = {
       name: formData.name,
       reason: formData.reason,
       timestamp: formData.timestamp,
       recipientDepartment: formData.department, // Ensure recipientDepartment is included
     };
-  
+
     for (const item of selectedItems) {
       const departmentPath = `departments/${formData.department}/localMeds/${item.itemKey}`;
-      
+
       // Fetch the existing quantity in the local supplies
       const localSupplySnapshot = await get(ref(database, departmentPath));
       let newQuantity = item.quantity;
-  
+
       if (localSupplySnapshot.exists()) {
         // Add to the existing quantity if the item already exists
         const existingData = localSupplySnapshot.val();
         newQuantity += existingData.quantity;
       }
-  
+
       // Update the local supplies with the new quantity without including recipientDepartment and reason
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
         timestamp: formData.timestamp, // Timestamp remains here
       });
-  
+
       // Ensure each transfer is added as a new entry in InventoryTransferHistory
       const historyPath = `medicineTransferHistory`;
       const newHistoryRef = push(ref(database, historyPath)); // Use push to generate a unique key
@@ -178,26 +178,27 @@ useEffect(() => {
         reason: formData.reason, // Include reason in the history
       });
   
+
       // Update the main inventory (deduct quantity)
-const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${item.itemKey}`);
-const mainInventorySnapshot = await get(mainInventoryRef);
+      const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${item.itemKey}`);
+      const mainInventorySnapshot = await get(mainInventoryRef);
 
-if (mainInventorySnapshot.exists()) {
-  const currentData = mainInventorySnapshot.val();
-  const updatedQuantity = currentData.quantity - item.quantity;
+      if (mainInventorySnapshot.exists()) {
+        const currentData = mainInventorySnapshot.val();
+        const updatedQuantity = currentData.quantity - item.quantity;
 
-  if (updatedQuantity < 0) {
-    console.error(`Not enough stock in Pharmacy for item: ${item.itemName}`);
-  } else {
-    // Update the quantity of the item in Pharmacy
-    await update(mainInventoryRef, { quantity: updatedQuantity });
-  }
-} else {
-  console.error(`Item ${item.itemName} does not exist in Pharmacy's inventory.`);
-}
+        if (updatedQuantity < 0) {
+          console.error(`Not enough stock in Pharmacy for item: ${item.itemName}`);
+        } else {
+          // Update the quantity of the item in Pharmacy
+          await update(mainInventoryRef, { quantity: updatedQuantity });
+        }
+      } else {
+        console.error(`Item ${item.itemName} does not exist in Pharmacy's inventory.`);
+      }
 
     }
-  
+
     alert('Transfer successful!');
     setFormData({ ...formData, reason: '' });
     setSelectedItems([]);
@@ -207,7 +208,7 @@ if (mainInventorySnapshot.exists()) {
   if (department !== "Pharmacy" && department !== "Admin") {
     return <AccessDenied />;
   }
-  
+
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -223,7 +224,7 @@ if (mainInventorySnapshot.exists()) {
 
       {/* Name Input */}
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Name:</label>
+        <label className="block font-semibold mb-1">Transfer from</label>
         <input
           type="text"
           name="name"
@@ -231,7 +232,6 @@ if (mainInventorySnapshot.exists()) {
           readOnly
           className="border p-2 w-full rounded"
         />
-        <p className="text-gray-500 text-sm">The one who processes.</p>
       </div>
 
       {/* Timestamp Display */}
@@ -264,7 +264,7 @@ if (mainInventorySnapshot.exists()) {
 
         {/* Reason Input */}
         <div className="mb-4">
-          <label className="block font-semibold mb-1">Reason:</label>
+          <label className="block font-semibold mb-1">Reason for transfer</label>
           <textarea
             name="reason"
             value={formData.reason}

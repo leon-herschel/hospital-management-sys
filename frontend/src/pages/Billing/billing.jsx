@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ref, onValue, remove } from 'firebase/database';
+import { ref, onValue, remove, update, query, orderByChild, equalTo } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ViewBill from './ViewBill';
 import DeleteConfirmationModal from './DeleteConfirmationModalBilling';
 import AddBill from './AddBill';
+import DateRangePicker from '../../components/DateRangePicker/DateRangePicker'; // Import DateRangePicker
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
@@ -13,11 +14,13 @@ const Billing = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [billingToDelete, setBillingToDelete] = useState(null);
+  const [startDate, setStartDate] = useState(null); // State for start date
+  const [endDate, setEndDate] = useState(null);     // State for end date
 
   // Fetch billings from Firebase and listen for updates
   useEffect(() => {
-    const billingsRef = ref(database, 'billing');
-    
+    const billingsRef = query(ref(database, "billing"), orderByChild('status'), equalTo('unpaid'));
+
     const unsubscribe = onValue(billingsRef, (snapshot) => {
       const billingList = [];
       if (snapshot.exists()) {
@@ -34,11 +37,22 @@ const Billing = () => {
     return () => unsubscribe();
   }, []);
 
-  // Filter billings based on search term
-  const filteredBillings = billings.filter(billing =>
-    billing.patientName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter billings based on search term and date range
+  const filteredBillings = billings.filter((billing) => {
+    const billingDate = new Date(billing.timestamp); // Assuming the billing has a timestamp field
 
+    // Filter by date range
+    const withinDateRange =
+      (!startDate || billingDate >= startDate) &&
+      (!endDate || billingDate <= endDate);
+
+    // Filter by search term
+    const matchesSearchTerm = billing.patientName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return withinDateRange && matchesSearchTerm;
+  });
+
+  // Handle deleting a billing
   const handleDeleteBilling = async () => {
     if (billingToDelete) {
       try {
@@ -53,9 +67,21 @@ const Billing = () => {
     }
   };
 
+  // Open delete confirmation modal
   const openDeleteModal = (billing) => {
     setBillingToDelete(billing);
     setIsDeleteModalOpen(true);
+  };
+
+  // Handle marking a billing as paid
+  const handleMarkAsPaid = async (billing) => {
+    try {
+      const billingRef = ref(database, `billing/${billing.id}`);
+      await update(billingRef, { status: 'paid' });
+      setBillings(billings.filter((b) => b.id !== billing.id)); // Remove from list once marked as paid
+    } catch (error) {
+      alert('Error updating billing status: ' + error.message);
+    }
   };
 
   const handleCloseAddBillModal = () => {
@@ -93,6 +119,16 @@ const Billing = () => {
         </button>
       </div>
 
+      {/* Date Range Picker */}
+      <div className="flex justify-between items-center mb-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+        />
+      </div>
+
       <table className="min-w-full border-collapse border border-gray-300 bg-white">
         <thead>
           <tr className="bg-gray-200">
@@ -111,6 +147,7 @@ const Billing = () => {
                 <td className="border-b px-4 py-2">{billing.status}</td>
                 <td className="border-b px-4 py-2">
                   <button onClick={() => handleViewBilling(billing)} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md">View</button>
+                  <button onClick={() => handleMarkAsPaid(billing)} className="ml-4 bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-md">Mark as Paid</button>
                   <button onClick={() => openDeleteModal(billing)} className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md">Delete</button>
                 </td>
               </tr>
