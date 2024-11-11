@@ -38,16 +38,22 @@ const TransferMed = () => {
 
   // Fetch department data from Firebase
   useEffect(() => {
-    departmentRef.current = ref(database, 'departments');
-    get(departmentRef.current)
-      .then(snapshot => {
+    const departmentRef = ref(database, "departments");
+    get(departmentRef)
+      .then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const departmentNames = Object.keys(data);
+          const departmentNames = Object.keys(data).filter(
+            (dept) => dept === "COVID UNIT" || dept === "ER" || dept === "ICU"
+          ); // Filter for CSR and Pharmacy
           setDepartments(departmentNames);
+        } else {
+          console.log("No data available");
         }
       })
-      .catch(error => console.error('Error fetching departments:', error));
+      .catch((error) => {
+        console.error("Error fetching departments:", error);
+      });
   }, []);
 
   
