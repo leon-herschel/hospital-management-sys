@@ -251,13 +251,13 @@ function Inventory() {
     selectedTab === "medicine"
       ? inventoryList.filter(
           (medicine) =>
-            medicine.itemName &&
-            medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+            medicine.genericName &&
+            medicine.genericName.toLowerCase().includes(searchTerm.toLowerCase())
         )
       : suppliesList.filter(
           (supply) =>
-            supply.itemName &&
-            supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+            supply.genericName &&
+            supply.genericName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
   if (!permissions?.accessInventory) {
@@ -317,12 +317,20 @@ function Inventory() {
             <table className="w-full text-md text-gray-900 text-center border border-slate-200">
               <thead className="text-md bg-slate-200">
                 <tr>
-                  <th className="px-6 py-3">Medicine Name</th>
-                  <th className="px-6 py-3">Quantity</th>
-                  <th className="px-6 py-3">Brand</th>
-                  <th className="px-6 py-3">Cost Price (₱)</th>
-                  <th className="px-6 py-3">Retail Price (₱)</th>
-                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Short Description</th>
+                  <th className="px-6 py-3">Standard Description</th>
+                  <th className="px-6 py-3">Custom Description</th>
+                  <th className="px-6 py-3">Generic Name</th>
+                  <th className="px-6 py-3">Specificications</th>
+                  <th className="px-6 py-3">Item Group</th>
+                  <th className="px-6 py-3">Item Category</th>
+                  <th className="px-6 py-3">Examination Type</th>
+                  <th className="px-6 py-3">NHIP Category</th>
+                  <th className="px-6 py-3">Drug Admin Group</th>
+                  <th className="px-6 py-3">Small Unit</th>
+                  <th className="px-6 py-3">Conversion</th>
+                  <th className="px-6 py-3">Big Unit</th>
+                  <th className="px-6 py-3">Expiry Date</th>
                   <th className="px-6 py-3">QR Code</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
@@ -334,22 +342,20 @@ function Inventory() {
                       key={item.id}
                       className="bg-white border-b hover:bg-slate-100"
                     >
-                      <td className="px-6 py-3">{item.itemName}</td>
-                      <td className="px-6 py-3">{item.quantity}</td>
-                      <td className="px-6 py-3">{item.brand}</td>
-                      <td className="px-6 py-3">
-                        {(item.costPrice !== undefined
-                          ? item.costPrice
-                          : 0
-                        ).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-3">
-                        {(item.retailPrice !== undefined
-                          ? item.retailPrice
-                          : 0
-                        ).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-3">{item.status}</td>
+                      <td className="px-6 py-3">{item.shortDesc}</td>
+                      <td className="px-6 py-3">{item.standardDesc}</td>
+                      <td className="px-6 py-3">{item.customDesc}</td>
+                      <td className="px-6 py-3">{item.genericName}</td>
+                      <td className="px-6 py-3">{item.specifications}</td>
+                      <td className="px-6 py-3">{item.itemGroup}</td>
+                      <td className="px-6 py-3">{item.itemCategory}</td>
+                      <td className="px-6 py-3">{item.examinationType}</td>
+                      <td className="px-6 py-3">{item.nhipCategory}</td>
+                      <td className="px-6 py-3">{item.drugAdminGroup}</td>
+                      <td className="px-6 py-3">{item.smallUnit}</td>
+                      <td className="px-6 py-3">{item.conversion}</td>
+                      <td className="px-6 py-3">{item.bigUnit}</td>
+                      <td className="px-6 py-3">{item.expiryDate}</td>
                       <td className="px-6 py-3 flex justify-center items-center">
                         <QRCode size={50} value={item.id} />
                       </td>
