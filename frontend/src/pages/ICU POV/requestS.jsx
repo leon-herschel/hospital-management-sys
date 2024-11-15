@@ -126,10 +126,15 @@ const RequestS = () => {
   
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
+    // Check if the item is already in the selectedItems array
+    if (selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
+      alert("This item has already been selected."); // Show an alert
+      return; // Exit the function
     }
+    // Add the new item if not already selected
+    setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
   };
+  
 
   const removeItem = (itemToRemove) => {
     setSelectedItems(
