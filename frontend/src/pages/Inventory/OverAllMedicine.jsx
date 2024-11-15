@@ -24,17 +24,22 @@ const OverAllMedicine = () => {
             const departmentsData = snapshot.val();
             if (departmentsData) {
               const totalMeds = {};
-
+  
+              // Iterate over each department
               for (const department of Object.keys(departmentsData)) {
-                const localMedsRef = ref(database, `departments/${department}/localMeds`);
+                const localMedsRef = ref(
+                  database,
+                  `departments/${department}/localMeds`
+                );
                 const medsSnapshot = await get(localMedsRef);
                 const localMedsData = medsSnapshot.val();
-
+  
                 if (localMedsData) {
+                  // Aggregate medicines by itemName
                   Object.entries(localMedsData).forEach(([key, value]) => {
                     const genericName = value.genericName;
                     const maxQuantity = value.maxQuantity || value.quantity;
-
+  
                     if (totalMeds[genericName]) {
                       totalMeds[genericName].quantity += value.quantity || 0;
                     } else {
@@ -78,9 +83,10 @@ const OverAllMedicine = () => {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, []);
+  
 
   if (loading) {
     return <div>Loading...</div>;
@@ -117,21 +123,22 @@ const OverAllMedicine = () => {
       <table className="w-full text-md text-gray-900 text-center border border-slate-200">
         <thead className="text-md bg-slate-200">
           <tr>
-            <th className="px-6 py-3">Short Description</th>
-            <th className="px-6 py-3">Standard Description</th>
-            <th className="px-6 py-3">Custom Description</th>
-            <th className="px-6 py-3">Generic Name</th>
-            <th className="px-6 py-3">Specifications</th>
-            <th className="px-6 py-3">Item Group</th>
-            <th className="px-6 py-3">Item Category</th>
-            <th className="px-6 py-3">Examination Type</th>
-            <th className="px-6 py-3">NHIP Category</th>
-            <th className="px-6 py-3">Drug Admin Group</th>
-            <th className="px-6 py-3">Small Unit</th>
-            <th className="px-6 py-3">Conversion</th>
-            <th className="px-6 py-3">Big Unit</th>
-            <th className="px-6 py-3">Expiry Date</th>
-            <th className="px-6 py-3">Status</th>
+          <th className="px-6 py-3">Short Description</th>
+                  <th className="px-6 py-3">Standard Description</th>
+                  <th className="px-6 py-3">Custom Description</th>
+                  <th className="px-6 py-3">Generic Name</th>
+                  <th className="px-6 py-3">Specificications</th>
+                  <th className="px-6 py-3">Item Group</th>
+                  <th className="px-6 py-3">Item Category</th>
+                  <th className="px-6 py-3">Examination Type</th>
+                  <th className="px-6 py-3">NHIP Category</th>
+                  <th className="px-6 py-3">Drug Admin Group</th>
+                  <th className="px-6 py-3">Small Unit</th>
+                  <th className="px-6 py-3">Conversion</th>
+                  <th className="px-6 py-3">Big Unit</th>
+                  <th className="px-6 py-3">Expiry Date</th>
+                  <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3"> Status</th>
             <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
@@ -139,24 +146,25 @@ const OverAllMedicine = () => {
           {currentItems.length > 0 ? (
             currentItems.map((medicine) => (
               <tr key={medicine.id} className="bg-white border-b hover:bg-slate-100">
-                <td className="px-6 py-3">{medicine.shortDesc}</td>
-                <td className="px-6 py-3">{medicine.standardDesc}</td>
-                <td className="px-6 py-3">{medicine.customDesc}</td>
-                <td className="px-6 py-3">{medicine.genericName}</td>
-                <td className="px-6 py-3">{medicine.specifications}</td>
-                <td className="px-6 py-3">{medicine.itemGroup}</td>
-                <td className="px-6 py-3">{medicine.itemCategory}</td>
-                <td className="px-6 py-3">{medicine.examinationType}</td>
-                <td className="px-6 py-3">{medicine.nhipCategory}</td>
-                <td className="px-6 py-3">{medicine.drugAdminGroup}</td>
-                <td className="px-6 py-3">{medicine.smallUnit}</td>
-                <td className="px-6 py-3">{medicine.conversion}</td>
-                <td className="px-6 py-3">{medicine.bigUnit}</td>
-                <td className="px-6 py-3">{medicine.expiryDate}</td>
-                <td className="px-6 py-3">{medicine.status}</td>
+               <td className="px-6 py-3">{medicine.shortDesc}</td>
+                      <td className="px-6 py-3">{medicine.standardDesc}</td>
+                      <td className="px-6 py-3">{medicine.customDesc}</td>
+                      <td className="px-6 py-3">{medicine.genericName}</td>
+                      <td className="px-6 py-3">{medicine.specifications}</td>
+                      <td className="px-6 py-3">{medicine.itemGroup}</td>
+                      <td className="px-6 py-3">{medicine.itemCategory}</td>
+                      <td className="px-6 py-3">{medicine.examinationType}</td>
+                      <td className="px-6 py-3">{medicine.nhipCategory}</td>
+                      <td className="px-6 py-3">{medicine.drugAdminGroup}</td>
+                      <td className="px-6 py-3">{medicine.smallUnit}</td>
+                      <td className="px-6 py-3">{medicine.conversion}</td>
+                      <td className="px-6 py-3">{medicine.bigUnit}</td>
+                      <td className="px-6 py-3">{medicine.expiryDate}</td>
+                      <td className="px-6 py-3">{medicine.quantity}</td>
+                      <td className="px-6 py-3">{medicine.status}</td>
                 <td className="px-6 py-3">
                   <button
-                    onClick={() => setSelectedItem(medicine.genericName)}
+                    onClick={() => setSelectedItem(medicine.genericName)} // Open modal for selected item
                     className="bg-blue-500 text-white px-4 py-2 rounded-md"
                   >
                     View
@@ -166,7 +174,7 @@ const OverAllMedicine = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="16" className="px-6 py-3">
+              <td colSpan="15" className="px-6 py-3">
                 No medicines found.
               </td>
             </tr>
