@@ -18,7 +18,7 @@ const DepartmentBreakdown = ({ itemName, onClose }) => {
         const meds = deptData.localMeds || {};
 
         const supplyItem = Object.values(supplies).find((item) => item.itemName === itemName);
-        const medItem = Object.values(meds).find((item) => item.itemName === itemName);
+        const medItem = Object.values(meds).find((item) => item.genericName === itemName);
 
         if (supplyItem || medItem) {
           const item = supplyItem || medItem;

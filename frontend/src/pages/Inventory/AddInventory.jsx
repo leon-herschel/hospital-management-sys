@@ -42,6 +42,7 @@ function AddInventory({ isOpen, toggleModal }) {
   const [conversion, setConversion] = useState("");
   const [bigUnit, setBigUnit] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [shortDescError, setShortDescError] = useState(false);
@@ -58,6 +59,7 @@ function AddInventory({ isOpen, toggleModal }) {
   const [conversionError, setConversionError] = useState(false);
   const [bigUnitError, setBigUnitError] = useState(false);
   const [expiryDateError, setExpiryDateError] = useState(false);
+  const [quantityError, setQuantityError] = useState(false);
 
   const handlesubmit = async () => {
     // Reset errors
@@ -75,6 +77,7 @@ function AddInventory({ isOpen, toggleModal }) {
     setConversionError(!conversion);
     setBigUnitError(!bigUnit);
     setExpiryDateError(!expiryDate);
+    setQuantityError(!quantity);
 
     if (
       !shortDesc ||
@@ -90,7 +93,8 @@ function AddInventory({ isOpen, toggleModal }) {
       !smallUnit ||
       !conversion ||
       !bigUnit ||
-      !expiryDate
+      !expiryDate ||
+      !quantity
     ) {
       return;
     }
@@ -122,6 +126,7 @@ function AddInventory({ isOpen, toggleModal }) {
         bigUnit,
         expiryDate,
         //maxQuantity,
+        quantity,
         qrCode: qrCodeDataUrl,
       };
 
@@ -143,6 +148,7 @@ function AddInventory({ isOpen, toggleModal }) {
       setConversion("");
       setBigUnit("");
       setExpiryDate("");
+      setQuantity("");
       toggleModal();
     } catch (error) {
       alert("Error adding inventory: " + error);
@@ -299,6 +305,24 @@ function AddInventory({ isOpen, toggleModal }) {
                 <option value="Female">Female</option>
               </select>
               {itemCategoryError && <p className="text-red-500 mt-1">Required</p>}
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="quantity" className="block text-gray-700 mb-1">
+                Quantity
+              </label>
+              <input
+                type="number"
+                id="quantity"
+                name="quantity"
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  quantityError ? "border-red-500" : "border-gray-300"
+                }`}
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                disabled={loading}
+              />
+              {quantityError && <p className="text-red-500 mt-1">Required</p>}
             </div>
           </div>
 
