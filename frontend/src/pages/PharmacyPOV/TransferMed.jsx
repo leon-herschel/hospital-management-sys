@@ -166,7 +166,7 @@ const TransferMed = () => {
         const historyPath = `medicineTransferHistory`;
         const newHistoryRef = push(ref(database, historyPath));
         await set(newHistoryRef, {
-          itemName: item.itemName,
+          genericName: item.genericName,
           quantity: item.quantity,
           timestamp: formData.timestamp,
           sender: formData.name,
@@ -207,7 +207,7 @@ const TransferMed = () => {
 
   const selectOptions = items.map((item) => ({
     value: item.itemKey,
-    label: `${item.itemName} (Max: ${item.quantity})`,
+    label: `${item.genericName} (Max: ${item.maxQuantity})`,
   }));
 
   return (
@@ -282,7 +282,7 @@ const TransferMed = () => {
         <tbody>
           {selectedItems.map((item) => (
             <tr key={item.itemKey}>
-              <td className="border p-2">{item.itemName} (Max: {item.quantity})</td>
+              <td className="border p-2">{item.genericName} (Max: {item.maxQuantity})</td>
               <td className="border p-2">
                 <input
                   type="number"
