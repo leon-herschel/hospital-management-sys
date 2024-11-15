@@ -12,56 +12,78 @@ const OverAllMedicine = () => {
   const [selectedItem, setSelectedItem] = useState(null); // State to manage selected item for breakdown
 
   useEffect(() => {
-    const departmentsRef = ref(database, "departments");
-    onValue(
-      departmentsRef,
-      async (snapshot) => {
-        const departmentsData = snapshot.val();
-        if (departmentsData) {
-          const totalMeds = {};
-
-          // Iterate over each department
-          for (const department of Object.keys(departmentsData)) {
-            const localMedsRef = ref(
-              database,
-              `departments/${department}/localMeds`
-            );
-            const medsSnapshot = await get(localMedsRef);
-            const localMedsData = medsSnapshot.val();
-
-            if (localMedsData) {
-              // Aggregate medicines by itemName
-              Object.entries(localMedsData).forEach(([key, value]) => {
-                const itemName = value.itemName;
-                const maxQuantity = value.maxQuantity || value.quantity;
-
-                if (totalMeds[itemName]) {
-                  totalMeds[itemName].quantity += value.quantity || 0;
-                } else {
-                  totalMeds[itemName] = {
-                    id: key,
-                    itemName: itemName,
-                    quantity: value.quantity || 0,
-                    maxQuantity: maxQuantity,
-                    status: calculateStatus(value.quantity || 0, maxQuantity),
-                  };
+    const fetchData = async () => {
+      try {
+        const departmentsRef = ref(database, "departments");
+        onValue(
+          departmentsRef,
+          async (snapshot) => {
+            const departmentsData = snapshot.val();
+            if (departmentsData) {
+              const totalMeds = {};
+  
+              // Iterate over each department
+              for (const department of Object.keys(departmentsData)) {
+                const localMedsRef = ref(
+                  database,
+                  `departments/${department}/localMeds`
+                );
+                const medsSnapshot = await get(localMedsRef);
+                const localMedsData = medsSnapshot.val();
+  
+                if (localMedsData) {
+                  // Aggregate medicines by itemName
+                  Object.entries(localMedsData).forEach(([key, value]) => {
+                    const genericName = value.genericName;
+                    const maxQuantity = value.maxQuantity || value.quantity;
+  
+                    if (totalMeds[genericName]) {
+                      totalMeds[genericName].quantity += value.quantity || 0;
+                    } else {
+                      totalMeds[genericName] = {
+                        id: key,
+                        shortDesc: value.shortDesc || "",
+                        standardDesc: value.standardDesc || "",
+                        customDesc: value.customDesc || "",
+                        genericName: genericName,
+                        specifications: value.specifications || "",
+                        itemGroup: value.itemGroup || "",
+                        itemCategory: value.itemCategory || "",
+                        examinationType: value.examinationType || "",
+                        nhipCategory: value.nhipCategory || "",
+                        drugAdminGroup: value.drugAdminGroup || "",
+                        smallUnit: value.smallUnit || "",
+                        conversion: value.conversion || "",
+                        bigUnit: value.bigUnit || "",
+                        expiryDate: value.expiryDate || "",
+                        quantity: value.quantity || 0,
+                        maxQuantity: maxQuantity,
+                        status: calculateStatus(value.quantity || 0, maxQuantity),
+                      };
+                    }
+                  });
                 }
-              });
+              }
+              setMedsList(Object.values(totalMeds));
+            } else {
+              setMedsList([]);
             }
+            setLoading(false);
+          },
+          (error) => {
+            setError(error);
+            setLoading(false);
           }
-
-          setMedsList(Object.values(totalMeds));
-        } else {
-          setMedsList([]);
-        }
-        setLoading(false);
-      },
-      (error) => {
-        setError(error);
+        );
+      } catch (err) {
+        setError(err);
         setLoading(false);
       }
-    );
+    };
+  
+    fetchData();
   }, []);
+  
 
   if (loading) {
     return <div>Loading...</div>;
@@ -72,7 +94,7 @@ const OverAllMedicine = () => {
   }
 
   const filteredInventory = medsList.filter((item) =>
-    item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+    item.genericName && item.genericName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -88,9 +110,21 @@ const OverAllMedicine = () => {
       <table className="w-full text-md text-gray-900 text-center border border-slate-200">
         <thead className="text-md bg-slate-200">
           <tr>
-            <th className="px-6 py-3">Item Name</th>
-            <th className="px-6 py-3">Quantity</th>
-            <th className="px-6 py-3">Status</th>
+          <th className="px-6 py-3">Short Description</th>
+                  <th className="px-6 py-3">Standard Description</th>
+                  <th className="px-6 py-3">Custom Description</th>
+                  <th className="px-6 py-3">Generic Name</th>
+                  <th className="px-6 py-3">Specificications</th>
+                  <th className="px-6 py-3">Item Group</th>
+                  <th className="px-6 py-3">Item Category</th>
+                  <th className="px-6 py-3">Examination Type</th>
+                  <th className="px-6 py-3">NHIP Category</th>
+                  <th className="px-6 py-3">Drug Admin Group</th>
+                  <th className="px-6 py-3">Small Unit</th>
+                  <th className="px-6 py-3">Conversion</th>
+                  <th className="px-6 py-3">Big Unit</th>
+                  <th className="px-6 py-3">Expiry Date</th>
+                  <th className="px-6 py-3"> Status</th>
             <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
@@ -98,12 +132,24 @@ const OverAllMedicine = () => {
           {filteredInventory.length > 0 ? (
             filteredInventory.map((medicine) => (
               <tr key={medicine.id} className="bg-white border-b hover:bg-slate-100">
-                <td className="px-6 py-3">{medicine.itemName}</td>
-                <td className="px-6 py-3">{medicine.quantity}</td>
-                <td className="px-6 py-3">{medicine.status}</td>
+               <td className="px-6 py-3">{medicine.shortDesc}</td>
+                      <td className="px-6 py-3">{medicine.standardDesc}</td>
+                      <td className="px-6 py-3">{medicine.customDesc}</td>
+                      <td className="px-6 py-3">{medicine.genericName}</td>
+                      <td className="px-6 py-3">{medicine.specifications}</td>
+                      <td className="px-6 py-3">{medicine.itemGroup}</td>
+                      <td className="px-6 py-3">{medicine.itemCategory}</td>
+                      <td className="px-6 py-3">{medicine.examinationType}</td>
+                      <td className="px-6 py-3">{medicine.nhipCategory}</td>
+                      <td className="px-6 py-3">{medicine.drugAdminGroup}</td>
+                      <td className="px-6 py-3">{medicine.smallUnit}</td>
+                      <td className="px-6 py-3">{medicine.conversion}</td>
+                      <td className="px-6 py-3">{medicine.bigUnit}</td>
+                      <td className="px-6 py-3">{medicine.expiryDate}</td>
+                      <td className="px-6 py-3">{medicine.status}</td>
                 <td className="px-6 py-3">
                   <button
-                    onClick={() => setSelectedItem(medicine.itemName)} // Open modal for selected item
+                    onClick={() => setSelectedItem(medicine.genericName)} // Open modal for selected item
                     className="bg-blue-500 text-white px-4 py-2 rounded-md"
                   >
                     View
@@ -113,7 +159,7 @@ const OverAllMedicine = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="px-6 py-3">
+              <td colSpan="15" className="px-6 py-3">
                 No medicines found.
               </td>
             </tr>

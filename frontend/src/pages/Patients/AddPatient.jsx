@@ -3,7 +3,7 @@ import { ref, push, set, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import "../../App.css";
 import { generatePDF } from "./GeneratePDF";
-import { getAuth } from "firebase/auth"; // Import auth to get current user
+import { getAuth } from "firebase/auth";
 
 function AddPatient({ isOpen, toggleModal }) {
   const [firstName, setFirstName] = useState("");
@@ -11,13 +11,13 @@ function AddPatient({ isOpen, toggleModal }) {
   const [birth, setBirth] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
-  const [contact, setContact] = useState("");
+  const [contact, setContact] = useState("+63"); // Default +63 is set
   const [status, setStatus] = useState("");
-  const [roomType, setRoomType] = useState(""); // Automatically set based on user's department
+  const [roomType, setRoomType] = useState("");
   const [dateTime, setDateTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [departments, setDepartments] = useState([]); // State to store department list
-  const [department, setDepartment] = useState(""); // State for the logged-in user's department
+  const [departments, setDepartments] = useState([]);
+  const [department, setDepartment] = useState("");
 
   // Error state variables
   const [firstNameError, setFirstNameError] = useState(false);
@@ -63,7 +63,6 @@ function AddPatient({ isOpen, toggleModal }) {
     return age;
   };
 
-  // Fetch departments from Firebase
   useEffect(() => {
     const fetchDepartments = async () => {
       const departmentsRef = ref(database, "departments");
@@ -71,13 +70,12 @@ function AddPatient({ isOpen, toggleModal }) {
       if (snapshot.exists()) {
         const data = snapshot.val();
         const departmentList = Object.keys(data);
-        setDepartments(departmentList); // Set department names (ICU, CSR, Pharmacy, etc.)
+        setDepartments(departmentList);
       }
     };
     fetchDepartments();
   }, []);
 
-  // Fetch logged-in user's department and set roomType
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -87,9 +85,9 @@ function AddPatient({ isOpen, toggleModal }) {
       get(userDepartmentRef).then((snapshot) => {
         const departmentData = snapshot.val();
         if (departmentData) {
-          setDepartment(departmentData); // Set the user's department
+          setDepartment(departmentData);
           if (departmentData !== "Admin") {
-            setRoomType(departmentData); // Set roomType to user's department
+            setRoomType(departmentData);
           } else {
             setRoomType("");
           }
@@ -98,22 +96,7 @@ function AddPatient({ isOpen, toggleModal }) {
     }
   }, []);
 
-  // Function to format the date as "MM/DD/YYYY, HH:mm:ss AM/PM"
-  const formatTimestamp = (date) => {
-    const options = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    };
-    return new Intl.DateTimeFormat('en-US', options).format(date);
-  };
-
   const handleSubmit = () => {
-    // Reset error states
     setFirstNameError(false);
     setLastNameError(false);
     setBirthError(false);
@@ -126,7 +109,6 @@ function AddPatient({ isOpen, toggleModal }) {
 
     let hasError = false;
 
-    // Validate input fields
     if (!firstName) {
       setFirstNameError(true);
       hasError = true;
@@ -147,7 +129,7 @@ function AddPatient({ isOpen, toggleModal }) {
       setGenderError(true);
       hasError = true;
     }
-    if (!contact || contact.length !== 11) {
+    if (!contact || contact.length !== 13) { // Check for the full length including +63
       setContactError(true);
       hasError = true;
     }
@@ -165,17 +147,14 @@ function AddPatient({ isOpen, toggleModal }) {
     }
 
     if (hasError) {
-      return; // Stop if there's an error
+      return;
     }
 
-    setSubmitting(true); // Disable the button and show loading
+    setSubmitting(true);
 
     const patientRef = ref(database, "patient");
     const newPatientRef = push(patientRef);
     const uniqueKey = newPatientRef.key;
-
-    // Get the current date as a timestamp string
-    const timestamp = formatTimestamp(new Date());
 
     const patientInfo = {
       firstName,
@@ -187,20 +166,19 @@ function AddPatient({ isOpen, toggleModal }) {
       status,
       roomType,
       qrData: uniqueKey,
-      dateTime: timestamp,  // Use formatted timestamp
+      dateTime,
     };
 
     set(newPatientRef, patientInfo)
       .then(() => {
         alert("Patient has been added successfully!");
         generatePDF(patientInfo);
-
-        setSubmitting(false); // Re-enable the button
+        setSubmitting(false);
         toggleModal();
         resetForm();
       })
       .catch((error) => {
-        setSubmitting(false); // Re-enable the button
+        setSubmitting(false);
         alert("Error adding patient: ", error);
       });
   };
@@ -211,17 +189,38 @@ function AddPatient({ isOpen, toggleModal }) {
     setBirth("");
     setAge("");
     setGender("");
-    setContact("");
+    setContact("+63"); // Reset contact number to default +63
     setStatus("");
-    setRoomType(""); // Reset roomType as well
+    setRoomType("");
     setDateTime("");
   };
 
+  // Handle contact input to prepend +63 automatically
+  const handleContactChange = (e) => {
+    let value = e.target.value;
+  
+    // If the value starts with +63, allow only numbers after +63
+    if (value.startsWith("+63")) {
+      // Allow only numbers after +63
+      value = "+63" + value.substring(3).replace(/[^0-9]/g, ""); 
+    } 
+  
+    // Ensure that the value doesn't go beyond +63 and 11 digits
+    if (value.length > 13) {
+      value = value.substring(0, 13); // Limit length to 13 characters (+63 and 11 digits)
+    }
+  
+    // Set the contact value while making sure the prefix +63 cannot be erased
+    if (value.length >= 3) {
+      setContact(value);
+    }
+  };
+  
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 overflow-auto">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative max-h-screen overflow-auto">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative max-h-screen overflow-auto">
         <button
           className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
           onClick={toggleModal}
@@ -231,200 +230,210 @@ function AddPatient({ isOpen, toggleModal }) {
 
         <h2 className="text-2xl font-bold mb-6">Add New Patient</h2>
 
-        <div className="mb-4">
-          <label htmlFor="firstname" className="block text-gray-700 mb-2">
-            First Name
-          </label>
-          <input
-            type="text"
-            id="firstname"
-            name="firstname"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              firstNameError ? "border-red-500" : "border-gray-300"
-            }`}
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            disabled={submitting} // Disable input when submitting
-          />
-          {firstNameError && (
-            <p className="text-red-500 mt-1">First Name is required</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="lastname" className="block text-gray-700 mb-2">
-            Last Name
-          </label>
-          <input
-            type="text"
-            id="lastname"
-            name="lastname"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              lastNameError ? "border-red-500" : "border-gray-300"
-            }`}
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            disabled={submitting} // Disable input when submitting
-          />
-          {lastNameError && (
-            <p className="text-red-500 mt-1">Last Name is required</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="birth" className="block text-gray-700 mb-2">
-            Date of Birth
-          </label>
-          <input
-            type="date"
-            id="birth"
-            name="birth"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              birthError ? "border-red-500" : "border-gray-300"
-            }`}
-            value={birth}
-            onChange={(e) => setBirth(e.target.value)}
-            disabled={submitting} // Disable input when submitting
-          />
-          {birthError && (
-            <p className="text-red-500 mt-1">Birth date is required</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="age" className="block text-gray-700 mb-2">
-            Age
-          </label>
-          <input
-            type="text"
-            id="age"
-            name="age"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              ageError ? "border-red-500" : "border-gray-300"
-            }`}
-            value={age}
-            readOnly
-          />
-          {ageError && <p className="text-red-500 mt-1">Age is required</p>}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="gender" className="block text-gray-700 mb-2">
-            Gender
-          </label>
-          <select
-            id="gender"
-            name="gender"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              genderError ? "border-red-500" : "border-gray-300"
-            }`}
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            disabled={submitting} // Disable input when submitting
-          >
-            <option value="" disabled>
-              Select Gender
-            </option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-          {genderError && (
-            <p className="text-red-500 mt-1">Gender is required</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="contact" className="block text-gray-700 mb-2">
-            Contact Number
-          </label>
-          <input
-            type="number"
-            id="contact"
-            name="contact"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              contactError ? "border-red-500" : "border-gray-300"
-            }`}
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            disabled={submitting} // Disable input when submitting
-          />
-          {contactError && (
-            <p className="text-red-500 mt-1">Contact must be 11 digits</p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="status" className="block text-gray-700 mb-2">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-              statusError ? "border-red-500" : "border-gray-300"
-            }`}
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            disabled={submitting} // Disable input when submitting
-          >
-            <option value="" disabled>
-              Select Status
-            </option>
-            <option value="Inpatient">Inpatient</option>
-            <option value="Outpatient">Outpatient</option>
-          </select>
-          {statusError && (
-            <p className="text-red-500 mt-1">Status is required</p>
-          )}
-        </div>
-
-        {status === "Inpatient" && (
-          <div className="mb-4">
-            <label htmlFor="roomType" className="block text-gray-700 mb-2">
-              Department
+        {/* First Name and Last Name Side by Side */}
+        <div className="flex space-x-4 mb-4">
+          <div className="flex-1">
+            <label htmlFor="firstname" className="block text-gray-700 mb-2">
+              First Name
             </label>
-            {department === "Admin" ? (
-              // Show dropdown for Admin to select room type
-              <select
-                id="roomType"
-                name="roomType"
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-                  roomTypeError ? "border-red-500" : "border-gray-300"
-                }`}
-                value={roomType}
-                onChange={(e) => setRoomType(e.target.value)}
-                disabled={submitting} // Disable input when submitting
-              >
-                <option value="" disabled>
-                  Select Department
-                </option>
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              // Automatically set and make it read-only for non-admin users
-              <input
-                type="text"
-                id="roomType"
-                name="roomType"
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
-                  roomTypeError ? "border-red-500" : "border-gray-300"
-                }`}
-                value={roomType} // Automatically set from user's department
-                readOnly // Make this read-only for non-admin users
-              />
-            )}
-            {roomTypeError && (
-              <p className="text-red-500 mt-1">
-                Department is required for inpatients
-              </p>
+            <input
+              type="text"
+              id="firstname"
+              name="firstname"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                firstNameError ? "border-red-500" : "border-gray-300"
+              }`}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              disabled={submitting}
+            />
+            {firstNameError && (
+              <p className="text-red-500 mt-1">First Name is required</p>
             )}
           </div>
-        )}
 
+          <div className="flex-1">
+            <label htmlFor="lastname" className="block text-gray-700 mb-2">
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lastname"
+              name="lastname"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                lastNameError ? "border-red-500" : "border-gray-300"
+              }`}
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              disabled={submitting}
+            />
+            {lastNameError && (
+              <p className="text-red-500 mt-1">Last Name is required</p>
+            )}
+          </div>
+        </div>
+
+        {/* Date of Birth and Age Side by Side */}
+        <div className="flex space-x-4 mb-4">
+          <div className="flex-1">
+            <label htmlFor="birth" className="block text-gray-700 mb-2">
+              Date of Birth
+            </label>
+            <input
+              type="date"
+              id="birth"
+              name="birth"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                birthError ? "border-red-500" : "border-gray-300"
+              }`}
+              value={birth}
+              onChange={(e) => setBirth(e.target.value)}
+              disabled={submitting}
+            />
+            {birthError && (
+              <p className="text-red-500 mt-1">Birth date is required</p>
+            )}
+          </div>
+
+          <div className="flex-1">
+            <label htmlFor="age" className="block text-gray-700 mb-2">
+              Age
+            </label>
+            <input
+              type="text"
+              id="age"
+              name="age"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                ageError ? "border-red-500" : "border-gray-300"
+              }`}
+              value={age}
+              readOnly
+            />
+            {ageError && <p className="text-red-500 mt-1">Age is required</p>}
+          </div>
+        </div>
+
+        {/* Gender and Contact Side by Side */}
+        <div className="flex space-x-4 mb-4">
+          <div className="flex-1">
+            <label htmlFor="gender" className="block text-gray-700 mb-2">
+              Gender
+            </label>
+            <select
+              id="gender"
+              name="gender"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                genderError ? "border-red-500" : "border-gray-300"
+              }`}
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              disabled={submitting}
+            >
+              <option value="" disabled>
+                Select Gender
+              </option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+            {genderError && (
+              <p className="text-red-500 mt-1">Gender is required</p>
+            )}
+          </div>
+
+          <div className="flex-1">
+            <label htmlFor="contact" className="block text-gray-700 mb-2">
+              Contact Number
+            </label>
+            <input
+              type="text"
+              id="contact"
+              name="contact"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                contactError ? "border-red-500" : "border-gray-300"
+              }`}
+              value={contact}
+              onChange={handleContactChange} // Call handleContactChange to auto-prepend +63
+              placeholder="+63"
+              disabled={submitting}
+            />
+            {contactError && (
+              <p className="text-red-500 mt-1">Contact must be 11 digits</p>
+            )}
+          </div>
+        </div>
+
+        {/* Status and Room Type (Inpatient Only) Side by Side */}
+        <div className="flex space-x-4 mb-4">
+          <div className="flex-1">
+            <label htmlFor="status" className="block text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                statusError ? "border-red-500" : "border-gray-300"
+              }`}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              disabled={submitting}
+            >
+              <option value="" disabled>
+                Select Status
+              </option>
+              <option value="Inpatient">Inpatient</option>
+              <option value="Outpatient">Outpatient</option>
+            </select>
+            {statusError && (
+              <p className="text-red-500 mt-1">Status is required</p>
+            )}
+          </div>
+
+          {status === "Inpatient" && (
+            <div className="flex-1">
+              <label htmlFor="roomType" className="block text-gray-700 mb-2">
+                Department
+              </label>
+              {department === "Admin" ? (
+                <select
+                  id="roomType"
+                  name="roomType"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                    roomTypeError ? "border-red-500" : "border-gray-300"
+                  }`}
+                  value={roomType}
+                  onChange={(e) => setRoomType(e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="" disabled>
+                    Select Department
+                  </option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  id="roomType"
+                  name="roomType"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
+                    roomTypeError ? "border-red-500" : "border-gray-300"
+                  }`}
+                  value={roomType}
+                  readOnly
+                />
+              )}
+              {roomTypeError && (
+                <p className="text-red-500 mt-1">Department is required</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Date/Time Field */}
         <div className="mb-4">
           <label htmlFor="dateTime" className="block text-gray-700 mb-2">
             Date/Time
@@ -437,18 +446,19 @@ function AddPatient({ isOpen, toggleModal }) {
               dateTimeError ? "border-red-500" : "border-gray-300"
             }`}
             value={dateTime}
-            onChange={(e) => setDateTime(e.target.value)}
-            disabled={submitting} // Disable input when submitting
+            readOnly // Make the input field read-only
+            disabled={submitting} // Disable input while submitting
           />
           {dateTimeError && (
             <p className="text-red-500 mt-1">Date and time is required</p>
           )}
         </div>
 
+        {/* Submit Button */}
         <button
           className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
           onClick={handleSubmit}
-          disabled={submitting} // Disable the button when submitting
+          disabled={submitting}
         >
           {submitting ? "Submitting..." : "Submit"}
         </button>
