@@ -288,8 +288,8 @@ function Inventory() {
     selectedTab === "medicine"
       ? inventoryList.filter(
           (medicine) =>
-            medicine.genericName &&
-            medicine.genericName.toLowerCase().includes(searchTerm.toLowerCase())
+            medicine.itemName &&
+            medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         )
       : suppliesList.filter(
           (supply) =>

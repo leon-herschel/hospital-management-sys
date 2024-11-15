@@ -81,46 +81,12 @@ const ViewMedReq = () => {
                 <div className="flex justify-between items-center">
                   <p className="font-bold text-lg">
                     A medicine transfer requested by{' '}
-                    <span className="text-primary">{request.name}</span>
+                    <span className="text-primary">{request.currentDepartment}</span>
                   </p>
                   <button onClick={() => handleConfirm(request)} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
                     View
                   </button>
                 </div>
-                {expandedRequests[index] && (
-                  <div className="p-4 bg-gray-100">
-                    <ul className="list-disc pl-5">
-                      <li><strong>Requested by:</strong> {request.name || 'N/A'}</li>
-                      <li><strong>Requested Department:</strong> {request.currentDepartment || 'N/A'}</li>
-                      {request.items && request.items.length > 0 ? (
-                        request.items.map((item, i) => (
-                          <li key={i}>
-                            <strong>Item Requested:</strong> {item.itemName} <br />
-                            <strong>Quantity Requested:</strong> {item.quantity}
-                          </li>
-                        ))
-                      ) : (
-                        <li>No items requested.</li>
-                      )}
-                      <li><strong>Request Date:</strong> {request.timestamp || 'N/A'}</li>
-                      <li><strong>Reason for Request:</strong> {request.reason || 'N/A'}</li>
-                    </ul>
-                    <div className="flex space-x-4 mt-4">
-                      <button
-                        onClick={() => handleConfirm(request)}
-                        className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => handleDecline(request)}
-                        className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             ))
           )}

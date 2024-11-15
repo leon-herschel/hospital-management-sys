@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ref, get, set, push, onValue, remove, update } from 'firebase/database';
+import { ref, get, set, push, onValue, update, remove } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
 
@@ -10,15 +10,12 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
     reason: '',
     timestamp: new Date().toLocaleString(),
   });
-  const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const searchRef = useRef('');
-  const departmentRef = useRef();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
-    departmentError: false,
     reasonError: false,
   });
 
@@ -31,28 +28,15 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
   }, []);
 
   useEffect(() => {
-    departmentRef.current = ref(database, 'departments');
-    get(departmentRef.current)
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const departmentNames = Object.keys(data);
-          setDepartments(departmentNames);
-        }
-      })
-      .catch(error => console.error('Error fetching departments:', error));
-  }, []);
-
-  useEffect(() => {
-    const suppliesRef = ref(database, 'departments/CSR/localSupplies');
-    const unsubscribe = onValue(suppliesRef, (snapshot) => {
+    const itemsRef = ref(database, 'departments/CSR/localSupplies');
+    const unsubscribe = onValue(itemsRef, (snapshot) => {
       if (snapshot.exists()) {
-        const supplies = Object.entries(snapshot.val())
+        const itemsData = Object.entries(snapshot.val())
           .map(([key, value]) => ({
             ...value,
             itemKey: key,
           }));
-        setItems(supplies);
+        setItems(itemsData);
       }
     });
 
@@ -69,11 +53,6 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
       setSelectedItems(requestToConfirm.items);
     }
   }, [requestToConfirm, currentDepartment]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
 
   const handleSearchChange = (e) => {
     searchRef.current = e.target.value;
@@ -109,7 +88,7 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
     const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
 
     if (value > maxAvailableQuantity) {
-      alert(`Cannot exceed available quantity of ${maxAvailableQuantity}`);
+      alert(`Cannot exceed available quantity.`);
       return;
     }
 
@@ -120,12 +99,11 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
   };
 
   const validateInputs = () => {
-    const { department, reason } = formData;
+    const { reason } = formData;
     setErrorMessages({
-      departmentError: !department,
       reasonError: !reason,
     });
-    return department && reason;
+    return reason;
   };
 
   const handleConfirm = async () => {
@@ -148,7 +126,7 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
           reason: formData.reason,
           recipientDepartment: formData.department,
           sender: formData.name,
-          timestamp: formData.timestamp
+          timestamp: formData.timestamp,
         };
 
         const historyPath = `supplyHistoryTransfer`;
@@ -183,7 +161,6 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
         }
       }
 
-      // Remove the confirmed request from Firebase
       const requestRef = ref(database, `departments/CSR/Request/${requestToConfirm.requestId}`);
       await remove(requestRef);
 
@@ -194,7 +171,6 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
       if (onConfirmSuccess) {
         onConfirmSuccess();
       }
-
     } catch (error) {
       console.error('Error confirming request:', error);
     }
@@ -215,7 +191,6 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
         </button>
       </div>
 
-      {/* Name Input */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Name:</label>
         <input
@@ -225,16 +200,13 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
           readOnly
           className="border p-2 w-full rounded"
         />
-        <p className="text-gray-500 text-sm">The one who processes.</p>
       </div>
 
-      {/* Timestamp Display */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Confirmation Timestamp:</label>
         <p>{formData.timestamp}</p>
       </div>
 
-      {/* Department (Non-editable) */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">To Department</label>
         <input
@@ -242,90 +214,86 @@ const ConfirmRequest = ({ requestToConfirm, currentDepartment, onConfirmSuccess 
           name="department"
           value={formData.department}
           readOnly
-          className="border p-2 w-full rounded"
+          className="border p-2 w-full rounded bg-gray-200 text-gray-700"
         />
       </div>
 
-      {/* General Input Fields */}
       <div className="mb-4">
-        <div className="grid grid-cols-2 gap-4">
-        <div className="mb-4">
-        <label className="block font-semibold mb-1">Reason</label>
+        <h2 className="font-semibold text-lg mb-2">General</h2>
+        <label className="block font-semibold mb-1" disabled>Reason</label>
         <input
           type="text"
-          name="department"
+          name="reason"
           value={formData.reason}
-          readOnly
-          className="border p-2 w-full rounded"
+          onChange={e => handleInputChange(e)}
+          className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
         />
-      </div>
-        </div>
-      </div>
-
-      {/* Item Selection Section */}
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Search Items</h2>
-        <input
-          type="text"
-          placeholder="Search items..."
-          onChange={handleSearchChange}
-          className="border p-2 w-full rounded mb-2"
-        />
-
-        <div className="flex flex-col">
-          {filteredItems.length > 0 ? filteredItems.map(item => (
-            <div key={item.itemKey} className="flex justify-between items-center mb-2">
-              <span>{item.itemName} (Available: {item.quantity})</span>
-              <button
-                onClick={() => addItem(item)}
-                className="bg-blue-500 text-white px-2 py-1 rounded"
-              >
-                Add
-              </button>
-            </div>
-          )) : (
-            items.map(item => (
-              <div key={item.itemKey} className="flex justify-between items-center mb-2">
-                <span>{item.itemName} (Available: {item.quantity})</span>
-                <button
-                  onClick={() => addItem(item)}
-                  className="bg-blue-500 text-white px-2 py-1 rounded"
-                >
-                  Add
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Selected Items Section */}
-      <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
-        {selectedItems.length > 0 ? (
-          selectedItems.map(item => (
-            <div key={item.itemKey} className="flex justify-between items-center mb-2">
-              <span>{item.itemName}</span>
-              <input
-                type="number"
-                value={item.quantity}
-                min="1"
-                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
-                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                className="border p-1 rounded w-16 text-center"
-              />
-              <button
-                onClick={() => removeItem(item)}
-                className="bg-red-500 text-white px-2 py-1 rounded"
-              >
-                Remove
-              </button>
-            </div>
-          ))
-        ) : (
-          <p>No items selected.</p>
+        {errorMessages.reasonError && (
+          <p className="text-red-500 text-sm">Please provide a reason.</p>
         )}
       </div>
+
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Search Items</label>
+        <input
+          type="text"
+          name="searchItem"
+          placeholder="Search for items"
+          value={searchRef.current}
+          onChange={handleSearchChange}
+          className="border p-2 w-full rounded"
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        {filteredItems.map(item => (
+          <button
+            key={item.itemKey}
+            onClick={() => addItem(item)}
+            className="bg-blue-500 text-white px-2 py-1 rounded"
+          >
+            {item.itemName} ({item.quantity} in stock)
+          </button>
+        ))}
+      </div>
+
+      {selectedItems.length > 0 && (
+        <div className="mb-4">
+          <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
+          <table className="w-full border-collapse border">
+            <thead>
+              <tr>
+                <th className="border p-2">Item Name</th>
+                <th className="border p-2">Quantity</th>
+                <th className="border p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedItems.map((item, index) => (
+                <tr key={index}>
+                  <td className="border p-2">{item.itemName}</td>
+                  <td className="border p-2">
+                    <input
+                      type="number"
+                      value={item.quantity}
+                      onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
+                      className="border p-1 w-16 rounded"
+                    />
+                  </td>
+                  <td className="border p-2">
+                    <button
+                      className="bg-red-500 text-white px-2 py-1 rounded"
+                      onClick={() => removeItem(item)}
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

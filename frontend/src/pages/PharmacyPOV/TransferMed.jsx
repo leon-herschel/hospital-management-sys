@@ -11,23 +11,19 @@ const TransferMed = () => {
     name: '',
     department: 'Pharmacy',
     reason: '',
-    timestamp: new Date().toLocaleString() // Add current timestamp on initial load
+    timestamp: new Date().toLocaleString()
   });
   const [departments, setDepartments] = useState([]);
-  const [items, setItems] = useState([]); // Will be updated in real-time with only supplies
+  const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-
-  const searchRef = useRef(''); // Ref to store search term without triggering re-renders
-  const departmentRef = useRef(); // Ref to store Firebase reference for departments
-
+  const searchRef = useRef('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
     reasonError: false,
   });
 
-  // Fetch authenticated user data
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -36,26 +32,27 @@ const TransferMed = () => {
     }
   }, []);
 
-  // Fetch department data from Firebase
   useEffect(() => {
-    departmentRef.current = ref(database, 'departments');
-    get(departmentRef.current)
-      .then(snapshot => {
+    const departmentRef = ref(database, "departments");
+    get(departmentRef)
+      .then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const departmentNames = Object.keys(data);
+          const departmentNames = Object.keys(data).filter(
+            (dept) => dept === "COVID UNIT" || dept === "ER" || dept === "ICU"
+          );
           setDepartments(departmentNames);
+        } else {
+          console.log("No data available");
         }
       })
-      .catch(error => console.error('Error fetching departments:', error));
+      .catch((error) => {
+        console.error("Error fetching departments:", error);
+      });
   }, []);
 
-
-  // Real-time update of medicine supplies using onValue
   useEffect(() => {
     const medicineRef = ref(database, 'departments/Pharmacy/localMeds');
-
-    // Real-time listener
     const unsubscribe = onValue(medicineRef, (snapshot) => {
       if (snapshot.exists()) {
         const medicines = Object.entries(snapshot.val())
@@ -63,13 +60,12 @@ const TransferMed = () => {
             ...value,
             itemKey: key,
           }));
-        setItems(medicines);  // Update state with real-time data
+        setItems(medicines);
       }
     });
 
-    return () => unsubscribe();  // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -120,7 +116,6 @@ const TransferMed = () => {
     return department && reason;
   };
 
-
   const handleTransfer = async () => {
     if (!validateInputs()) {
       alert('Please fill in all required fields.');
@@ -137,42 +132,36 @@ const TransferMed = () => {
       name: formData.name,
       reason: formData.reason,
       timestamp: formData.timestamp,
-      recipientDepartment: formData.department, // Ensure recipientDepartment is included
+      recipientDepartment: formData.department,
     };
 
     for (const item of selectedItems) {
       const departmentPath = `departments/${formData.department}/localMeds/${item.itemKey}`;
-
-      // Fetch the existing quantity in the local supplies
       const localSupplySnapshot = await get(ref(database, departmentPath));
       let newQuantity = item.quantity;
 
       if (localSupplySnapshot.exists()) {
-        // Add to the existing quantity if the item already exists
         const existingData = localSupplySnapshot.val();
         newQuantity += existingData.quantity;
       }
 
-      // Update the local supplies with the new quantity without including recipientDepartment and reason
       await set(ref(database, departmentPath), {
         ...item,
         quantity: newQuantity,
-        timestamp: formData.timestamp, // Timestamp remains here
+        timestamp: formData.timestamp,
       });
 
-      // Ensure each transfer is added as a new entry in InventoryTransferHistory
       const historyPath = `medicineTransferHistory`;
-      const newHistoryRef = push(ref(database, historyPath)); // Use push to generate a unique key
+      const newHistoryRef = push(ref(database, historyPath));
       await set(newHistoryRef, {
         itemName: item.itemName,
         quantity: item.quantity,
         timestamp: formData.timestamp,
         sender: formData.name,
-        recipientDepartment: formData.department, // Include recipientDepartment in the history
-        reason: formData.reason, // Include reason in the history
+        recipientDepartment: formData.department,
+        reason: formData.reason,
       });
 
-      // Update the main inventory (deduct quantity)
       const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${item.itemKey}`);
       const mainInventorySnapshot = await get(mainInventoryRef);
 
@@ -183,13 +172,11 @@ const TransferMed = () => {
         if (updatedQuantity < 0) {
           console.error(`Not enough stock in Pharmacy for item: ${item.itemName}`);
         } else {
-          // Update the quantity of the item in Pharmacy
           await update(mainInventoryRef, { quantity: updatedQuantity });
         }
       } else {
         console.error(`Item ${item.itemName} does not exist in Pharmacy's inventory.`);
       }
-
     }
 
     alert('Transfer successful!');
@@ -215,7 +202,6 @@ const TransferMed = () => {
         </button>
       </div>
 
-      {/* Name Input */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Transfer from</label>
         <input
@@ -227,13 +213,11 @@ const TransferMed = () => {
         />
       </div>
 
-      {/* Timestamp Display */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Transfer Timestamp:</label>
         <p>{formData.timestamp}</p>
       </div>
 
-      {/* General Input Fields */}
       <div className="mb-4">
         <h2 className="font-semibold text-lg mb-2">General</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -255,10 +239,9 @@ const TransferMed = () => {
           </div>
         </div>
 
-        {/* Reason Input */}
         <div className="mb-4">
           <label className="block font-semibold mb-1">Reason for transfer</label>
-          <textarea
+          <input
             name="reason"
             value={formData.reason}
             onChange={handleInputChange}
@@ -268,7 +251,6 @@ const TransferMed = () => {
         </div>
       </div>
 
-      {/* Search Medicine */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Search Medicine:</label>
         <input
@@ -280,7 +262,6 @@ const TransferMed = () => {
         <p className="text-gray-500 text-sm">Search for medicine to add to the transfer list.</p>
       </div>
 
-      {/* Filtered Items */}
       {filteredItems.length > 0 && (
         <div className="mb-4">
           <h3 className="font-semibold mb-1">Results:</h3>
@@ -303,14 +284,13 @@ const TransferMed = () => {
         </div>
       )}
 
-      {/* Selected Items */}
       {selectedItems.length > 0 && (
         <div className="mb-4">
-          <h3 className="font-semibold mb-1">Selected Items:</h3>
+          <h3 className="font-semibold mb-1">To be Transfer Medicines:</h3>
           <table className="border rounded w-full">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border px-4 py-2">Name</th>
+                <th className="border px-4 py-2">Medicine Name</th>
                 <th className="border px-4 py-2">Quantity</th>
                 <th className="border px-4 py-2">Actions</th>
               </tr>
@@ -318,7 +298,22 @@ const TransferMed = () => {
             <tbody>
               {selectedItems.map((item, index) => (
                 <tr key={index} className="border-b">
-                  <td className="border px-4 py-2">{item.itemName}</td>
+                  <td className="border px-4 py-2">
+                    <select
+                      value={item.itemKey}
+                      onChange={(e) => addItem(items.find(i => i.itemKey === e.target.value))}
+                      className="border p-2 w-full rounded"
+                    >
+                      <option value="" disabled>
+                        Select Medicine
+                      </option>
+                      {items.map((medItem) => (
+                        <option key={medItem.itemKey} value={medItem.itemKey}>
+                          {medItem.itemName} (Max: {medItem.quantity})
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="border px-4 py-2">
                     <input
                       type="number"
