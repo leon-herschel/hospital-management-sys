@@ -166,7 +166,6 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSucce
         }
       }
 
-      // Remove the confirmed request from Firebase
       const requestRef = ref(database, `departments/Pharmacy/Request/${requestToConfirm.requestId}`);
       await remove(requestRef);
 
@@ -185,7 +184,6 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSucce
     setSubmitting(false);
   };
 
-
   return (
     <div className="max-w-full mx-auto mt-6 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -199,7 +197,6 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSucce
         </button>
       </div>
 
-      {/* Name Input */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Name:</label>
         <input
@@ -209,16 +206,13 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSucce
           readOnly
           className="border p-2 w-full rounded"
         />
-        <p className="text-gray-500 text-sm">The one who processes.</p>
       </div>
 
-      {/* Timestamp Display */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Confirmation Timestamp:</label>
         <p>{formData.timestamp}</p>
       </div>
 
-      {/* To Department Display (Read-Only) */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">To Department</label>
         <input
@@ -230,10 +224,8 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSucce
         />
       </div>
 
-      {/* General Input Fields */}
       <div className="mb-4">
         <h2 className="font-semibold text-lg mb-2">General</h2>
-
         <div>
           <label className="block font-semibold mb-1">Reason</label>
           <input
@@ -249,7 +241,6 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSucce
         </div>
       </div>
 
-      {/* Search for Medicines */}
       <div className="mb-4">
         <label className="block font-semibold mb-1">Search Medicines</label>
         <input
@@ -274,37 +265,42 @@ const ConfirmMedRequest = ({ requestToConfirm, currentDepartment, onConfirmSucce
         ))}
       </div>
 
-      {/* Selected Medicines */}
       {selectedMedications.length > 0 && (
-        <>
-          <div className="mb-4">
-            <h2 className="font-semibold text-lg mb-2">Selected Medicines</h2>
-            <ul>
+        <div className="mb-4">
+          <h2 className="font-semibold text-lg mb-2">Requested Medicine</h2>
+          <table className="w-full border-collapse border">
+            <thead>
+              <tr>
+                <th className="border p-2">Medicine Name</th>
+                <th className="border p-2">Quantity</th>
+                <th className="border p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               {selectedMedications.map((med, index) => (
-                <li key={index} className="flex justify-between items-center mb-2">
-                  <div>
-                    <p>{med.itemName}</p>
-                    <p className="text-sm text-gray-500">Quantity: {med.quantity}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
+                <tr key={index}>
+                  <td className="border p-2">{med.itemName}</td>
+                  <td className="border p-2">
                     <input
                       type="number"
                       value={med.quantity}
                       onChange={(e) => handleQuantityChange(med, parseInt(e.target.value))}
                       className="border p-1 w-16 rounded"
                     />
+                  </td>
+                  <td className="border p-2">
                     <button
                       className="bg-red-500 text-white px-2 py-1 rounded"
                       onClick={() => removeMedication(med)}
                     >
                       Remove
                     </button>
-                  </div>
-                </li>
+                  </td>
+                </tr>
               ))}
-            </ul>
-          </div>
-        </>
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
