@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef} from "react";
 import Select from "react-select"; // Import react-select
 import { ref, get, set, push, update, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
@@ -17,6 +17,7 @@ const Transfer = () => {
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
+  const selectRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
@@ -75,16 +76,23 @@ const Transfer = () => {
   };
 
   const handleSelectChange = (selectedOption) => {
-    const selectedItem = items.find((item) => item.itemKey === selectedOption.value);
-    if (selectedItem) {
-      addItem(selectedItem);
+    const newItem = items.find((item) => item.itemKey === selectedOption.value);
+    if (newItem) {
+      addItem(newItem);
+
+      // Clear the selected option
+      selectRef.current.clearValue();
     }
   };
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
+    // Check if the item is already in the selectedItems array
+    if (selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
+      alert("This item has already been selected."); // Show an alert
+      return; // Exit the function
     }
+    // Add the new item if not already selected
+    setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
   };
 
   const removeItem = (itemToRemove) => {
@@ -297,6 +305,7 @@ const Transfer = () => {
                 onChange={handleSelectChange}
                 placeholder="Search and select item..."
                 className="w-full"
+                ref={selectRef}
               />
             </td>
             <td className="border p-2"></td>
