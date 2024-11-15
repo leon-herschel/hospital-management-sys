@@ -71,30 +71,58 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { shortDesc, standardDesc, customDesc, genericName, specifications, itemGroup, itemCategory, examinationType, nhipCategory,
-      drugAdminGroup, smallUnit, conversion, bigUnit, expiryDate, quantity
-     } =
-      event.target.elements;
-
+    const {
+      shortDesc,
+      standardDesc,
+      customDesc,
+      genericName,
+      specifications,
+      itemGroup,
+      itemCategory,
+      examinationType,
+      nhipCategory,
+      drugAdminGroup,
+      smallUnit,
+      conversion,
+      bigUnit,
+      expiryDate,
+      quantity
+    } = event.target.elements || {};
+  
+    // Debugging log
+    console.log('shortDesc:', shortDesc?.value);
+    console.log('quantity:', quantity?.value);
+  
+    // Check if quantity exists
+    if (!quantity) {
+      console.error('Quantity input is missing or undefined');
+      return; // Early exit to avoid further errors
+    }
+  
+    const updatedQuantity = Number(quantity.value || 0);
+    const maxQuantity = currentItem?.maxQuantity || updatedQuantity;
+    const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
+  
     const updatedInventory = {
-      shortDesc: shortDesc.value,
+      shortDesc: shortDesc?.value || "",
       quantity: updatedQuantity,
-      standardDesc: standardDesc.value,
-      customDesc: customDesc.value,
-      genericName: genericName.value,
-      specifications: specifications.value,
-      itemGroup: itemGroup.value,
-      itemCategory: itemCategory.value,
-      examinationType: examinationType.value,
-      nhipCategory: nhipCategory.value,
-      drugAdminGroup: drugAdminGroup.value,
-      smallUnit: smallUnit.value,
-      conversion: conversion.value,
-      bigUnit: bigUnit.value,
-      expiryDate: expiryDate.value,
-      quantity:quantity.value
+      maxQuantity: maxQuantity,
+      standardDesc: standardDesc?.value || "",
+      customDesc: customDesc?.value || "",
+      genericName: genericName?.value || "",
+      specifications: specifications?.value || "",
+      itemGroup: itemGroup?.value || "",
+      itemCategory: itemCategory?.value || "",
+      examinationType: examinationType?.value || "",
+      nhipCategory: nhipCategory?.value || "",
+      drugAdminGroup: drugAdminGroup?.value || "",
+      smallUnit: smallUnit?.value || "",
+      conversion: conversion?.value || "",
+      bigUnit: bigUnit?.value || "",
+      expiryDate: expiryDate?.value || "",
+      status: updatedStatus,
     };
-
+  
     const updatePath =
       role === "admin"
         ? `departments/Pharmacy/localMeds/${currentItem.id}`
@@ -102,6 +130,7 @@ function Inventory() {
     await update(ref(database, updatePath), updatedInventory);
     toggleEditModal();
   };
+  
 
   const handleUpdateSupply = async (event) => {
     event.preventDefault();
@@ -264,8 +293,8 @@ function Inventory() {
         )
       : suppliesList.filter(
           (supply) =>
-            supply.genericName &&
-            supply.genericName.toLowerCase().includes(searchTerm.toLowerCase())
+            supply.itemName &&
+            supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
   if (!permissions?.accessInventory) {
@@ -541,76 +570,267 @@ function Inventory() {
       )}
 
       {/* Edit Modal */}
-      {editModal && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
-            <h2 className="text-lg font-bold mb-4">
-              Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item
-            </h2>
-            <form
-              onSubmit={
-                selectedTab === "medicine" ? handleUpdate : handleUpdateSupply
-              }
-            >
+        {editModal && (
+          <div className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-2/3 md:w-1/2 lg:w-1/3">
+              <h2 className="text-lg font-bold mb-4">
+                Edit {selectedTab === "medicine" ? "Medicine" : "Supply"} Item
+              </h2>
+              <form
+                onSubmit={
+                  selectedTab === "medicine" ? handleUpdate : handleUpdateSupply
+                }
+              >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="mb-4">
+                  <label htmlFor="shortDesc" className="block text-gray-700 mb-1">
+                    Short Description
+                  </label>
+                  <input
+                    type="text"
+                    id="shortDesc"
+                    name="shortDesc"
+                    className="w-full px-3 py-2 border rounded-lg"
+                    defaultValue={currentItem?.shortDesc || ""}
+                  required
+                  />
+              </div>
+
               <div className="mb-4">
-                <label className="block mb-2">Medicine Name</label>
+                <label htmlFor="standardDesc" className="block text-gray-700 mb-1">
+                  Standard Description
+                </label>
                 <input
                   type="text"
-                  name="itemName"
-                  defaultValue={currentItem?.itemName || ""}
-                  className="border px-4 py-2 w-full"
-                  required
+                  id="standardDesc"
+                  name="standardDesc"
+                  className="w-full px-3 py-2 border rounded-lg"
+                  defaultValue={currentItem?.standardDesc  || ""}
                 />
               </div>
+
               <div className="mb-4">
-                <label className="block mb-2">Quantity</label>
+                <label htmlFor="customDesc" className="block text-gray-700 mb-1">
+                  Custom Description
+                </label>
                 <input
-                  type="number"
-                  name="quantity"
-                  defaultValue={currentItem?.quantity || ""}
-                  className="border px-4 py-2 w-full"
-                  required
+                  type="text"
+                  id="customDesc"
+                  name="customDesc"
+                  className="w-full px-3 py-2 border rounded-lg"
+                  defaultValue={currentItem?.customDesc || ""}
                 />
               </div>
+
               <div className="mb-4">
-                <label className="block mb-2">Cost Price (₱)</label>
-                <input
-                  type="number"
-                  name="costPrice"
-                  defaultValue={currentItem?.costPrice || ""}
-                  className="border px-4 py-2 w-full"
-                  required
-                />
+                <label htmlFor="genericName" className="block text-gray-700 mb-1">
+                  Generic Name
+                </label>
+                <select
+                id="genericName"
+                name="genericName"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+                defaultValue={currentItem?.genericName}
+              >
+                  <option value="" disabled>Select Generic Name</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
               </div>
+
               <div className="mb-4">
-                <label className="block mb-2">Retail Price (₱)</label>
-                <input
-                  type="number"
-                  name="retailPrice"
-                  defaultValue={currentItem?.retailPrice || ""}
-                  className="border px-4 py-2 w-full"
-                  required
-                />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={toggleEditModal}
-                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 mr-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200"
-                >
-                  Update Item
-                </button>
-              </div>
-            </form>
+              <label htmlFor="specifications" className="block text-gray-700 mb-1">
+                Specifications
+              </label>
+              <input
+                type="text"
+                id="specifications"
+                name="specifications"
+                className="w-full px-3 py-2 border rounded-lg"
+                defaultValue={currentItem?.specifications}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="itemGroup" className="block text-gray-700 mb-1">
+                Item Group
+              </label>
+              <select
+              id="itemGroup"
+              name="itemGroup"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.itemGroup}              
+            >
+                <option value="" disabled>Select Item Group</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="itemCategory" className="block text-gray-700 mb-1">
+                Item Category
+              </label>
+              <select
+              id="itemCategory"
+              name="itemCategory"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.itemCategory}
+            >
+                <option value="" disabled>Select Item Category</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="quantity" className="block text-gray-700 mb-1">
+                Quantity
+              </label>
+              <input
+                type="number"
+                id="quantity"
+                name="quantity"
+                className="w-full px-3 py-2 border rounded-lg"
+                defaultValue={currentItem?.quantity}
+              />
+            </div>
+                </div>
+
+                {/*column 2 */}
+                <div>
+
+                <div className="mb-4">
+              <label htmlFor="examinationType" className="block text-gray-700 mb-1">
+                Examination Type
+              </label>
+              <select
+              id="examinationType"
+              name="examinationType"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.examinationType}
+            >
+                <option value="" disabled>Select Examination Type</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="nhipCategory" className="block text-gray-700 mb-1">
+                NHIP Category
+              </label>
+              <select
+              id="nhipCategory"
+              name="nhipCategory"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.nhipCategory}
+            >
+                <option value="" disabled>Select NHIP Category</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="drugAdminGroup" className="block text-gray-700 mb-1">
+                Drug Admin Group
+              </label>
+              <select
+              id="drugAdminGroup"
+              name="drugAdminGroup"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.drugAdminGroup}
+            >
+                <option value="" disabled>Select Drug Admin Group</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="smallUnit" className="block text-gray-700 mb-1">
+                Small Unit
+              </label>
+              <select
+              id="smallUnit"
+              name="smallUnit"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.smallUnit}
+            >
+                <option value="" disabled>Select  Small Unit</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="conversion" className="block text-gray-700 mb-1">
+                Conversion
+              </label>
+              <select
+              id="conversion"
+              name="converision"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.conversion}
+            >
+                <option value="" disabled>Select  Conversion</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="bigUnit" className="block text-gray-700 mb-1">
+                Big Unit
+              </label>
+              <select
+              id="bigUnit"
+              name="bigUnit"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring"
+              defaultValue={currentItem?.bigUnit}
+            >
+                <option value="" disabled>Select Big Unit</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="expiryDate" className="block text-gray-700 mb-1">
+                Expiry Date
+              </label>
+              <input
+                type="date"
+                id="expiryDate"
+                name="expiryDate"
+                className="w-full px-3 py-2 border rounded-lg"
+                defaultValue={currentItem?.expiryDate}
+              />
+            </div>
+                </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={toggleEditModal}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-200 mr-2"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200"
+                  >
+                    Update Item
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

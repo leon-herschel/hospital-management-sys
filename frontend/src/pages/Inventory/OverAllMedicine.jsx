@@ -124,6 +124,7 @@ const OverAllMedicine = () => {
                   <th className="px-6 py-3">Conversion</th>
                   <th className="px-6 py-3">Big Unit</th>
                   <th className="px-6 py-3">Expiry Date</th>
+                  <th className="px-6 py-3">Quantity</th>
                   <th className="px-6 py-3"> Status</th>
             <th className="px-6 py-3">Actions</th>
           </tr>
@@ -146,6 +147,7 @@ const OverAllMedicine = () => {
                       <td className="px-6 py-3">{medicine.conversion}</td>
                       <td className="px-6 py-3">{medicine.bigUnit}</td>
                       <td className="px-6 py-3">{medicine.expiryDate}</td>
+                      <td className="px-6 py-3">{medicine.quantity}</td>
                       <td className="px-6 py-3">{medicine.status}</td>
                 <td className="px-6 py-3">
                   <button
