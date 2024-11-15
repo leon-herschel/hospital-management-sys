@@ -88,7 +88,11 @@ const RequestS = () => {
           const itemsList = Object.keys(data).map((key) => ({
             itemKey: key,
             itemName: data[key].itemName,
+            brand: data[key].brand,
+            costPrice: data[key].costPrice,
+            retailPrice: data[key].costPrice,
             maxQuantity: data[key].maxQuantity,
+            qrCode: data[key].qrCode,
           }));
           setItems(itemsList);
         } else {
