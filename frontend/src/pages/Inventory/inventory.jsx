@@ -71,20 +71,28 @@ function Inventory() {
 
   const handleUpdate = async (event) => {
     event.preventDefault();
-    const { itemName, quantity, retailPrice, costPrice } =
+    const { shortDesc, standardDesc, customDesc, genericName, specifications, itemGroup, itemCategory, examinationType, nhipCategory,
+      drugAdminGroup, smallUnit, conversion, bigUnit, expiryDate, quantity
+     } =
       event.target.elements;
 
-    const updatedQuantity = Number(quantity.value);
-    const maxQuantity = currentItem.maxQuantity || updatedQuantity;
-    const updatedStatus = calculateStatus(updatedQuantity, maxQuantity);
-
     const updatedInventory = {
-      itemName: itemName.value,
+      shortDesc: shortDesc.value,
       quantity: updatedQuantity,
-      maxQuantity: maxQuantity,
-      retailPrice: Number(retailPrice.value),
-      costPrice: Number(costPrice.value),
-      status: updatedStatus,
+      standardDesc: standardDesc.value,
+      customDesc: customDesc.value,
+      genericName: genericName.value,
+      specifications: specifications.value,
+      itemGroup: itemGroup.value,
+      itemCategory: itemCategory.value,
+      examinationType: examinationType.value,
+      nhipCategory: nhipCategory.value,
+      drugAdminGroup: drugAdminGroup.value,
+      smallUnit: smallUnit.value,
+      conversion: conversion.value,
+      bigUnit: bigUnit.value,
+      expiryDate: expiryDate.value,
+      quantity:quantity.value
     };
 
     const updatePath =
@@ -331,6 +339,7 @@ function Inventory() {
                   <th className="px-6 py-3">Conversion</th>
                   <th className="px-6 py-3">Big Unit</th>
                   <th className="px-6 py-3">Expiry Date</th>
+                  <th className="px-6 py-3">Quantity</th>
                   <th className="px-6 py-3">QR Code</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
@@ -356,6 +365,7 @@ function Inventory() {
                       <td className="px-6 py-3">{item.conversion}</td>
                       <td className="px-6 py-3">{item.bigUnit}</td>
                       <td className="px-6 py-3">{item.expiryDate}</td>
+                      <td className="px-6 py-3">{item.quantity}</td>
                       <td className="px-6 py-3 flex justify-center items-center">
                         <QRCode size={50} value={item.id} />
                       </td>
