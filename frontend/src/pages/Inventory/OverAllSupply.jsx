@@ -3,11 +3,14 @@ import { ref, get, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import { calculateStatus } from "./CalculateStatusLogic";
 import DepartmentBreakdown from "./DepartmentBreakdown"; // Import the DepartmentBreakdown component
+import Pagination from "../../components/reusable/Pagination"; // Import the Pagination component
 
 const OverAllSupply = () => {
   const [overallInventory, setOverallInventory] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState(null); // State to manage selected item for breakdown
+  const [currentPage, setCurrentPage] = useState(1); // Current page state
+  const itemsPerPage = 10; // Items per page
 
   useEffect(() => {
     const departmentsRef = ref(database, "departments");
@@ -51,6 +54,15 @@ const OverAllSupply = () => {
     ([, item]) => item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredInventory.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-md p-6">
       <h1 className="text-xl font-bold mb-4">Overall Supplies Inventory</h1>
@@ -71,8 +83,8 @@ const OverAllSupply = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredInventory.length > 0 ? (
-            filteredInventory.map(([itemName, item]) => (
+          {currentItems.length > 0 ? (
+            currentItems.map(([itemName, item]) => (
               <tr key={itemName} className="bg-white border-b hover:bg-slate-100">
                 <td className="px-6 py-3">{item.itemName}</td>
                 <td className="px-6 py-3">{item.totalQuantity}</td>
@@ -94,6 +106,9 @@ const OverAllSupply = () => {
           )}
         </tbody>
       </table>
+
+      {/* Pagination Component */}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
 
       {/* Render DepartmentBreakdown if an item is selected */}
       {selectedItem && (

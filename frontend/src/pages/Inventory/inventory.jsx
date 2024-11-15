@@ -264,8 +264,8 @@ function Inventory() {
         )
       : suppliesList.filter(
           (supply) =>
-            supply.genericName &&
-            supply.genericName.toLowerCase().includes(searchTerm.toLowerCase())
+            supply.itemName &&
+            supply.itemName.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
   if (!permissions?.accessInventory) {
