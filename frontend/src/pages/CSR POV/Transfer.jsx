@@ -204,7 +204,7 @@ const Transfer = () => {
 
   const selectOptions = items.map((item) => ({
     value: item.itemKey,
-    label: `${item.itemName} (Max: ${item.maxQuantity})`,
+    label: `${item.itemName} (Max Quantity: ${item.maxQuantity})`,
   }));
 
   return (
