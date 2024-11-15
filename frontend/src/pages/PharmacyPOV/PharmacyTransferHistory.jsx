@@ -4,6 +4,7 @@ import { database } from "../../firebase/firebase";
 import { getAuth } from "firebase/auth";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import Pagination from "../../components/reusable/Pagination"; // Import your Pagination component
 
 const PharmacyTransferHistory = () => {
   const [transferList, setTransferList] = useState([]);
@@ -11,6 +12,8 @@ const PharmacyTransferHistory = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1); // Initialize currentPage
+  const itemsPerPage = 10; // Define items per page
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -33,27 +36,24 @@ const PharmacyTransferHistory = () => {
     if (department) {
       const PharmacyHistoryRef = ref(database, "medicineTransferHistory");
 
-      const unsubscribePharmacyHistory = onValue(
-        PharmacyHistoryRef,
-        (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            const PharmacyData = Object.keys(data).map((key) => ({
-              ...data[key],
-              id: key,
-            }));
+      const unsubscribePharmacyHistory = onValue(PharmacyHistoryRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const PharmacyData = Object.keys(data).map((key) => ({
+            ...data[key],
+            id: key,
+          }));
 
-            if (department !== "Pharmacy" && department !== "Admin") {
-              const filteredData = PharmacyData.filter(
-                (medicine) => medicine.recipientDepartment === department
-              );
-              setTransferList(filteredData);
-            } else {
-              setTransferList(PharmacyData);
-            }
+          if (department !== "Pharmacy" && department !== "Admin") {
+            const filteredData = PharmacyData.filter(
+              (medicine) => medicine.recipientDepartment === department
+            );
+            setTransferList(filteredData);
+          } else {
+            setTransferList(PharmacyData);
           }
         }
-      );
+      });
 
       return () => unsubscribePharmacyHistory();
     }
@@ -63,45 +63,49 @@ const PharmacyTransferHistory = () => {
   const filteredTransferList = transferList.filter((pharmacy) => {
     const pharmacyTimestamp = new Date(pharmacy.timestamp);
 
-    // If only startDate is selected (single-day selection)
     if (startDate && !endDate) {
       const startOfDay = new Date(
         startDate.getFullYear(),
         startDate.getMonth(),
         startDate.getDate(),
-        0,
-        0,
-        0
+        0, 0, 0
       );
       const endOfDay = new Date(
         startDate.getFullYear(),
         startDate.getMonth(),
         startDate.getDate(),
-        23,
-        59,
-        59
+        23, 59, 59
       );
       const withinSingleDay =
         pharmacyTimestamp >= startOfDay && pharmacyTimestamp <= endOfDay;
       const matchesSearchTerm =
-        pharmacy.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        pharmacy.itemBrand.toLowerCase().includes(searchTerm.toLowerCase());
+        pharmacy.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pharmacy.itemBrand?.toLowerCase().includes(searchTerm.toLowerCase());
 
       return withinSingleDay && matchesSearchTerm;
     }
 
-    // If both startDate and endDate are selected (range selection)
     const withinDateRange =
       (!startDate || pharmacyTimestamp >= startDate) &&
       (!endDate || pharmacyTimestamp <= endDate);
 
-    // Check if the pharmacy item matches the search term
     const matchesSearchTerm =
       pharmacy.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pharmacy.itemBrand?.toLowerCase().includes(searchTerm.toLowerCase());
 
     return withinDateRange && matchesSearchTerm;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredTransferList.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredTransferList.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   return (
     <div className="w-full">
@@ -153,12 +157,9 @@ const PharmacyTransferHistory = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredTransferList.length > 0 ? (
-              filteredTransferList.map((pharmacy) => (
-                <tr
-                  key={pharmacy.id}
-                  className="bg-white border-b hover:bg-slate-100"
-                >
+            {currentItems.length > 0 ? (
+              currentItems.map((pharmacy) => (
+                <tr key={pharmacy.id} className="bg-white border-b hover:bg-slate-100">
                   <td className="px-6 py-3">{pharmacy.itemName}</td>
                   <td className="px-6 py-3">{pharmacy.itemBrand}</td>
                   <td className="px-6 py-3">{pharmacy.quantity}</td>
@@ -178,6 +179,13 @@ const PharmacyTransferHistory = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 };
