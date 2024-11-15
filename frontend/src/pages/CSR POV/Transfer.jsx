@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from "react";
+import Select from "react-select"; // Import react-select
 import { ref, get, set, push, update, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { getAuth } from 'firebase/auth';
@@ -6,48 +7,45 @@ import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAuth } from "../../context/authContext/authContext";
 
 const Transfer = () => {
-  const { department } = useAuth(); 
+  const { department } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    department: 'Pharmacy',
-    reason: '',
-    timestamp: new Date().toLocaleString() 
+    name: "",
+    department: "Pharmacy",
+    reason: "",
+    timestamp: new Date().toLocaleString(),
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
     departmentError: false,
     reasonError: false,
   });
 
-  const searchRef = useRef('');
-  const departmentRef = useRef();
-
-  // Fetch authenticated user data
+  // Fetch user details
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      setFormData(prevData => ({ ...prevData, name: user.displayName || user.email }));
+      setFormData((prevData) => ({
+        ...prevData,
+        name: user.displayName || user.email,
+      }));
     }
   }, []);
 
-  // Fetch department data from Firebase
+  // Fetch department names
   useEffect(() => {
     const departmentRef = ref(database, "departments");
     get(departmentRef)
       .then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const departmentNames = Object.keys(data).filter(
-            (dept) => dept === "COVID UNIT" || dept === "ER" || dept === "ICU"
-          ); // Filter for CSR and Pharmacy
+          const departmentNames = Object.keys(data).filter((dept) =>
+            ["COVID UNIT", "ER", "ICU"].includes(dept)
+          );
           setDepartments(departmentNames);
-        } else {
-          console.log("No data available");
         }
       })
       .catch((error) => {
@@ -55,10 +53,10 @@ const Transfer = () => {
       });
   }, []);
 
-  // Real-time update of supplies
+  // Fetch item inventory
   useEffect(() => {
-    const suppliesRef = ref(database, 'departments/CSR/localSupplies');
-    const unsubscribe = onValue(suppliesRef, snapshot => {
+    const suppliesRef = ref(database, "departments/CSR/localSupplies");
+    const unsubscribe = onValue(suppliesRef, (snapshot) => {
       if (snapshot.exists()) {
         const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
           ...value,
@@ -76,136 +74,141 @@ const Transfer = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSearchChange = (e) => {
-    searchRef.current = e.target.value;
-    const searchQuery = searchRef.current.toLowerCase(); // Save the lowercase search query
-  
-    const filtered = items.filter(item =>
-      item.itemName && item.itemName.toLowerCase().includes(searchQuery) // Check if itemName exists
-    );
-  
-    setFilteredItems(filtered);
+  const handleSelectChange = (selectedOption) => {
+    const selectedItem = items.find((item) => item.itemKey === selectedOption.value);
+    if (selectedItem) {
+      addItem(selectedItem);
+    }
   };
-  
-  
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find(item => item.itemName === itemToAdd.itemName)) {
+    if (!selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
       setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
-      searchRef.current = '';
-      setFilteredItems([]);
     }
   };
 
   const removeItem = (itemToRemove) => {
-    setSelectedItems(selectedItems.filter(item => item.itemName !== itemToRemove.itemName));
+    setSelectedItems(selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey));
   };
 
   const handleQuantityChange = (item, value) => {
-    const mainInventoryItem = items.find(i => i.itemKey === item.itemKey);
-    const maxAvailableQuantity = mainInventoryItem?.quantity || 0;
-
-    if (value > maxAvailableQuantity) {
-      alert(`Cannot exceed available quantity of ${maxAvailableQuantity}`);
-      return;
+    const newQuantity = Math.max(parseInt(value, 0));
+    if (newQuantity > item.maxQuantity) {
+      alert(`Quantity cannot exceed ${item.maxQuantity}`);
+    } else {
+      const updatedItems = selectedItems.map((selectedItem) =>
+        selectedItem.itemKey === item.itemKey
+          ? { ...selectedItem, quantity: newQuantity }
+          : selectedItem
+      );
+      setSelectedItems(updatedItems);
     }
-
-    const updatedItems = selectedItems.map(selectedItem =>
-      selectedItem.itemName === item.itemName ? { ...selectedItem, quantity: value } : selectedItem
-    );
-    setSelectedItems(updatedItems);
   };
 
   const validateInputs = () => {
     const { department, reason } = formData;
-    setErrorMessages({
+    const errors = {
       departmentError: !department,
       reasonError: !reason,
-    });
-    return department && reason;
+    };
+    setErrorMessages(errors);
+    return Object.values(errors).every((error) => !error);
   };
 
   const handleTransfer = async () => {
     if (!validateInputs()) {
-      alert('Please fill in all required fields.');
+      alert("Please fill in all required fields.");
       return;
     }
+
     if (selectedItems.length === 0) {
-      alert('Please select items to transfer.');
+      alert("Please select items to transfer.");
       return;
     }
 
     setSubmitting(true);
 
-    for (const item of selectedItems) {
-      const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
-
-      // Fetch the existing quantity in the local supplies
-      const localSupplySnapshot = await get(ref(database, departmentPath));
-      let newQuantity = item.quantity;
-
-      if (localSupplySnapshot.exists()) {
-        const existingData = localSupplySnapshot.val();
-        newQuantity += existingData.quantity;
-      }
-
-      // Update the local supplies with the new quantity
-      await set(ref(database, departmentPath), {
-        ...item,
-        quantity: newQuantity,
-        timestamp: formData.timestamp,
-      });
-
-      // Push transfer details to InventoryHistoryTransfer
-      const historyPath = `supplyHistoryTransfer`;
-      const newHistoryRef = push(ref(database, historyPath));
-      await set(newHistoryRef, {
-        itemKey: item.itemKey,
-        itemName: item.itemName,
-        itemBrand: item.brand, // Include itemBrand here
-        quantity: item.quantity,
-        timestamp: formData.timestamp,
-        sender: formData.name,
-        recipientDepartment: formData.department,
+    try {
+      const transferData = {
+        name: formData.name,
         reason: formData.reason,
-      });
+        timestamp: formData.timestamp,
+        recipientDepartment: formData.department,
+      };
 
-      // Update the main inventory (deduct quantity)
-      const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
-      const mainInventorySnapshot = await get(mainInventoryRef);
+      for (const item of selectedItems) {
+        const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
+        const localSupplySnapshot = await get(ref(database, departmentPath));
+        let newQuantity = item.quantity;
 
-      if (mainInventorySnapshot.exists()) {
-        const currentData = mainInventorySnapshot.val();
-        const updatedQuantity = Math.max(currentData.quantity - item.quantity, 0);
-        await update(mainInventoryRef, { quantity: updatedQuantity });
-      } else {
-        console.error(`Item ${item.itemName} does not exist in the main inventory.`);
+        if (localSupplySnapshot.exists()) {
+          const existingData = localSupplySnapshot.val();
+          newQuantity += existingData.quantity;
+        }
+
+        await set(ref(database, departmentPath), {
+          ...item,
+          quantity: newQuantity,
+          timestamp: formData.timestamp,
+        });
+
+        const historyPath = `supplyHistoryTransfer`;
+        const newHistoryRef = push(ref(database, historyPath));
+        await set(newHistoryRef, {
+          itemName: item.itemName,
+          quantity: item.quantity,
+          timestamp: formData.timestamp,
+          sender: formData.name,
+          recipientDepartment: formData.department,
+          reason: formData.reason,
+        });
+
+        const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
+        const mainInventorySnapshot = await get(mainInventoryRef);
+
+        if (mainInventorySnapshot.exists()) {
+          const currentData = mainInventorySnapshot.val();
+          const updatedQuantity = currentData.quantity - item.quantity;
+
+          if (updatedQuantity < 0) {
+            console.error(`Not enough stock in CSR for item: ${item.itemName}`);
+          } else {
+            await update(mainInventoryRef, { quantity: updatedQuantity });
+          }
+        } else {
+          console.error(`Item ${item.itemName} does not exist in CSR's inventory.`);
+        }
       }
-    }
 
-    alert('Transfer successful!');
-    setFormData({ ...formData, reason: '' });
-    setSelectedItems([]);
-    setSubmitting(false);
+      alert("Transfer successful!");
+      setFormData({ ...formData, reason: "" });
+      setSelectedItems([]);
+    } catch (error) {
+      console.error("Error processing transfer:", error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (department !== "CSR" && department !== "Admin") {
     return <AccessDenied />;
   }
 
-  
-  
+  const selectOptions = items.map((item) => ({
+    value: item.itemKey,
+    label: `${item.itemName} (Max: ${item.quantity})`,
+  }));
 
   return (
     <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Create a new stock transfer.</h1>
+        <h1 className="text-xl font-bold">Create a new stock transfer</h1>
         <button
           className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-          onClick={handleTransfer} // Call handleTransfer directly
+          onClick={handleTransfer}
           disabled={submitting}
         >
-          {submitting ? 'Processing...' : 'Transfer'}
+          {submitting ? "Processing..." : "Transfer"}
         </button>
       </div>
 
@@ -218,115 +221,91 @@ const Transfer = () => {
           readOnly
           className="border p-2 w-full rounded"
         />
-        
       </div>
 
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Transfer Timestamp:</label>
-        <p>{formData.timestamp}</p>
+        <label className="block font-semibold mb-1">To Department</label>
+        <select
+          name="department"
+          value={formData.department}
+          onChange={handleInputChange}
+          className={`border p-2 w-full rounded ${
+            errorMessages.departmentError ? "border-red-500" : ""
+          }`}
+        >
+          {departments.map((dept, index) => (
+            <option key={index} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>
+        {errorMessages.departmentError && (
+          <p className="text-red-500 text-sm">Please select a department.</p>
+        )}
       </div>
 
       <div className="mb-4">
-        <h2 className="font-semibold text-lg mb-2">General</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block font-semibold mb-1">To Department</label>
-            <select
-              name="department"
-              value={formData.department}
-              onChange={handleInputChange}
-              className={`border p-2 w-full rounded ${errorMessages.departmentError ? 'border-red-500' : ''}`}
-            >
-              {departments.map((dept, index) => (
-                <option key={index} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-            {errorMessages.departmentError && <p className="text-red-500 text-sm">Please select a department.</p>}
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="block font-semibold mb-1">Reason for transfer</label>
-          <textarea
-            name="reason"
-            value={formData.reason}
-            onChange={handleInputChange}
-            className={`border p-2 w-full rounded ${errorMessages.reasonError ? 'border-red-500' : ''}`}
-          />
-          {errorMessages.reasonError && <p className="text-red-500 text-sm">Please provide a reason for the transfer.</p>}
-        </div>
-      </div>
-
-      <div>
-        <label className="block font-semibold mb-1">Search for Items to Transfer</label>
+        <label className="block font-semibold mb-1">Reason for transfer</label>
         <input
-          type="text"
-          value={searchRef.current}
-          onChange={handleSearchChange}
-          className="border p-2 w-full rounded mb-4"
-          placeholder="Search by item name"
+          name="reason"
+          value={formData.reason}
+          onChange={handleInputChange}
+          className={`border p-2 w-full rounded ${
+            errorMessages.reasonError ? "border-red-500" : ""
+          }`}
         />
-        {filteredItems.length > 0 && (
-          <ul className="border rounded p-2 max-h-40 overflow-y-auto">
-            {filteredItems.map(item => (
-              <li
-                key={item.itemKey}
-                className="cursor-pointer hover:bg-gray-200 p-2 rounded"
-                onClick={() => addItem(item)}
-              >
-                {item.itemName} (Available: {item.quantity})
-              </li>
-            ))}
-            </ul>
-          )}
-        </div>
-        <div>
-          
-  <h2 className="font-semibold text-lg mb-2">Selected Items for Transfer</h2>
-  {selectedItems.length > 0 ? (
-    <table className="border rounded w-full mb-4">
-      <thead>
-        <tr className="bg-gray-200">
-          <th className="text-left p-2">Name</th>
-          <th className="text-left p-2">Quantity</th>
-          <th className="text-left p-2">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {selectedItems.map((item, index) => (
-          <tr key={index} className="border-b">
-            <td className="p-2">{item.itemName}</td>
-            <td className="p-2">
-              <input
-                type="number"
-                min="1"
-                max={items.find(i => i.itemKey === item.itemKey)?.quantity || 0}
-                value={item.quantity}
-                onChange={(e) => handleQuantityChange(item, parseInt(e.target.value))}
-                className="border p-1 w-20 rounded"
+        {errorMessages.reasonError && (
+          <p className="text-red-500 text-sm">Please provide a reason for the transfer.</p>
+        )}
+      </div>
+
+      <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
+      <table className="w-full border-collapse border">
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="border p-2">Selected Supplies</th>
+            <th className="border p-2">Quantity</th>
+            <th className="border p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {selectedItems.map((item) => (
+            <tr key={item.itemKey}>
+              <td className="border p-2">{item.itemName} (Max: {item.maxQuantity})</td>
+              <td className="border p-2">
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => handleQuantityChange(item, e.target.value)}
+                  className="border border-gray-300 rounded p-1 w-16"
+                />
+              </td>
+              <td className="border p-2">
+                <button
+                  onClick={() => removeItem(item)}
+                  className="bg-red-500 text-white px-2 py-1 rounded"
+                >
+                  Remove
+                </button>
+              </td>
+            </tr>
+          ))}
+          <tr>
+            <td className="border p-2">
+              <Select
+                options={selectOptions}
+                onChange={handleSelectChange}
+                placeholder="Search and select item..."
+                className="w-full"
               />
             </td>
-            <td className="p-2">
-              <button
-                className="bg-red-500 text-white px-2 py-1 rounded"
-                onClick={() => removeItem(item)}
-              >
-                Remove
-              </button>
-            </td>
+            <td className="border p-2"></td>
+            <td className="border p-2"></td>
           </tr>
-        ))}
-      </tbody>
-    </table>
-  ) : (
-    <p className="text-gray-500 mb-4">No items selected.</p>
-  )}
-</div>
-      </div>
-    );
-  };
-  
-  export default Transfer;
-  
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Transfer;
