@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Select from "react-select"; // Import react-select
 import { ref, get, set, push } from "firebase/database"; // Firebase functions
 import { database } from "../../firebase/firebase"; // Firebase configuration
@@ -15,6 +15,7 @@ const RequestS = () => {
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // To store medicines or supplies data
   const [selectedItems, setSelectedItems] = useState([]); // To store selected items
+  const selectRef = useRef(null);
   const [userDepartment, setUserDepartment] = useState("");
   const [submitting, setSubmitting] = useState(false); // For submission state
   const [departmentError, setDepartmentError] = useState(false);
@@ -93,6 +94,7 @@ const RequestS = () => {
             retailPrice: data[key].costPrice,
             maxQuantity: data[key].maxQuantity,
             qrCode: data[key].qrCode,
+            genericName: data[key].genericName,
           }));
           setItems(itemsList);
         } else {
@@ -116,8 +118,12 @@ const RequestS = () => {
     const newItem = items.find((item) => item.itemKey === selectedOption.value);
     if (newItem) {
       addItem(newItem);
+  
+      // Clear the selected option after adding the item
+      selectRef.current.clearValue();
     }
   };
+  
 
   const addItem = (itemToAdd) => {
     if (!selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
@@ -271,7 +277,7 @@ const RequestS = () => {
           {selectedItems.map((item) => (
             <tr key={item.itemKey}>
               <td className="border p-2">
-                {item.itemName} (Max: {item.maxQuantity})
+               {item.genericName} {item.itemName} (Max: {item.maxQuantity})
               </td>
               <td className="border p-2">
                 <input
@@ -299,6 +305,7 @@ const RequestS = () => {
                 onChange={handleSelectChange}
                 placeholder="Search and select item..."
                 className="w-full"
+                ref={selectRef}
               />
             </td>
             <td className="border p-2"></td>
