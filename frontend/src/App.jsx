@@ -31,6 +31,7 @@ import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory
 import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
 import UsageHistory from "./pages/History/UsageHistory";
 import PaidSection from "./pages/Billing/PaidSection";
+import StockInHistory from "./pages/History/StockInHistory";
 import { element } from "prop-types";
 
 function App() {
@@ -76,6 +77,7 @@ function App() {
         { path: "CsrTransferHistory", element: <CsrTransferHistory/>},
         { path: "UsageHistory", element: <UsageHistory/>},
         { path: "PaidSection", element: <PaidSection/>},
+        {path: "StockInHistory", element: <StockInHistory/>},
       ],
     },
     {
