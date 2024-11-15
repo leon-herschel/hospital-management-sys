@@ -123,7 +123,6 @@ const RequestS = () => {
       selectRef.current.clearValue();
     }
   };
-  
 
   const addItem = (itemToAdd) => {
     // Check if the item is already in the selectedItems array

@@ -47,6 +47,8 @@ const TransferMed = () => {
             ["COVID UNIT", "ER", "ICU"].includes(dept)
           );
           setDepartments(departmentNames);
+        } else {
+          console.log("No data available");
         }
       })
       .catch((error) => {
