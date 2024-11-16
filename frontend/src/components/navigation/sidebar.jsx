@@ -404,7 +404,7 @@ const Sidebar = () => {
       {/* Right Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navbar */}
-        <header className="flex justify-between items-center p-4 bg-white drop-shadow-sm">
+        <header className="flex justify-between items-center p-4 bg-white drop-shadow-sm z-50">
           <button
             className="lg:hidden text-gray-800"
             onClick={() => setSidebarOpen(true)}
@@ -415,7 +415,7 @@ const Sidebar = () => {
             {currentTitle}
           </h1>
           <div className="flex items-center space-x-2">
-            <UserProfileDropdown />
+            <UserProfileDropdown onLogout={handleLogout} />
           </div>
         </header>
 
