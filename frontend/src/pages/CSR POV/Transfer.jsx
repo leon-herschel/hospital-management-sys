@@ -10,7 +10,7 @@ const Transfer = () => {
   const { department } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
-    department: "Pharmacy",
+    department: "COVID UNIT",
     reason: "",
     timestamp: new Date().toLocaleString(),
   });

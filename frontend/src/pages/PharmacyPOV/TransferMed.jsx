@@ -10,7 +10,7 @@ const TransferMed = () => {
   const { department } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
-    department: "Pharmacy",
+    department: "COVID UNIT",
     reason: "",
     timestamp: new Date().toLocaleString(),
   });
@@ -168,7 +168,8 @@ const TransferMed = () => {
         const historyPath = `medicineTransferHistory`;
         const newHistoryRef = push(ref(database, historyPath));
         await set(newHistoryRef, {
-          genericName: item.genericName,
+          itemName: item.genericName,
+          itemBrand: item.shortDesc,
           quantity: item.quantity,
           timestamp: formData.timestamp,
           sender: formData.name,

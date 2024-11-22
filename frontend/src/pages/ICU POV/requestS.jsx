@@ -9,7 +9,7 @@ const RequestS = () => {
     name: "",
     department: "Pharmacy",
     reason: "",
-    timestamp: "",
+    timestamp: new Date().toLocaleString(),
     currentDepartment: "",
   });
   const [departments, setDepartments] = useState([]);
@@ -81,21 +81,38 @@ const RequestS = () => {
       } else if (formData.department === "CSR") {
         itemRef = ref(database, "departments/CSR/localSupplies");
       }
-
+    
       try {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const itemsList = Object.keys(data).map((key) => ({
-            itemKey: key,
-            itemName: data[key].itemName,
-            brand: data[key].brand,
-            costPrice: data[key].costPrice,
-            retailPrice: data[key].costPrice,
-            maxQuantity: data[key].maxQuantity,
-            qrCode: data[key].qrCode,
-            genericName: data[key].genericName,
-          }));
+          const itemsList = Object.keys(data).map((key) => {
+            const item = data[key];
+    
+            // Determine the correct name field dynamically
+            const nameField = formData.department === "Pharmacy" ? "genericName" : "itemName";
+    
+            // Validate that the required nameField exists
+            if (!item || !item[nameField]) {
+              console.warn(
+                `Item with key ${key} is missing the '${nameField}' property.`
+              );
+              return null;
+            }
+    
+            // Map item fields
+            return {
+              itemKey: key,
+              itemName: item[nameField], 
+              brand: item.brand || "",
+              shortDesc: item.shortDesc || "",
+              standardDesc: item.standardDesc || "",
+              costPrice: item.costPrice || 0,
+              retailPrice: item.retailPrice || 0,
+              maxQuantity: item.maxQuantity || 0,
+              qrCode: item.qrCode || "",
+            };
+          }).filter(Boolean); // Remove any null entries
           setItems(itemsList);
         } else {
           console.log("No data available");
@@ -106,6 +123,7 @@ const RequestS = () => {
         setItems([]);
       }
     };
+    
     fetchItems();
   }, [formData.department]);
 
@@ -281,7 +299,7 @@ const RequestS = () => {
           {selectedItems.map((item) => (
             <tr key={item.itemKey}>
               <td className="border p-2">
-               {item.genericName} {item.itemName} (Max: {item.maxQuantity})
+              {item.itemName} (Max: {item.maxQuantity})
               </td>
               <td className="border p-2">
                 <input
