@@ -14,24 +14,26 @@ const MedicineTable = ({ medicines }) => {
   };
 
   return (
-    <table className="table-auto w-full border-collapse">
-      <thead>
-        <tr>
-          <th className="border px-4 py-2">Medicine Name</th>
-          <th className="border px-4 py-2">Quantity</th>
-          <th className="border px-4 py-2">Timestamp</th>
-        </tr>
-      </thead>
-      <tbody>
-        {medicines.map((med) => (
-          <tr key={med.id} className="border-t">
-            <td className="border px-4 py-2">{med.name}</td>
-            <td className="border px-4 py-2">{med.quantity}</td>
-            <td className="border px-4 py-2">{formatDate(med.timestamp)}</td>
+    <div className="relative overflow-x-auto rounded-md shadow-sm">
+      <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+        <thead className="text-md bg-slate-200">
+          <tr>
+            <th className="px-6 py-3">Medicine Name</th>
+            <th className="px-6 py-3">Quantity</th>
+            <th className="px-6 py-3">Timestamp</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {medicines.map((med) => (
+            <tr key={med.id} className="bg-white border-b hover:bg-slate-100">
+              <td className="px-6 py-3">{med.name}</td>
+              <td className="px-6 py-3">{med.quantity}</td>
+              <td className="px-6 py-3">{formatDate(med.timestamp)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
