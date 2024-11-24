@@ -120,67 +120,70 @@ const OverAllMedicine = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full border border-slate-300 px-4 py-2 rounded-md mb-4"
       />
-      <table className="w-full text-md text-gray-900 text-center border border-slate-200">
-        <thead className="text-md bg-slate-200">
-          <tr>
-          <th className="px-6 py-3">Short Description</th>
-                  <th className="px-6 py-3">Standard Description</th>
-                  <th className="px-6 py-3">Custom Description</th>
-                  <th className="px-6 py-3">Generic Name</th>
-                  <th className="px-6 py-3">Specificications</th>
-                  <th className="px-6 py-3">Item Group</th>
-                  <th className="px-6 py-3">Item Category</th>
-                  <th className="px-6 py-3">Examination Type</th>
-                  <th className="px-6 py-3">NHIP Category</th>
-                  <th className="px-6 py-3">Drug Admin Group</th>
-                  <th className="px-6 py-3">Small Unit</th>
-                  <th className="px-6 py-3">Conversion</th>
-                  <th className="px-6 py-3">Big Unit</th>
-                  <th className="px-6 py-3">Expiry Date</th>
-                  <th className="px-6 py-3">Quantity</th>
-                  <th className="px-6 py-3"> Status</th>
-            <th className="px-6 py-3">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentItems.length > 0 ? (
-            currentItems.map((medicine) => (
-              <tr key={medicine.id} className="bg-white border-b hover:bg-slate-100">
-               <td className="px-6 py-3">{medicine.shortDesc}</td>
-                      <td className="px-6 py-3">{medicine.standardDesc}</td>
-                      <td className="px-6 py-3">{medicine.customDesc}</td>
-                      <td className="px-6 py-3">{medicine.genericName}</td>
-                      <td className="px-6 py-3">{medicine.specifications}</td>
-                      <td className="px-6 py-3">{medicine.itemGroup}</td>
-                      <td className="px-6 py-3">{medicine.itemCategory}</td>
-                      <td className="px-6 py-3">{medicine.examinationType}</td>
-                      <td className="px-6 py-3">{medicine.nhipCategory}</td>
-                      <td className="px-6 py-3">{medicine.drugAdminGroup}</td>
-                      <td className="px-6 py-3">{medicine.smallUnit}</td>
-                      <td className="px-6 py-3">{medicine.conversion}</td>
-                      <td className="px-6 py-3">{medicine.bigUnit}</td>
-                      <td className="px-6 py-3">{medicine.expiryDate}</td>
-                      <td className="px-6 py-3">{medicine.quantity}</td>
-                      <td className="px-6 py-3">{medicine.status}</td>
-                <td className="px-6 py-3">
-                  <button
-                    onClick={() => setSelectedItem(medicine.genericName)} // Open modal for selected item
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md"
-                  >
-                    View
-                  </button>
+
+      <div className="relative overflow-x-auto rounded-md shadow-sm">
+        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+          <thead className="text-md bg-slate-200">
+            <tr>
+            <th className="px-6 py-3">Short Description</th>
+                    <th className="px-6 py-3">Standard Description</th>
+                    <th className="px-6 py-3">Custom Description</th>
+                    <th className="px-6 py-3">Generic Name</th>
+                    <th className="px-6 py-3">Specificications</th>
+                    <th className="px-6 py-3">Item Group</th>
+                    <th className="px-6 py-3">Item Category</th>
+                    <th className="px-6 py-3">Examination Type</th>
+                    <th className="px-6 py-3">NHIP Category</th>
+                    <th className="px-6 py-3">Drug Admin Group</th>
+                    <th className="px-6 py-3">Small Unit</th>
+                    <th className="px-6 py-3">Conversion</th>
+                    <th className="px-6 py-3">Big Unit</th>
+                    <th className="px-6 py-3">Expiry Date</th>
+                    <th className="px-6 py-3">Quantity</th>
+                    <th className="px-6 py-3"> Status</th>
+              <th className="px-6 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentItems.length > 0 ? (
+              currentItems.map((medicine) => (
+                <tr key={medicine.id} className="bg-white border-b hover:bg-slate-100">
+                <td className="px-6 py-3">{medicine.shortDesc}</td>
+                        <td className="px-6 py-3">{medicine.standardDesc}</td>
+                        <td className="px-6 py-3">{medicine.customDesc}</td>
+                        <td className="px-6 py-3">{medicine.genericName}</td>
+                        <td className="px-6 py-3">{medicine.specifications}</td>
+                        <td className="px-6 py-3">{medicine.itemGroup}</td>
+                        <td className="px-6 py-3">{medicine.itemCategory}</td>
+                        <td className="px-6 py-3">{medicine.examinationType}</td>
+                        <td className="px-6 py-3">{medicine.nhipCategory}</td>
+                        <td className="px-6 py-3">{medicine.drugAdminGroup}</td>
+                        <td className="px-6 py-3">{medicine.smallUnit}</td>
+                        <td className="px-6 py-3">{medicine.conversion}</td>
+                        <td className="px-6 py-3">{medicine.bigUnit}</td>
+                        <td className="px-6 py-3">{medicine.expiryDate}</td>
+                        <td className="px-6 py-3">{medicine.quantity}</td>
+                        <td className="px-6 py-3">{medicine.status}</td>
+                  <td className="px-6 py-3">
+                    <button
+                      onClick={() => setSelectedItem(medicine.genericName)} // Open modal for selected item
+                      className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="15" className="px-6 py-3">
+                  No medicines found.
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="15" className="px-6 py-3">
-                No medicines found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination Component */}
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
