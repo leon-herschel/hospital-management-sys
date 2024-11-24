@@ -73,39 +73,42 @@ const OverAllSupply = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full border border-slate-300 px-4 py-2 rounded-md mb-4"
       />
-      <table className="w-full text-md text-gray-900 text-center border border-slate-200">
-        <thead className="text-md bg-slate-200">
-          <tr>
-            <th className="px-6 py-3">Item Name</th>
-            <th className="px-6 py-3">Total Quantity</th>
-            <th className="px-6 py-3">Status</th>
-            <th className="px-6 py-3">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentItems.length > 0 ? (
-            currentItems.map(([itemName, item]) => (
-              <tr key={itemName} className="bg-white border-b hover:bg-slate-100">
-                <td className="px-6 py-3">{item.itemName}</td>
-                <td className="px-6 py-3">{item.totalQuantity}</td>
-                <td className="px-6 py-3">{item.status}</td>
-                <td className="px-6 py-3">
-                  <button
-                    onClick={() => setSelectedItem(itemName)} // Set selected item
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md"
-                  >
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
+
+      <div className="relative overflow-x-auto rounded-md shadow-sm">
+        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+          <thead className="text-md bg-slate-200">
             <tr>
-              <td colSpan="4" className="px-6 py-3">No supplies found.</td>
+              <th className="px-6 py-3">Item Name</th>
+              <th className="px-6 py-3">Total Quantity</th>
+              <th className="px-6 py-3">Status</th>
+              <th className="px-6 py-3">Actions</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {currentItems.length > 0 ? (
+              currentItems.map(([itemName, item]) => (
+                <tr key={itemName} className="bg-white border-b hover:bg-slate-100">
+                  <td className="px-6 py-3">{item.itemName}</td>
+                  <td className="px-6 py-3">{item.totalQuantity}</td>
+                  <td className="px-6 py-3">{item.status}</td>
+                  <td className="px-6 py-3">
+                    <button
+                      onClick={() => setSelectedItem(itemName)} // Set selected item
+                      className="bg-blue-500 text-white px-4 py-2 rounded-md"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="px-6 py-3">No supplies found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination Component */}
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />

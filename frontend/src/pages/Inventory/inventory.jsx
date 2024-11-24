@@ -399,30 +399,32 @@ function Inventory() {
                         <QRCode size={50} value={item.id} />
                       </td>
                       <td className="px-6 py-3">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => confirmDelete(item)}
-                          className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => handleStockIn(item)} // Trigger the StockIn modal
-                          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-                        >
-                          Stock In
-                        </button>
+                        <div className="flex justify-center space-x-2 items-center">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => confirmDelete(item)}
+                            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => handleStockIn(item)} // Trigger the StockIn modal
+                            className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-0 text-sm font-500 rounded-md"
+                          >
+                            Stock In
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="px-6 py-3">
+                    <td colSpan="17" className="px-6 py-3">
                       No items in inventory.
                     </td>
                   </tr>
@@ -502,30 +504,32 @@ function Inventory() {
                         <QRCode size={50} value={item.id} />
                       </td>
                       <td className="px-6 py-3">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => confirmDelete(item)}
-                          className="ml-4 bg-red-600 text-white px-6 py-2 rounded-md"
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => handleStockIn(item)} // Trigger the StockIn modal
-                          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-                        >
-                          Stock In
-                        </button>
+                        <div className="flex justify-center space-x-2 items-center">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => confirmDelete(item)}
+                            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => handleStockIn(item)} // Trigger the StockIn modal
+                            className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-0 text-sm font-500 rounded-md"
+                          >
+                            Stock In
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="px-6 py-3">
+                    <td colSpan="17" className="px-6 py-3">
                       No supplies in inventory.
                     </td>
                   </tr>
