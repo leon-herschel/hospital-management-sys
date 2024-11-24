@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Select from "react-select"; // Import react-select
 import { ref, get, set, push } from "firebase/database"; // Firebase functions
 import { database } from "../../firebase/firebase"; // Firebase configuration
@@ -9,12 +9,13 @@ const RequestS = () => {
     name: "",
     department: "Pharmacy",
     reason: "",
-    timestamp: "",
+    timestamp: new Date().toLocaleString(),
     currentDepartment: "",
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]); // To store medicines or supplies data
   const [selectedItems, setSelectedItems] = useState([]); // To store selected items
+  const selectRef = useRef(null);
   const [userDepartment, setUserDepartment] = useState("");
   const [submitting, setSubmitting] = useState(false); // For submission state
   const [departmentError, setDepartmentError] = useState(false);
@@ -80,20 +81,38 @@ const RequestS = () => {
       } else if (formData.department === "CSR") {
         itemRef = ref(database, "departments/CSR/localSupplies");
       }
-
+    
       try {
         const snapshot = await get(itemRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const itemsList = Object.keys(data).map((key) => ({
-            itemKey: key,
-            itemName: data[key].itemName,
-            brand: data[key].brand,
-            costPrice: data[key].costPrice,
-            retailPrice: data[key].costPrice,
-            maxQuantity: data[key].maxQuantity,
-            qrCode: data[key].qrCode,
-          }));
+          const itemsList = Object.keys(data).map((key) => {
+            const item = data[key];
+    
+            // Determine the correct name field dynamically
+            const nameField = formData.department === "Pharmacy" ? "genericName" : "itemName";
+    
+            // Validate that the required nameField exists
+            if (!item || !item[nameField]) {
+              console.warn(
+                `Item with key ${key} is missing the '${nameField}' property.`
+              );
+              return null;
+            }
+    
+            // Map item fields
+            return {
+              itemKey: key,
+              itemName: item[nameField], 
+              brand: item.brand || "",
+              shortDesc: item.shortDesc || "",
+              standardDesc: item.standardDesc || "",
+              costPrice: item.costPrice || 0,
+              retailPrice: item.retailPrice || 0,
+              maxQuantity: item.maxQuantity || 0,
+              qrCode: item.qrCode || "",
+            };
+          }).filter(Boolean); // Remove any null entries
           setItems(itemsList);
         } else {
           console.log("No data available");
@@ -104,6 +123,7 @@ const RequestS = () => {
         setItems([]);
       }
     };
+    
     fetchItems();
   }, [formData.department]);
 
@@ -116,14 +136,22 @@ const RequestS = () => {
     const newItem = items.find((item) => item.itemKey === selectedOption.value);
     if (newItem) {
       addItem(newItem);
+  
+      // Clear the selected option after adding the item
+      selectRef.current.clearValue();
     }
   };
 
   const addItem = (itemToAdd) => {
-    if (!selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
-      setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
+    // Check if the item is already in the selectedItems array
+    if (selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
+      alert("This item has already been selected."); // Show an alert
+      return; // Exit the function
     }
+    // Add the new item if not already selected
+    setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
   };
+  
 
   const removeItem = (itemToRemove) => {
     setSelectedItems(
@@ -271,7 +299,7 @@ const RequestS = () => {
           {selectedItems.map((item) => (
             <tr key={item.itemKey}>
               <td className="border p-2">
-                {item.itemName} (Max: {item.maxQuantity})
+              {item.itemName}
               </td>
               <td className="border p-2">
                 <input
@@ -299,6 +327,7 @@ const RequestS = () => {
                 onChange={handleSelectChange}
                 placeholder="Search and select item..."
                 className="w-full"
+                ref={selectRef}
               />
             </td>
             <td className="border p-2"></td>
