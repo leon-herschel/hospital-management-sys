@@ -299,7 +299,7 @@ const RequestS = () => {
           {selectedItems.map((item) => (
             <tr key={item.itemKey}>
               <td className="border p-2">
-              {item.itemName} (Max: {item.maxQuantity})
+              {item.itemName}
               </td>
               <td className="border p-2">
                 <input

@@ -204,7 +204,7 @@ const Transfer = () => {
 
   const selectOptions = items.map((item) => ({
     value: item.itemKey,
-    label: `${item.itemName} (Max Quantity: ${item.maxQuantity})`,
+    label: `${item.itemName} (Max Quantity: ${item.quantity})`,
   }));
 
   return (
@@ -279,7 +279,7 @@ const Transfer = () => {
         <tbody>
           {selectedItems.map((item) => (
             <tr key={item.itemKey}>
-              <td className="border p-2">{item.itemName} (Max: {item.maxQuantity})</td>
+              <td className="border p-2">{item.itemName}</td>
               <td className="border p-2">
                 <input
                   type="number"
