@@ -14,24 +14,26 @@ const SupplyTable = ({ supplies }) => {
   };
 
   return (
-    <table className="table-auto w-full border-collapse">
-      <thead>
-        <tr>
-          <th className="border px-4 py-2">Supply Name</th>
-          <th className="border px-4 py-2">Quantity</th>
-          <th className="border px-4 py-2">Timestamp</th>
-        </tr>
-      </thead>
-      <tbody>
-        {supplies.map((supply) => (
-          <tr key={supply.id} className="border-t">
-            <td className="border px-4 py-2">{supply.name}</td>
-            <td className="border px-4 py-2">{supply.quantity}</td>
-            <td className="border px-4 py-2">{formatDate(supply.timestamp)}</td>
+    <div className="relative overflow-x-auto rounded-md shadow-sm">
+      <table className="w-full text-md text-gray-900 text-center border border-slate-200">
+        <thead className="text-md bg-slate-200">
+          <tr>
+            <th className="px-6 py-3">Supply Name</th>
+            <th className="px-6 py-3">Quantity</th>
+            <th className="px-6 py-3">Timestamp</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {supplies.map((supply) => (
+            <tr key={supply.id} className="bg-white border-b hover:bg-slate-100">
+              <td className="px-6 py-3">{supply.name}</td>
+              <td className="px-6 py-3">{supply.quantity}</td>
+              <td className="px-6 py-3">{formatDate(supply.timestamp)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

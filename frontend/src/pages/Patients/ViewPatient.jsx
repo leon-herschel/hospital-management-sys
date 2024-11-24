@@ -173,51 +173,90 @@ function ViewPatient() {
   const supplies = patient.suppliesUsed ? Object.values(patient.suppliesUsed) : [];
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-1">
       <button
         className="mb-4 bg-gray-500 text-white py-2 px-4 rounded"
         onClick={() => navigate("/patients")}
       >
         Back to Patients List
       </button>
-
-      <h1 className="text-2xl font-bold mb-4">Patient Details</h1>
-      <div className="mb-4">
-        <strong>Name:</strong> {patient.firstName}
-      </div>
-      <div className="mb-4">
-        <strong>Last Name:</strong> {patient.lastName}
-      </div>
-      <div className="mb-4">
-        <strong>Date of Birth:</strong> {patient.birth}
-      </div>
-      <div className="mb-4">
-        <strong>Contact:</strong> {patient.contact}
-      </div>
-      <div className="mb-4">
-        <strong>Status:</strong> {patient.status}
-      </div>
-      {patient.diagnosis && (
-        <div className="mb-4">
-          <strong>Diagnosis:</strong> {patient.diagnosis}
+      <div className="md:flex no-wrap md:-mx-2">
+        {/* Left Side */}
+        <div className="w-full md:w-3/12 md:mx-2">
+          <div className="bg-white p-4 border-t-4 border-green-400">
+            <div className="image overflow-hidden">
+            </div>
+            <h1 className="text-gray-900 font-bold text-xl leading-8 my-1">{patient.firstName} {patient.lastName}</h1>
+            <h3 className="text-gray-600 font-lg text-semibold leading-6">Patient</h3>
+            <ul className="bg-gray-100 text-gray-600 hover:text-gray-700 hover:shadow py-2 px-3 mt-3 divide-y rounded shadow-sm">
+              <li className="flex items-center py-3">
+                <span>Status</span>
+                <span className="ml-auto">
+                  <span className={`py-1 px-2 rounded text-white text-sm ${patient.status === 'Inpatient' ? 'bg-green-500' : 'bg-blue-500'}`}>
+                    {patient.status}
+                  </span>
+                </span>
+              </li>
+              <li className="flex items-center py-3">
+                <span>Admission Date</span>
+                <span className="ml-auto">{patient.dateTime}</span>
+              </li>
+            </ul>
+          </div>
         </div>
-      )}
-      <div className="mb-4">
-        {patient.status === "Inpatient" ? (
-          <>
-            <strong>Room Type:</strong> {patient.roomType}
-          </>
-        ) : null}
+
+        {/* Right Side */}
+        <div className="w-full md:w-9/12 md:mx-2">
+          <div className="bg-white p-3 shadow-sm rounded-sm">
+            <div className="flex items-center space-x-2 font-semibold text-gray-900 leading-8">
+              <span className="text-green-500">
+                <svg className="h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </span>
+              <span className="tracking-wide">About</span>
+            </div>
+            <div className="text-gray-700">
+              <div className="grid md:grid-cols-2">
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">First Name</div>
+                  <div className="px-4 py-2">{patient.firstName}</div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">Last Name</div>
+                  <div className="px-4 py-2">{patient.lastName}</div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">Gender</div>
+                  <div className="px-4 py-2">{patient.gender}</div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">Contact No.</div>
+                  <div className="px-4 py-2">{patient.contact}</div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">Date of Birth</div>
+                  <div className="px-4 py-2">{patient.birth}</div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">Type of Room</div>
+                  <div className="px-4 py-2">{patient.roomType}</div>
+                </div>
+              </div>
+            </div>
+            <button className="block w-full text-blue-800 text-sm font-semibold rounded-lg hover:bg-gray-100 focus:outline-none focus:shadow-outline focus:bg-gray-100 hover:shadow-xs p-3 my-4">
+              Show Full Information
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Tabs for Supplies Used and Medicines Used */}
-      <div className="mb-4">
+      {/* Supplies and Medicines */}
+      <div className="mt-4">
         <div className="flex">
           <button
             className={`py-2 px-4 ${
-              activeTab === "supplies"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
+              activeTab === "supplies" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"
             } rounded-tl rounded-tr`}
             onClick={() => setActiveTab("supplies")}
           >
@@ -225,16 +264,13 @@ function ViewPatient() {
           </button>
           <button
             className={`py-2 px-4 ${
-              activeTab === "medicines"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-700"
+              activeTab === "medicines" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"
             } rounded-tl rounded-tr`}
             onClick={() => setActiveTab("medicines")}
           >
             Medicines Used
           </button>
         </div>
-
         <div className="border-t border-gray-300 p-4">
           {activeTab === "supplies" ? (
             supplies.length > 0 ? (
@@ -250,138 +286,14 @@ function ViewPatient() {
         </div>
       </div>
 
-      {patient.status === "Outpatient" && prescriptionList.length > 0 && (
-        <div className="mb-4">
-          <strong>Prescriptions:</strong>
-          {prescriptionList.map((prescription) => (
-            <div
-              key={prescription.id}
-              className="border border-gray-300 p-4 mb-4 rounded"
-            >
-              <div>
-                <span className="font-bold">Prescription Name:</span>{" "}
-                {prescription.prescriptionName}
-              </div>
-              <div>
-                <span className="font-bold">Dosage:</span> {prescription.dosage}
-              </div>
-              <div>
-                <span className="font-bold">Instruction:</span>{" "}
-                {prescription.instruction}
-              </div>
-              <div>
-                <span className="font-bold">Timestamp:</span>{" "}
-                {prescription.createdAt}
-              </div>
-              <div className="mt-2 flex gap-2">
-                <button
-                  onClick={() => handleEditPrescriptionClick(prescription)}
-                  className="bg-yellow-500 text-white py-1 px-2 rounded"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleRemovePrescriptionClick(prescription.id)}
-                  className="bg-red-500 text-white py-1 px-2 rounded"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {addPrescription && patient.status === "Outpatient" ? (
-        <div className="mt-4">
-          <div className="mb-2">
-            <label className="block mb-1">Prescription Name:</label>
-            <input
-              type="text"
-              className={`w-full border ${
-                errors.prescriptionName ? "border-red-500" : "border-gray-300"
-              } p-2 rounded`}
-              value={prescriptionName}
-              onChange={(e) => setPrescriptionName(e.target.value)}
-            />
-            {errors.prescriptionName && (
-              <span className="text-red-500 text-sm">
-                {errors.prescriptionName}
-              </span>
-            )}
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1">Dosage:</label>
-            <input
-              type="text"
-              className={`w-full border ${
-                errors.dosage ? "border-red-500" : "border-gray-300"
-              } p-2 rounded`}
-              value={dosage}
-              onChange={(e) => setDosage(e.target.value)}
-            />
-            {errors.dosage && (
-              <span className="text-red-500 text-sm">{errors.dosage}</span>
-            )}
-          </div>
-
-          <div className="mb-2">
-            <label className="block mb-1">Instruction:</label>
-            <input
-              type="text"
-              className={`w-full border ${
-                errors.instruction ? "border-red-500" : "border-gray-300"
-              } p-2 rounded`}
-              value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
-            />
-            {errors.instruction && (
-              <span className="text-red-500 text-sm">{errors.instruction}</span>
-            )}
-          </div>
-
-          <div className="flex justify-between mt-4">
-            <button
-              onClick={handleSubmit}
-              className="bg-green-500 text-white py-2 px-4 rounded"
-              disabled={loading}
-            >
-              {editingId ? "Update Prescription" : "Add Prescription"}
-            </button>
-            <button
-              onClick={handleCancelPrescriptionClick}
-              className="bg-gray-500 text-white py-2 px-4 rounded"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        patient.status === "Outpatient" && (
-          <button
-            onClick={handleAddPrescriptionClick}
-            className="bg-blue-500 text-white py-2 px-4 rounded mt-4"
-          >
-            Add Prescription
-          </button>
-        )
-      )}
-
       <button
         className="bg-gray-500 text-white py-2 px-4 rounded"
         onClick={() => generatePDF(patient)}
       >
         Generate PDF
       </button>
-
-      <DeleteConfirmationModal
-        isOpen={removeModalOpen}
-        onClose={() => setRemoveModalOpen(false)}
-        onConfirm={confirmRemovePrescription}
-        message="Are you sure you want to remove this prescription?"
-      />
     </div>
+
   );
 }
 
