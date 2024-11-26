@@ -231,7 +231,8 @@ function AddInventory({ isOpen, toggleModal }) {
               <label htmlFor="genericName" className="block text-gray-700 mb-1">
                 Generic Name
               </label>
-              <select
+              <input
+              type="text"
               id="genericName"
               name="genericName"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring ${
@@ -241,10 +242,7 @@ function AddInventory({ isOpen, toggleModal }) {
               onChange={(e) => setGenericName(e.target.value)}
             disabled={loading} // Disable input when submitting
             >
-                <option value="" disabled>Select Generic Name</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
+              </input>
               {genericNameError && <p className="text-red-500 mt-1">Required</p>}
             </div>
 
@@ -265,6 +263,7 @@ function AddInventory({ isOpen, toggleModal }) {
               />
               {specificationsError && <p className="text-red-500 mt-1">Required</p>}
             </div>
+
             <div className="mb-4">
               <label htmlFor="itemGroup" className="block text-gray-700 mb-1">
                 Item Group
@@ -280,8 +279,11 @@ function AddInventory({ isOpen, toggleModal }) {
             disabled={loading} // Disable input when submitting
             >
                 <option value="" disabled>Select Item Group</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="Drugs and Medicines">Drugs and Medicines</option>
+                <option value="Examinations">Examinations</option>
+                <option value="Procedures">Procedures</option>
+                <option value="Assets Equipment">Assets Equipment</option>
+                <option value="Miscellaneous/Others">Miscellaneous/Others</option>
               </select>
               {itemGroupError && <p className="text-red-500 mt-1">Required</p>}
             </div>
@@ -289,7 +291,7 @@ function AddInventory({ isOpen, toggleModal }) {
             <div className="mb-4">
               <label htmlFor="itemCategory" className="block text-gray-700 mb-1">
                 Item Category
-              </label>
+              </label>  
               <select
               id="itemCategory"
               name="itemCategory"
@@ -300,9 +302,16 @@ function AddInventory({ isOpen, toggleModal }) {
               onChange={(e) => setItemCategory(e.target.value)}
             disabled={loading} // Disable input when submitting
             >
-                <option value="" disabled>Select Item Category</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                  <option value="" disabled>Select Item Category</option>
+                  <option value="Nebules and Sprays">Nebules and Sprays</option>
+                  <option value="Tablets and Capsules">Tablets and Capsules</option>
+                  <option value="Syrup, Suspension and Drops">Syrup, Suspension and Drops</option>
+                  <option value="Creams and Ointments">Creams and Ointments</option>
+                  <option value="Ampoules and Vials">Ampoules and Vials</option>
+                  <option value="Eye and Ear Preparation">Eye and Ear Preparation</option>
+                  <option value="I.V Fluids">I.V Fluids</option>
+                  <option value="Suppositories">I.V Fluids</option>
+                  <option value="Oxygen">Oxygen</option>
               </select>
               {itemCategoryError && <p className="text-red-500 mt-1">Required</p>}
             </div>
@@ -366,8 +375,14 @@ function AddInventory({ isOpen, toggleModal }) {
             disabled={loading} // Disable input when submitting
             >
                 <option value="" disabled>Select NHIP Category</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="Medicines">Medicines</option>
+                <option value="Medical Supplies">Medical Supplies</option>
+                <option value="Operating Room Fee">Operating Room Fee</option>
+                <option value="Laboratory Examination">Laboratory Examination</option>
+                <option value="X-Ray Examination">X-Ray Examination</option>
+                <option value="Other Fees">Other Fees</option>
+                <option value="X-Ray/Laboratory/Others">X-Ray/Laboratory/Others</option>
+                <option value="Miscellaneous">Miscellaneous</option>
               </select>
               {nhipCategoryError && <p className="text-red-500 mt-1">Required</p>}
             </div>
