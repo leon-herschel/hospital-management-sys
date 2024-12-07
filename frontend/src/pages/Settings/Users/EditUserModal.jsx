@@ -157,7 +157,7 @@ const EditUserModal = ({ showModal, setShowModal, userId }) => {
                   >
                     <option value="" disabled>Select a role</option>
                     {roles.map((role) => (
-                      <option key={role} value={role}>{role}</option>
+                      <option key={role} value={role}>{role.split(' ') .map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</option>
                     ))}
                   </select>
                 </div>

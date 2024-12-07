@@ -180,6 +180,7 @@ const DepartmentsTable = () => {
                 <td className="px-6 py-4 flex justify-center space-x-4">
                   <button
                     className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+                    disabled={department.id === 'Admin'}
                     onClick={() => {
                       setSelectedDepartment(department);
                       setShowEditDepartmentModal(true);

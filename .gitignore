@@ -1,2 +1,5 @@
 node_modules
 /backend/serviceAccountKey.json
+/backend/firebaseAdmin.js
+/backend/roles.js
+/backend/server.js

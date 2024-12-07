@@ -199,7 +199,9 @@ function ViewPatient() {
               </li>
               <li className="flex items-center py-3">
                 <span>Admission Date</span>
-                <span className="ml-auto">{patient.dateTime}</span>
+                <span className="ml-auto">
+                  {patient.dateTime ? new Date(patient.dateTime).toLocaleDateString() : "N/A"}
+                </span>
               </li>
             </ul>
           </div>
