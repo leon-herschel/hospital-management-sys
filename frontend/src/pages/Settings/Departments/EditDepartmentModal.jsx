@@ -20,7 +20,6 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
         accessOverallInventory: department.permissions.accessOverallInventory || false,
         accessInventoryHistory: department.permissions.accessInventoryHistory || false,
         accessPatients: department.permissions.accessPatients || false,
-        accessSettings: department.permissions.accessSettings || false,
       });
     }
   }, [department]);

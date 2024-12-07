@@ -27,9 +27,18 @@ const UsersTable = () => {
     return () => unsubscribe();
   }, []);
 
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      user.email.toLowerCase().includes(searchLower) || 
+      user.firstName.toLowerCase().includes(searchLower) ||
+      user.lastName.toLowerCase().includes(searchLower) ||
+      fullName.includes(searchLower) ||
+      user.role.toLowerCase().includes(searchLower) ||
+      user.department.toLowerCase().includes(searchLower)
+    );
+  });
 
   const handleDeleteUser = async () => {
     if (userToDelete) {
