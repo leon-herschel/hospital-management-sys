@@ -62,6 +62,8 @@ const Sidebar = () => {
   const titles = {
     "/dashboard": "Overview",
     "/patients": "Patient Management",
+    "/booking": "Appointments",
+    "/PatientBooking": "Booking",
     "/inventory": "Inventory Management",
     "/settings": "Admin Settings",
     "/analytics": "Analytics",
@@ -340,6 +342,54 @@ const Sidebar = () => {
               Patients
             </Link>
           )}
+
+            <>
+              {/* Inventory Dropdown */}
+              <div
+                className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
+                onClick={toggleInventoryDropdown}
+              >
+                <ClipboardDocumentIcon className="w-6 h-6 mr-3" />
+                <span>Appointments</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
+                    inventoryDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+
+              <div
+                className={`ml-2 overflow-hidden transition-all duration-300 ease-in-out ${
+                  inventoryDropdownOpen
+                    ? "max-h-40 opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                <Link
+                  to="/booking"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/booking")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                  Appointments
+                </Link>
+
+                  <Link
+                    to="/PatientBooking"
+                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                      isActive("/PatientBooking")
+                        ? "bg-slate-800 text-white shadow-sm"
+                        : "text-white"
+                    } hover:bg-slate-800`}
+                  >
+                    <CubeIcon className="w-5 h-5 mr-3" />
+                    Booking
+                  </Link>
+              </div>
+            </>
 
           {(department === "Billing" || department === "Admin") && (
           <Link
