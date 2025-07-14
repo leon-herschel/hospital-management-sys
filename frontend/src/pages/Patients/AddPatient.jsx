@@ -234,7 +234,7 @@ function AddPatient({ isOpen, toggleModal }) {
         <div className="flex space-x-4 mb-4">
           <div className="flex-1">
             <label htmlFor="firstname" className="block text-gray-700 mb-2">
-              First Name
+              First Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -254,7 +254,7 @@ function AddPatient({ isOpen, toggleModal }) {
 
           <div className="flex-1">
             <label htmlFor="lastname" className="block text-gray-700 mb-2">
-              Last Name
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -277,7 +277,7 @@ function AddPatient({ isOpen, toggleModal }) {
         <div className="flex space-x-4 mb-4">
           <div className="flex-1">
             <label htmlFor="birth" className="block text-gray-700 mb-2">
-              Date of Birth
+              Date of Birth <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
@@ -297,7 +297,7 @@ function AddPatient({ isOpen, toggleModal }) {
 
           <div className="flex-1">
             <label htmlFor="age" className="block text-gray-700 mb-2">
-              Age
+              Age <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -317,7 +317,7 @@ function AddPatient({ isOpen, toggleModal }) {
         <div className="flex space-x-4 mb-4">
           <div className="flex-1">
             <label htmlFor="gender" className="block text-gray-700 mb-2">
-              Gender
+              Gender <span className="text-red-500">*</span>
             </label>
             <select
               id="gender"
@@ -330,7 +330,7 @@ function AddPatient({ isOpen, toggleModal }) {
               disabled={submitting}
             >
               <option value="" disabled>
-                Select Gender
+                Select Gender <span className="text-red-500">*</span>
               </option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -342,7 +342,7 @@ function AddPatient({ isOpen, toggleModal }) {
 
           <div className="flex-1">
             <label htmlFor="contact" className="block text-gray-700 mb-2">
-              Contact Number
+              Contact Number <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -366,7 +366,7 @@ function AddPatient({ isOpen, toggleModal }) {
         <div className="flex space-x-4 mb-4">
           <div className="flex-1">
             <label htmlFor="status" className="block text-gray-700 mb-2">
-              Status
+              Status <span className="text-red-500">*</span>
             </label>
             <select
               id="status"
@@ -379,7 +379,7 @@ function AddPatient({ isOpen, toggleModal }) {
               disabled={submitting}
             >
               <option value="" disabled>
-                Select Status
+                Select Status 
               </option>
               <option value="Inpatient">Inpatient</option>
               <option value="Outpatient">Outpatient</option>
@@ -392,7 +392,7 @@ function AddPatient({ isOpen, toggleModal }) {
           {status === "Inpatient" && (
             <div className="flex-1">
               <label htmlFor="roomType" className="block text-gray-700 mb-2">
-                Department
+                Department <span className="text-red-500">*</span>
               </label>
               {department === "Admin" ? (
                 <select
@@ -406,7 +406,7 @@ function AddPatient({ isOpen, toggleModal }) {
                   disabled={submitting}
                 >
                   <option value="" disabled>
-                    Select Department
+                    Select Department <span className="text-red-500">*</span>
                   </option>
                   {departments.map((dept) => (
                     <option key={dept} value={dept}>

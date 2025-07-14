@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { ref, get, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import { calculateStatus } from "./CalculateStatusLogic";
-import DepartmentBreakdown from "./DepartmentBreakdown"; // Import the DepartmentBreakdown component
-import Pagination from "../../components/reusable/Pagination"; // Import the Pagination component
+import DepartmentBreakdown from "./DepartmentBreakdown";
+import Pagination from "../../components/reusable/Pagination";
+import { sortByField } from "../../components/reusable/Sorter";
 
 const OverAllSupply = () => {
-  const [overallInventory, setOverallInventory] = useState({});
+  const [overallInventory, setOverallInventory] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedItem, setSelectedItem] = useState(null); // State to manage selected item for breakdown
-  const [currentPage, setCurrentPage] = useState(1); // Current page state
-  const itemsPerPage = 10; // Items per page
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const departmentsRef = ref(database, "departments");
@@ -41,7 +42,12 @@ const OverAllSupply = () => {
         });
       });
 
-      setOverallInventory(totalInventory);
+      const inventoryArray = Object.values(totalInventory);
+
+      // Apply alphabetical sorting using itemName
+      const sortedInventory = sortByField(inventoryArray, "itemName");
+
+      setOverallInventory(sortedInventory);
     };
 
     fetchOverallInventory();
@@ -50,8 +56,8 @@ const OverAllSupply = () => {
     return () => unsubscribeDepartments();
   }, []);
 
-  const filteredInventory = Object.entries(overallInventory).filter(
-    ([, item]) => item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInventory = overallInventory.filter((item) =>
+    item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredInventory.length / itemsPerPage);
@@ -86,14 +92,14 @@ const OverAllSupply = () => {
           </thead>
           <tbody>
             {currentItems.length > 0 ? (
-              currentItems.map(([itemName, item]) => (
-                <tr key={itemName} className="bg-white border-b hover:bg-slate-100">
+              currentItems.map((item) => (
+                <tr key={item.itemName} className="bg-white border-b hover:bg-slate-100">
                   <td className="px-6 py-3">{item.itemName}</td>
                   <td className="px-6 py-3">{item.totalQuantity}</td>
                   <td className="px-6 py-3">{item.status}</td>
                   <td className="px-6 py-3">
                     <button
-                      onClick={() => setSelectedItem(itemName)} // Set selected item
+                      onClick={() => setSelectedItem(item.itemName)}
                       className="bg-blue-500 text-white px-4 py-2 rounded-md"
                     >
                       View
@@ -110,14 +116,16 @@ const OverAllSupply = () => {
         </table>
       </div>
 
-      {/* Pagination Component */}
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
-      {/* Render DepartmentBreakdown if an item is selected */}
       {selectedItem && (
         <DepartmentBreakdown
           itemName={selectedItem}
-          onClose={() => setSelectedItem(null)} // Close breakdown on request
+          onClose={() => setSelectedItem(null)}
         />
       )}
     </div>

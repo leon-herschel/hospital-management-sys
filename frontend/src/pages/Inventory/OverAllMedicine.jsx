@@ -4,7 +4,7 @@ import { database } from "../../firebase/firebase";
 import { calculateStatus } from "./CalculateStatusLogic";
 import DepartmentBreakdown from "./DepartmentBreakdown";
 import Pagination from "../../components/reusable/Pagination"; // Import your Pagination component
-
+import { sortByField } from "../../components/reusable/Sorter";
 const OverAllMedicine = () => {
   const [medsList, setMedsList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,9 @@ const OverAllMedicine = () => {
                   });
                 }
               }
-              setMedsList(Object.values(totalMeds));
+              const sortedMeds = sortByField(Object.values(totalMeds), "genericName");
+  setMedsList(sortedMeds);
+             
             } else {
               setMedsList([]);
             }

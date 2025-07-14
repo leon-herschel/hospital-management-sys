@@ -109,9 +109,9 @@ const Sidebar = () => {
       >
         <div className="flex items-center justify-center">
           <img
-            src={logoSidebar}
-            alt="Southwestern University Medical Center"
-            className="p-3 pb-1 text-white text-center text-lg"
+             src={logoSidebar}
+            alt="OdysSys"
+            className="p-1 pb-0 text-white text-center text-lg"
           />
         </div>
 

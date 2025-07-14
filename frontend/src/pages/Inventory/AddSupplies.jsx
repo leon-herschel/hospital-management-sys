@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { ref, push, set } from "firebase/database";
 import QRCode from "qrcode";
 import { database } from "../../firebase/firebase";
+import BulkUploadModal from "./BulkUploadModal";
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
+  
 
   if (percentage > 70) {
     return "Good";
@@ -25,6 +27,7 @@ const generateRandomKey = (length) => {
   return result;
 };
 
+
 function AddSupplies({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -32,7 +35,7 @@ function AddSupplies({ isOpen, toggleModal }) {
   const [costPrice, setCostPrice] = useState("");
   const [retailPrice, setRetailPrice] = useState("");
   const [loading, setLoading] = useState(false); // New state to track loading
-
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [itemNameError, setItemNameError] = useState(false);
   const [quantityError, setQuantityError] = useState(false);
   const [brandError, setBrandError] = useState(false);
@@ -126,7 +129,7 @@ function AddSupplies({ isOpen, toggleModal }) {
 
         <div className="mb-4">
           <label htmlFor="itemName" className="block text-gray-700 mb-2">
-            Supply Name
+            Supply Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -146,7 +149,7 @@ function AddSupplies({ isOpen, toggleModal }) {
 
         <div className="mb-4">
           <label htmlFor="quantity" className="block text-gray-700 mb-2">
-            Quantity
+            Quantity <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -166,7 +169,7 @@ function AddSupplies({ isOpen, toggleModal }) {
 
         <div className="mb-4">
           <label htmlFor="brand" className="block text-gray-700 mb-2">
-            Brand
+            Brand <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -184,7 +187,7 @@ function AddSupplies({ isOpen, toggleModal }) {
 
         <div className="mb-4">
           <label htmlFor="costPrice" className="block text-gray-700 mb-2">
-            Cost Price
+            Cost Price <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -204,7 +207,7 @@ function AddSupplies({ isOpen, toggleModal }) {
 
         <div className="mb-4">
           <label htmlFor="retailPrice" className="block text-gray-700 mb-2">
-            Retail Price
+            Retail Price <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -230,6 +233,17 @@ function AddSupplies({ isOpen, toggleModal }) {
           {loading ? <span>Loading...</span> : "Submit"}{" "}
           {/* Show loading text */}
         </button>
+        <button
+  className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition mt-3"
+  onClick={() => setBulkModalOpen(true)}
+>
+  Add Bulk Supplies (CSV)
+</button>
+
+<BulkUploadModal
+  isOpen={bulkModalOpen}
+  onClose={() => setBulkModalOpen(false)}
+/>
       </div>
     </div>
   );

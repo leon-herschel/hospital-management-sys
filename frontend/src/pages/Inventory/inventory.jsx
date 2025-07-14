@@ -9,6 +9,7 @@ import Notification from "./Notification";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAccessControl } from "../../components/roles/accessControl";
 import StockInModal from "./StockInModal"; // Import the StockInModal
+import { sortByField } from "../../components/reusable/Sorter";
 
 const calculateStatus = (quantity, maxQuantity) => {
   const percentage = (quantity / maxQuantity) * 100;
@@ -220,7 +221,7 @@ function Inventory() {
                 .sort((a, b) => a.itemName.localeCompare(b.itemName))
             : [];
 
-          setInventoryList(inventoryData);
+            setInventoryList(sortByField(inventoryData, "genericName"));
         },
         (error) => {
           console.error("Error fetching inventory:", error);
@@ -247,7 +248,7 @@ function Inventory() {
                 .sort((a, b) => a.itemName.localeCompare(b.itemName))
             : [];
 
-          setSuppliesList(suppliesData);
+            setSuppliesList(sortByField(suppliesData, "itemName"))
         },
         (error) => {
           console.error("Error fetching supplies:", error);
@@ -288,8 +289,8 @@ function Inventory() {
     selectedTab === "medicine"
       ? inventoryList.filter(
           (medicine) =>
-            medicine.itemName &&
-            medicine.itemName.toLowerCase().includes(searchTerm.toLowerCase())
+            medicine.genericName &&
+            medicine.genericName.toLowerCase().includes(searchTerm.toLowerCase())
         )
       : suppliesList.filter(
           (supply) =>

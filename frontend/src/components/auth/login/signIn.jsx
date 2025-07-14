@@ -46,7 +46,7 @@ const SignIn = () => {
       <div className="w-1/2 h-screen hidden lg:block">
         <img
           src={bgImage}
-          alt="Southwestern University Hospital"
+          alt="OddySys"
           className="object-cover w-full h-full"
         />
       </div>

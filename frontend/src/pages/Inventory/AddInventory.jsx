@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ref, push, set } from "firebase/database";
 import QRCode from "qrcode";
 import { database } from "../../firebase/firebase";
+import MedicineBulkUpload from "./MedicineBuldUpload"
 
 // Helper function to generate a random alphanumeric string
 const generateRandomKey = (length) => {
@@ -61,6 +62,11 @@ function AddInventory({ isOpen, toggleModal }) {
   const [expiryDateError, setExpiryDateError] = useState(false);
   const [quantityError, setQuantityError] = useState(false);
 
+  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
+
+const toggleCSVModal = () => {
+  setIsCSVModalOpen(!isCSVModalOpen);
+};
   const handlesubmit = async () => {
     // Reset errors
     setShortDescError(!shortDesc);
@@ -175,7 +181,7 @@ function AddInventory({ isOpen, toggleModal }) {
           <div>
             <div className="mb-4">
               <label htmlFor="shortDesc" className="block text-gray-700 mb-1">
-                Short Description
+                Short Description <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -193,7 +199,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="standardDesc" className="block text-gray-700 mb-1">
-                Standard Description
+                Standard Description <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -211,7 +217,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="customDesc" className="block text-gray-700 mb-1">
-                Custom Description
+                Custom Description <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -229,7 +235,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="genericName" className="block text-gray-700 mb-1">
-                Generic Name
+                Generic Name <span className="text-red-500">*</span>
               </label>
               <input
               type="text"
@@ -248,7 +254,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="specifications" className="block text-gray-700 mb-1">
-                Specifications
+                Specifications <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -266,7 +272,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="itemGroup" className="block text-gray-700 mb-1">
-                Item Group
+                Item Group <span className="text-red-500">*</span>
               </label>
               <select
               id="itemGroup"
@@ -290,7 +296,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="itemCategory" className="block text-gray-700 mb-1">
-                Item Category
+                Item Category <span className="text-red-500">*</span>
               </label>  
               <select
               id="itemCategory"
@@ -318,7 +324,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="quantity" className="block text-gray-700 mb-1">
-                Quantity
+                Quantity <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -341,7 +347,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="examinationType" className="block text-gray-700 mb-1">
-                Examination Type
+                Examination Type <span className="text-red-500">*</span>
               </label>
               <select
               id="examinationType"
@@ -362,7 +368,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="nhipCategory" className="block text-gray-700 mb-1">
-                NHIP Category
+                NHIP Category <span className="text-red-500">*</span>
               </label>
               <select
               id="nhipCategory"
@@ -389,7 +395,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="drugAdminGroup" className="block text-gray-700 mb-1">
-                Drug Admin Group
+                Drug Admin Group <span className="text-red-500">*</span>
               </label>
               <select
               id="drugAdminGroup"
@@ -410,7 +416,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="smallUnit" className="block text-gray-700 mb-1">
-                Small Unit
+                Small Unit <span className="text-red-500">*</span>
               </label>
               <select
               id="smallUnit"
@@ -431,7 +437,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="conversion" className="block text-gray-700 mb-1">
-                Conversion
+                Conversion <span className="text-red-500">*</span>
               </label>
               <select
               id="conversion"
@@ -452,7 +458,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="bigUnit" className="block text-gray-700 mb-1">
-                Big Unit
+                Big Unit <span className="text-red-500">*</span>
               </label>
               <select
               id="bigUnit"
@@ -473,7 +479,7 @@ function AddInventory({ isOpen, toggleModal }) {
 
             <div className="mb-4">
               <label htmlFor="expiryDate" className="block text-gray-700 mb-1">
-                Expiry Date
+                Expiry Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -490,6 +496,8 @@ function AddInventory({ isOpen, toggleModal }) {
             </div>
           </div>
         </div>
+        
+        
 
         <div className="flex justify-end mt-6">
           <button
@@ -499,6 +507,12 @@ function AddInventory({ isOpen, toggleModal }) {
           >
             {loading ? "Loading..." : "Submit"}
           </button>
+          <button
+  onClick={toggleCSVModal}
+  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition mb-4"
+>
+  Upload Bulk (CSV)
+</button><MedicineBulkUpload isOpen={isCSVModalOpen} toggleModal={toggleCSVModal} />
         </div>
       </div>
     </div>
