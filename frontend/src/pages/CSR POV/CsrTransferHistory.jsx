@@ -142,7 +142,7 @@ const CsrTransferHistory = () => {
               <th className="px-6 py-3">Supply Name</th>
               <th className="px-6 py-3">Brand</th>
               <th className="px-6 py-3">Quantity</th>
-              <th className="px-6 py-3">Sender</th>
+              <th className="px-6 py-3">Transferred by:</th>
               <th className="px-6 py-3">Timestamp</th>
               <th className="px-6 py-3">Department Receiver</th>
               <th className="px-6 py-3">Reason</th>

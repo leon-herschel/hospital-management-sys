@@ -4,7 +4,9 @@ import { database } from "../../firebase/firebase";
 import { getAuth } from "firebase/auth";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import Pagination from "../../components/reusable/Pagination"; // Import your Pagination component
+import Pagination from "../../components/reusable/Pagination"; 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const PharmacyTransferHistory = () => {
   const [transferList, setTransferList] = useState([]);
@@ -105,7 +107,39 @@ const PharmacyTransferHistory = () => {
   // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+  }
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+  
+    doc.text("Pharmacy Transfer History Report", 14, 20);
+    if (startDate && endDate) {
+      doc.text(`Date Range: ${startDate.toDateString()} - ${endDate.toDateString()}`, 14, 30);
+    }
+  
+    const data = filteredTransferList.map(item => [
+      item.itemName || "",
+      item.itemBrand || "",
+      item.quantity || "",
+      item.sender || "",
+      item.timestamp || "",
+      item.recipientDepartment || "",
+      item.reason || ""
+    ]);
+  
+    autoTable(doc, {
+      head: [["Medicine Name", "Brand", "Qty", "Sender", "Timestamp", "To Dept", "Reason"]],
+      body: data,
+      startY: 40,
+      styles: { fontSize: 8 },
+    });
+    
+    
+  
+    doc.save("pharmacy_transfer_report.pdf");
+  
   };
+
 
   return (
     <div className="w-full">
@@ -141,6 +175,15 @@ const PharmacyTransferHistory = () => {
           placeholder="Search by Medicine Name or Brand"
           className="border rounded-md px-4 py-2"
         />
+        <div className="flex justify-end mb-2">
+  <button
+    onClick={generatePDF}
+    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+  >
+    Generate PDF
+  </button>
+</div>
+
       </div>
 
       <div className="relative overflow-x-auto rounded-md shadow-sm">

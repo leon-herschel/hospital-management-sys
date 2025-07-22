@@ -29,12 +29,26 @@ const Transfer = () => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      setFormData((prevData) => ({
-        ...prevData,
-        name: user.displayName || user.email,
-      }));
+      const userRef = ref(database, `users/${user.uid}`);
+  
+      get(userRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          const fullName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
+          setFormData((prevData) => ({
+            ...prevData,
+            name: fullName || user.email, // fallback if names are missing
+          }));
+        } else {
+          setFormData((prevData) => ({
+            ...prevData,
+            name: user.email, // fallback
+          }));
+        }
+      });
     }
   }, []);
+  
 
   // Fetch department names
   useEffect(() => {
@@ -221,7 +235,7 @@ const Transfer = () => {
       </div>
 
       <div className="mb-4">
-        <label className="block font-semibold mb-1">Transfer from</label>
+        <label className="block font-semibold mb-1">Transferred By:</label>
         <input
           type="text"
           name="name"
