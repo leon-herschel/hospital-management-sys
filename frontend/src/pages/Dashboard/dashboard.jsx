@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShoppingCartIcon, CreditCardIcon, UserIcon, UsersIcon, ArrowRightIcon } from '@heroicons/react/16/solid';
+import { ShoppingCartIcon, CreditCardIcon, UserIcon, UsersIcon, ArrowRightIcon, UserPlusIcon } from '@heroicons/react/16/solid';
 import { ref, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import { calculateStatus } from "../Inventory/CalculateStatusLogic";
@@ -208,7 +208,7 @@ const Dashboard = () => {
                     <div className="px-6 pt-6 text-md font-semibold">New Patients Today</div>
                     <div className="flex flex-row justify-between px-6">
                         <div className="relative h-14 w-14 rounded-full bg-yellow-500 text-center text-yellow-50">
-                            <CreditCardIcon className="h-8 w-8 mx-auto my-3 text-white" />
+                            <UserPlusIcon className="h-8 w-8 mx-auto my-3 text-white" />
                         </div>
                         <h2 className="self-center text-3xl font-bold">{newPatientCount}</h2>
                     </div>
