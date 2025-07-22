@@ -11,7 +11,7 @@ const PaidSection = () => {
 
     // Fetch paid billing records from Firebase
     useEffect(() => {
-        const billingRef = query(ref(database, "billing"), orderByChild('status'), equalTo('paid'));
+        const billingRef = query(ref(database, "Clinic1/billing"), orderByChild('status'), equalTo('paid'));
 
         const unsubscribeBillingRef = onValue(billingRef, (snapshot) => {
             const data = snapshot.val();

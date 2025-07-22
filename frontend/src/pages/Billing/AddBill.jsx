@@ -7,12 +7,14 @@ const AddBill = ({ onClose }) => {
   const [selectedPatient, setSelectedPatient] = useState("");
   const [billingAmount, setBillingAmount] = useState(0);
   const [selectedPatientName, setSelectedPatientName] = useState("");
+  const [selectedPatientFirstName, setSelectedPatientFirstName] = useState("");
+  const [selectedPatientLastName, setSelectedPatientLastName] = useState("");
   const [medsUsed, setMedsUsed] = useState([]);
   const [suppliesUsed, setSuppliesUsed] = useState([]);
 
   // Fetch patient list on component mount
   useEffect(() => {
-    const patientRef = ref(database, "patient");
+    const patientRef = ref(database, `Clinic1/patient`);
     const unsubscribePatientRef = onValue(patientRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -33,18 +35,20 @@ const AddBill = ({ onClose }) => {
   useEffect(() => {
     const fetchBillingItems = async () => {
       if (!selectedPatient) return;
-  
-      const patientRef = ref(database, `patient/${selectedPatient}`);
+
+      const patientRef = ref(database, `Clinic1/patient/${selectedPatient}`);
       try {
         const snapshot = await get(patientRef);
         let totalAmount = 0;
         let meds = [];
         let supplies = [];
-  
+
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setSelectedPatientName(data.name || "");
-  
+          setSelectedPatientFirstName(data.firstName || "");
+          setSelectedPatientLastName(data.lastName || "");
+          setSelectedPatientName(`${data.firstName || ""} ${data.lastName || ""}`.trim());
+
           // Calculate total from medUse
           if (data.medUse && typeof data.medUse === "object") {
             Object.keys(data.medUse).forEach((key) => {
@@ -52,7 +56,7 @@ const AddBill = ({ onClose }) => {
               const quantity = medicine.quantity || 0;
               const retailPrice = medicine.retailPrice || 0;
               totalAmount += quantity * retailPrice;
-  
+
               meds.push({
                 id: push(ref(database, "temp")).key, // Use a temporary ref to generate a unique key
                 name: medicine.name || "Unknown Medicine",
@@ -61,7 +65,7 @@ const AddBill = ({ onClose }) => {
               });
             });
           }
-  
+
           // Calculate total from suppliesUsed
           if (data.suppliesUsed && typeof data.suppliesUsed === "object") {
             Object.keys(data.suppliesUsed).forEach((key) => {
@@ -69,7 +73,7 @@ const AddBill = ({ onClose }) => {
               const quantity = supply.quantity || 0;
               const retailPrice = supply.retailPrice || 0;
               totalAmount += quantity * retailPrice;
-  
+
               supplies.push({
                 id: push(ref(database, "temp")).key, // Use a temporary ref to generate a unique key
                 name: supply.name || "Unknown Supply",
@@ -78,7 +82,7 @@ const AddBill = ({ onClose }) => {
               });
             });
           }
-  
+
           // Set the total billing amount and items used
           setBillingAmount(totalAmount);
           console.log("Total Billing Amount:", totalAmount);
@@ -91,7 +95,7 @@ const AddBill = ({ onClose }) => {
         console.error("Error fetching billing items: ", error);
       }
     };
-  
+
     fetchBillingItems();
   }, [selectedPatient]);
   
@@ -105,25 +109,25 @@ const AddBill = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedPatient || !billingStatus) {
-      alert("Please select a patient, and choose a billing status.");
+    if (!selectedPatient) {
+      alert("Please select a patient.");
       return;
     }
 
-    const billingRef = push(ref(database, "billing"));
+    const billingRef = push(ref(database, `Clinic1/billing`));
 
     const billingData = {
       amount: billingAmount,
-      status: "unpaid", // Automatically set status to "unpaid"
+      status: "unpaid",
       patientName: selectedPatientName,
       medsUsed: medsUsed.map((med) => ({
-        id: med.id, // Unique key
+        id: med.id,
         name: med.name,
         quantity: med.quantity,
         retailPrice: med.retailPrice,
       })),
       suppliesUsed: suppliesUsed.map((supply) => ({
-        id: supply.id, // Unique key
+        id: supply.id,
         name: supply.name,
         quantity: supply.quantity,
         retailPrice: supply.retailPrice,
@@ -153,7 +157,9 @@ const AddBill = ({ onClose }) => {
           >
             <option value="">Select Patient</option>
             {patientList.map((patient) => (
-              <option key={patient.id} value={patient.id}>{patient.firstName}</option>
+              <option key={patient.id} value={patient.id}>
+                {patient.firstName} {patient.lastName}
+              </option>
             ))}
           </select>
         </div>
