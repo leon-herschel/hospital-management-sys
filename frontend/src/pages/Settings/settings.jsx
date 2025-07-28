@@ -75,7 +75,7 @@ const Settings = () => {
         </button>
       </div>
 
-      {/* Content */}
+    
       {tableView === 'User Management' && <UsersTable />}
       {tableView === 'Role Management' && <RolesTable />}
       {tableView === 'Department Management' && <DepartmentsTable />}
