@@ -4,6 +4,8 @@ import RolesTable from './Roles/RolesTable';
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAccessControl } from "../../components/roles/accessControl";
 import DepartmentsTable from './Departments/DepartmentsTable';
+import ClinicsTable from './Clinics/ClinicTable';
+import DoctorsTable from './Doctors/DoctorsTable';
 
 const Settings = () => {
   const [tableView, setTableView] = useState('User Management');
@@ -20,12 +22,12 @@ const Settings = () => {
   return (
     <div className="w-full">
       {/* Tabs */}
-      <div className="mb-4 flex justify-start items-center">
-      <button
+      <div className="mb-4 flex justify-start items-center flex-wrap gap-2">
+        <button
           onClick={() => handleClick("User Management")}
-          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+          className={`px-6 py-2 rounded-md transition duration-200 ${
             tableView === "User Management"
-              ? "bg-slate-900 text-white text-bold"
+              ? "bg-slate-900 text-white font-bold"
               : "bg-slate-200 text-gray-900"
           }`}
         >
@@ -33,9 +35,9 @@ const Settings = () => {
         </button>
         <button
           onClick={() => handleClick("Role Management")}
-          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+          className={`px-6 py-2 rounded-md transition duration-200 ${
             tableView === "Role Management"
-              ? "bg-slate-900 text-white text-bold"
+              ? "bg-slate-900 text-white font-bold"
               : "bg-slate-200 text-gray-900"
           }`}
         >
@@ -43,19 +45,42 @@ const Settings = () => {
         </button>
         <button
           onClick={() => handleClick("Department Management")}
-          className={`space-x-4 px-6 py-2 rounded-md transition duration-200 ${
+          className={`px-6 py-2 rounded-md transition duration-200 ${
             tableView === "Department Management"
-              ? "bg-slate-900 text-white text-bold"
+              ? "bg-slate-900 text-white font-bold"
               : "bg-slate-200 text-gray-900"
           }`}
         >
           Department Management
         </button>
+        <button
+          onClick={() => handleClick("Clinic Management")}
+          className={`px-6 py-2 rounded-md transition duration-200 ${
+            tableView === "Clinic Management"
+              ? "bg-slate-900 text-white font-bold"
+              : "bg-slate-200 text-gray-900"
+          }`}
+        >
+          Clinic Management
+        </button>
+        <button
+          onClick={() => handleClick("Doctor Management")}
+          className={`px-6 py-2 rounded-md transition duration-200 ${
+            tableView === "Doctor Management"
+              ? "bg-slate-900 text-white font-bold"
+              : "bg-slate-200 text-gray-900"
+          }`}
+        >
+          Doctor Management
+        </button>
       </div>
-      
+
+    
       {tableView === 'User Management' && <UsersTable />}
       {tableView === 'Role Management' && <RolesTable />}
       {tableView === 'Department Management' && <DepartmentsTable />}
+      {tableView === 'Clinic Management' && <ClinicsTable />}
+      {tableView === 'Doctor Management' && <DoctorsTable />}
     </div>
   );
 };
