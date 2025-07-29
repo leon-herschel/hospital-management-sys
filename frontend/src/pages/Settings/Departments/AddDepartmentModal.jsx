@@ -93,8 +93,16 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               />
               <span className="ml-2 text-gray-700">Access Patients</span>
             </label>
+              <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessSettings}
+                onChange={() => setAccessSettings(!accessSettings)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Settings</span>
+            </label>
           </div>
-
           <div className="flex justify-center">
             <button
               type="submit"

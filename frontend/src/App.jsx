@@ -25,13 +25,15 @@ import TransferMed from "./pages/PharmacyPOV/TransferMed";
 import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
 import OverallInventory from "./pages/Inventory/OverAllInventory";
-import ViewRequest from "./pages/CSR POV/ViewRequest"
+import ViewRequest from "./pages/CSR POV/ViewRequest";
 import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
 import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory";
 import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
 import UsageHistory from "./pages/History/UsageHistory";
 import PaidSection from "./pages/Billing/PaidSection";
 import StockInHistory from "./pages/History/StockInHistory";
+import AdminConsult from "./pages/AdminAppointments/Consultation/AdminConsult";
+import AdminLab from "./pages/AdminAppointments/Laboratory/AdminLab";
 import { element } from "prop-types";
 
 function App() {
@@ -68,16 +70,21 @@ function App() {
         { path: "requestStock", element: <RequestStock /> },
         { path: "icuLocalInventory", element: <IcuLocalInventory /> },
         { path: "TransferMed", element: <TransferMed /> },
-        { path: "ViewRequest", element: <ViewRequest/> },
+        { path: "ViewRequest", element: <ViewRequest /> },
         { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
         { path: "OverallInventory", element: <OverallInventory /> },
         { path: "ConfirmRequest", element: <ConfirmRequest /> },
-        { path: "PharmacyTransferHistory", element: < PharmacyTransferHistory/>},
-        { path: "CsrTransferHistory", element: <CsrTransferHistory/>},
-        { path: "UsageHistory", element: <UsageHistory/>},
-        { path: "PaidSection", element: <PaidSection/>},
-        {path: "StockInHistory", element: <StockInHistory/>},
+        {
+          path: "PharmacyTransferHistory",
+          element: <PharmacyTransferHistory />,
+        },
+        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
+        { path: "UsageHistory", element: <UsageHistory /> },
+        { path: "PaidSection", element: <PaidSection /> },
+        { path: "StockInHistory", element: <StockInHistory /> },
+        { path: "AdminConsult", element: <AdminConsult /> },
+        { path: "AdminLab", element: <AdminLab /> },
       ],
     },
     {
