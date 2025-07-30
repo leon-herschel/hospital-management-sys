@@ -1,21 +1,21 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
-  const [departmentName, setDepartmentName] = useState(''); 
-  const [accessInventory, setAccessInventory] = useState(false); 
-  const [accessOverallInventory, setAccessOverallInventory] = useState(false); 
+  const [departmentName, setDepartmentName] = useState("");
+  const [accessInventory, setAccessInventory] = useState(false);
+  const [accessOverallInventory, setAccessOverallInventory] = useState(false);
   const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
-  const [accessPatients, setAccessPatients] = useState(false); 
-  const [accessSettings, setAccessSettings] = useState(false); 
+  const [accessPatients, setAccessPatients] = useState(false);
+  const [accessSettings, setAccessSettings] = useState(false);
   const [accessBilling, setAccessBilling] = useState(false); // Fixed naming here
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const newDepartment = {
-      [departmentName]: { 
-        permissions: {  
+      [departmentName]: {
+        permissions: {
           accessInventory,
           accessOverallInventory,
           accessInventoryHistory,
@@ -26,8 +26,8 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
       },
     };
 
-    onAddDepartment(newDepartment); 
-    setShowModal(false); 
+    onAddDepartment(newDepartment);
+    setShowModal(false);
   };
 
   if (!showModal) return null;
@@ -42,11 +42,11 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
           <XMarkIcon className="h-6 w-6" />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6">Add Department</h2> 
+        <h2 className="text-2xl font-bold mb-6">Add Department</h2>
 
         <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
           <div className="mb-4">
-            <label className="block text-gray-700">Department Name</label> 
+            <label className="block text-gray-700">Department Name</label>
             <input
               type="text"
               placeholder="Department Name"
@@ -72,19 +72,27 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               <input
                 type="checkbox"
                 checked={accessOverallInventory}
-                onChange={() => setAccessOverallInventory(!accessOverallInventory)}
+                onChange={() =>
+                  setAccessOverallInventory(!accessOverallInventory)
+                }
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Overall Inventory</span>
+              <span className="ml-2 text-gray-700">
+                Access Overall Inventory
+              </span>
             </label>
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
                 checked={accessInventoryHistory}
-                onChange={() => setAccessInventoryHistory(!accessInventoryHistory)}
+                onChange={() =>
+                  setAccessInventoryHistory(!accessInventoryHistory)
+                }
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Inventory History</span>
+              <span className="ml-2 text-gray-700">
+                Access Inventory History
+              </span>
             </label>
             <label className="flex items-center mb-2">
               <input
@@ -95,9 +103,6 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               />
               <span className="ml-2 text-gray-700">Access Patients</span>
             </label>
-<<<<<<< HEAD
-              <label className="flex items-center mb-2">
-=======
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
@@ -108,7 +113,6 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               <span className="ml-2 text-gray-700">Access Billing</span>
             </label>
             <label className="flex items-center mb-2">
->>>>>>> 74e03ab709130d84e10f92c39b14c86280553762
               <input
                 type="checkbox"
                 checked={accessSettings}
@@ -123,7 +127,7 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               type="submit"
               className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
             >
-              Create Department 
+              Create Department
             </button>
           </div>
         </form>
