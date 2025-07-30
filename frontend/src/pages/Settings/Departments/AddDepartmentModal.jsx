@@ -8,6 +8,7 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
   const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
   const [accessPatients, setAccessPatients] = useState(false); 
   const [accessSettings, setAccessSettings] = useState(false); 
+  const [accessBilling, setAccessBilling] = useState(false); // Fixed naming here
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -20,6 +21,7 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
           accessInventoryHistory,
           accessPatients,
           accessSettings,
+          accessBilling, // This now matches the state variable
         },
       },
     };
@@ -93,7 +95,20 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               />
               <span className="ml-2 text-gray-700">Access Patients</span>
             </label>
+<<<<<<< HEAD
               <label className="flex items-center mb-2">
+=======
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessBilling}
+                onChange={() => setAccessBilling(!accessBilling)} // Fixed setter here
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Billing</span>
+            </label>
+            <label className="flex items-center mb-2">
+>>>>>>> 74e03ab709130d84e10f92c39b14c86280553762
               <input
                 type="checkbox"
                 checked={accessSettings}
