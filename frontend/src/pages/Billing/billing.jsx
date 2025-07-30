@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ref, onValue, remove, update, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, onValue, remove, update, query, orderByChild, equalTo, get } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import ViewBill from './ViewBill';
 import DeleteConfirmationModal from './DeleteConfirmationModalBilling';
 import AddBill from './AddBill';
 import DateRangePicker from '../../components/DateRangePicker/DateRangePicker'; // Import DateRangePicker
+import ReceiptModal from './ReceiptModal';
 
 const Billing = () => {
   const [billings, setBillings] = useState([]);
@@ -16,10 +17,12 @@ const Billing = () => {
   const [billingToDelete, setBillingToDelete] = useState(null);
   const [startDate, setStartDate] = useState(null); // State for start date
   const [endDate, setEndDate] = useState(null);     // State for end date
+  const [patientDetails, setPatientDetails] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
   // Fetch billings from Firebase and listen for updates
   useEffect(() => {
-    const billingsRef = query(ref(database, "billing"), orderByChild('status'), equalTo('unpaid'));
+    const billingsRef = query(ref(database, `Clinic1/billing`), orderByChild('status'), equalTo('unpaid'));
 
     const unsubscribe = onValue(billingsRef, (snapshot) => {
       const billingList = [];
@@ -56,7 +59,7 @@ const Billing = () => {
   const handleDeleteBilling = async () => {
     if (billingToDelete) {
       try {
-        const billingRef = ref(database, `billing/${billingToDelete.id}`);
+        const billingRef = ref(database, `Clinic1/billing/${billingToDelete.id}`);
         await remove(billingRef);
         setBillings(billings.filter((b) => b.id !== billingToDelete.id));
         setIsDeleteModalOpen(false);
@@ -76,7 +79,7 @@ const Billing = () => {
   // Handle marking a billing as paid
   const handleMarkAsPaid = async (billing) => {
     try {
-      const billingRef = ref(database, `billing/${billing.id}`);
+      const billingRef = ref(database, `Clinic1/billing/${billing.id}`);
       await update(billingRef, { status: 'paid' });
       setBillings(billings.filter((b) => b.id !== billing.id)); // Remove from list once marked as paid
     } catch (error) {
@@ -88,9 +91,23 @@ const Billing = () => {
     setIsAddModalOpen(false);
   };
 
-  const handleViewBilling = (billing) => {
+  // Fetch patient details including medUsed and suppliesUsed
+  const handleViewBilling = async (billing) => {
     setViewBilling(billing);
     setIsViewModalOpen(true);
+
+    // Assuming billing.patientId exists
+    if (billing.patientId) {
+      const patientRef = dbRef(database, `Clinic1/patients`);
+      const snapshot = await get(patientRef);
+      if (snapshot.exists()) {
+        setPatientDetails(snapshot.val());
+      } else {
+        setPatientDetails(null);
+      }
+    } else {
+      setPatientDetails(null);
+    }
   };
 
   const handleCloseModal = () => {
@@ -142,13 +159,16 @@ const Billing = () => {
           {filteredBillings.length > 0 ? (
             filteredBillings.map(billing => (
               <tr key={billing.id} className="hover:bg-gray-100">
-                <td className="border-b px-4 py-2">{billing.patientName}</td>
+                <td className="border-b px-4 py-2">
+                  {billing.patientFirstName} {billing.patientName}
+                </td>
                 <td className="border-b px-4 py-2">₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}</td>
                 <td className="border-b px-4 py-2">{billing.status}</td>
                 <td className="border-b px-4 py-2">
                   <button onClick={() => handleViewBilling(billing)} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md">View</button>
                   <button onClick={() => handleMarkAsPaid(billing)} className="ml-4 bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-md">Mark as Paid</button>
                   <button onClick={() => openDeleteModal(billing)} className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md">Delete</button>
+                  <button onClick={() => setIsReceiptModalOpen(true)} className="ml-4 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-1 rounded-md">Receipt</button>
                 </td>
               </tr>
             ))
@@ -177,6 +197,14 @@ const Billing = () => {
           isOpen={isDeleteModalOpen}
           onConfirm={handleDeleteBilling}
           onCancel={() => setIsDeleteModalOpen(false)}
+        />
+      )}
+
+      {isReceiptModalOpen && (
+        <ReceiptModal
+          billing={viewBilling}
+          patientDetails={patientDetails}
+          onClose={() => setIsReceiptModalOpen(false)}
         />
       )}
     </div>
