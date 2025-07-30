@@ -31,6 +31,8 @@ const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
   const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
+  const [appoinmentsDropdownOpen, setAppointmentsDropdownOpen] =
+    useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const permissions = useAccessControl();
@@ -52,6 +54,9 @@ const Sidebar = () => {
 
   const toggleInventoryDropdown = () => {
     setInventoryDropdownOpen(!inventoryDropdownOpen);
+  };
+  const toggleAppointmentsDropdown = () => {
+    setAppointmentsDropdownOpen(!appoinmentsDropdownOpen);
   };
 
   const toggleHistoryDropdown = () => {
@@ -81,6 +86,8 @@ const Sidebar = () => {
     "/UsageHistory": "Usage History",
     "/PaidSection": "PaidSection",
     "/StockInHistory": "Stock In History",
+    "/AdminConsult": "Admin Consultation",
+    "/AdminLab": "Admin Laboratory",
   };
 
   let currentTitle = "Overview";
@@ -109,7 +116,7 @@ const Sidebar = () => {
       >
         <div className="flex items-center justify-center">
           <img
-             src={logoSidebar}
+            src={logoSidebar}
             alt="OdysSys"
             className="p-1 pb-0 text-white text-center text-lg"
           />
@@ -181,6 +188,55 @@ const Sidebar = () => {
               </div>
             </>
           )}
+
+          <>
+            {/* Admin Appt Dropdown */}
+            <div
+              className="flex items-center px-4 py-2 mt-2 mx-3 rounded-md text-white cursor-pointer hover:bg-slate-800"
+              onClick={toggleAppointmentsDropdown}
+            >
+              <ClipboardDocumentIcon className="w-6 h-6 mr-3" />
+              <span>Admin Laboratory</span>
+              <ChevronDownIcon
+                className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
+                  appoinmentsDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+
+            <div
+              className={`ml-2 overflow-hidden transition-all duration-300 ease-in-out ${
+                appoinmentsDropdownOpen
+                  ? "max-h-40 opacity-100"
+                  : "max-h-0 opacity-0"
+              }`}
+            >
+              <Link
+                to="/AdminLab"
+                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                  isActive("/inventory")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                } hover:bg-slate-800`}
+              >
+                <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                Admin Laboratory
+              </Link>
+
+              {/* Admin Consult */}
+              <Link
+                to="/AdminConsult"
+                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                  isActive("/AdminConsult")
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-white"
+                } hover:bg-slate-800`}
+              >
+                <CubeIcon className="w-5 h-5 mr-3" />
+                Admin Consultation
+              </Link>
+            </div>
+          </>
 
           {(department === "CSR" || department === "Admin") && (
             <Link
@@ -342,31 +398,31 @@ const Sidebar = () => {
           )}
 
           {(department === "Billing" || department === "Admin") && (
-          <Link
-            to="/billing"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-              isActive("/billing")
-                ? "bg-slate-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-slate-800`}
-          >
-            <CreditCardIcon className="w-6 h-6 mr-3" />
-            Billing
-          </Link>
+            <Link
+              to="/billing"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                isActive("/billing")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
+            >
+              <CreditCardIcon className="w-6 h-6 mr-3" />
+              Billing
+            </Link>
           )}
-          
+
           {(department === "Billing" || department === "Admin") && (
-          <Link
-            to="/PaidSection"
-            className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-              isActive("/PaidSection")
-                ? "bg-slate-800 text-white shadow-sm"
-                : "text-white"
-            } hover:bg-slate-800`}
-          >
-            <CreditCardIcon className="w-6 h-6 mr-3" />
-            Billing Paid Section
-          </Link>
+            <Link
+              to="/PaidSection"
+              className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                isActive("/PaidSection")
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "text-white"
+              } hover:bg-slate-800`}
+            >
+              <CreditCardIcon className="w-6 h-6 mr-3" />
+              Billing Paid Section
+            </Link>
           )}
 
           <Link

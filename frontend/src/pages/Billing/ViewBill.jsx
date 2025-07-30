@@ -7,7 +7,7 @@ const ViewBill = ({ billing, onClose }) => {
   const [billingItems, setBillingItems] = useState([]);
 
   useEffect(() => {
-    const billingRef = ref(database, `billing/${billing.id}`); // Using the unique key from the billing object
+    const billingRef = ref(database, `Clinic1/billing/${billing.id}`); // Using the unique key from the billing object
 
     const unsubscribeBilling = onValue(billingRef, (snapshot) => {
       const data = snapshot.val();
