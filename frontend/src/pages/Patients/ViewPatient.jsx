@@ -33,7 +33,7 @@ function ViewPatient() {
   // Fetch patient data and prescriptions when the component loads
   useEffect(() => {
     if (id) {
-      const patientRef = ref(database, `patient/${id}`);
+      const patientRef = ref(database, `patients/${id}`);
       const unsubscribe = onValue(patientRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -85,7 +85,7 @@ function ViewPatient() {
     }
 
     setLoading(true);
-    const prescriptionRef = ref(database, `patient/${id}/prescriptions`);
+    const prescriptionRef = ref(database, `patients/${id}/prescriptions`);
 
     const patientPrescription = {
       prescriptionName,
@@ -98,7 +98,7 @@ function ViewPatient() {
       if (editingId) {
         const updateRef = ref(
           database,
-          `patient/${id}/prescriptions/${editingId}`
+          `patients/${id}/prescriptions/${editingId}`
         );
         await update(updateRef, patientPrescription);
         setConfirmationMessage("Prescription updated successfully.");
@@ -170,7 +170,9 @@ function ViewPatient() {
   if (!patient) return <div>Patient not found</div>;
 
   const medicines = patient.medUse ? Object.values(patient.medUse) : [];
-  const supplies = patient.suppliesUsed ? Object.values(patient.suppliesUsed) : [];
+  const supplies = patient.suppliesUsed
+    ? Object.values(patient.suppliesUsed)
+    : [];
 
   return (
     <div className="container mx-auto p-1">
@@ -184,23 +186,21 @@ function ViewPatient() {
         {/* Left Side */}
         <div className="w-full md:w-3/12 md:mx-2">
           <div className="bg-white p-4 border-t-4 border-green-400">
-            <div className="image overflow-hidden">
-            </div>
-            <h1 className="text-gray-900 font-bold text-xl leading-8 my-1">{patient.firstName} {patient.lastName}</h1>
-            <h3 className="text-gray-600 font-lg text-semibold leading-6">Patient</h3>
+            <div className="image overflow-hidden"></div>
+            <h1 className="text-gray-900 font-bold text-xl leading-8 my-1">
+              {patient.firstName} {patient.lastName}
+            </h1>
+            <h3 className="text-gray-600 font-lg text-semibold leading-6">
+              Patient
+            </h3>
             <ul className="bg-gray-100 text-gray-600 hover:text-gray-700 hover:shadow py-2 px-3 mt-3 divide-y rounded shadow-sm">
+             
               <li className="flex items-center py-3">
-                <span>Status</span>
+                <span>Blood Type:</span>
                 <span className="ml-auto">
-                  <span className={`py-1 px-2 rounded text-white text-sm ${patient.status === 'Inpatient' ? 'bg-green-500' : 'bg-blue-500'}`}>
-                    {patient.status}
-                  </span>
-                </span>
-              </li>
-              <li className="flex items-center py-3">
-                <span>Admission Date</span>
-                <span className="ml-auto">
-                  {patient.dateTime ? new Date(patient.dateTime).toLocaleDateString() : "N/A"}
+                  {patient.bloodType
+                  
+                   }
                 </span>
               </li>
             </ul>
@@ -212,8 +212,19 @@ function ViewPatient() {
           <div className="bg-white p-3 shadow-sm rounded-sm">
             <div className="flex items-center space-x-2 font-semibold text-gray-900 leading-8">
               <span className="text-green-500">
-                <svg className="h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <svg
+                  className="h-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
                 </svg>
               </span>
               <span className="tracking-wide">About</span>
@@ -234,15 +245,11 @@ function ViewPatient() {
                 </div>
                 <div className="grid grid-cols-2">
                   <div className="px-4 py-2 font-semibold">Contact No.</div>
-                  <div className="px-4 py-2">{patient.contact}</div>
+                  <div className="px-4 py-2">{patient.contactNumber}</div>
                 </div>
                 <div className="grid grid-cols-2">
                   <div className="px-4 py-2 font-semibold">Date of Birth</div>
-                  <div className="px-4 py-2">{patient.birth}</div>
-                </div>
-                <div className="grid grid-cols-2">
-                  <div className="px-4 py-2 font-semibold">Type of Room</div>
-                  <div className="px-4 py-2">{patient.roomType}</div>
+                  <div className="px-4 py-2">{patient.dateOfBirth}</div>
                 </div>
               </div>
             </div>
@@ -258,7 +265,9 @@ function ViewPatient() {
         <div className="flex">
           <button
             className={`py-2 px-4 ${
-              activeTab === "supplies" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"
+              activeTab === "supplies"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
             } rounded-tl rounded-tr`}
             onClick={() => setActiveTab("supplies")}
           >
@@ -266,7 +275,9 @@ function ViewPatient() {
           </button>
           <button
             className={`py-2 px-4 ${
-              activeTab === "medicines" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"
+              activeTab === "medicines"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
             } rounded-tl rounded-tr`}
             onClick={() => setActiveTab("medicines")}
           >
@@ -295,7 +306,6 @@ function ViewPatient() {
         Generate PDF
       </button>
     </div>
-
   );
 }
 

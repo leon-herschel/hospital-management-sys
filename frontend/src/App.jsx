@@ -32,8 +32,10 @@ import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
 import UsageHistory from "./pages/History/UsageHistory";
 import PaidSection from "./pages/Billing/PaidSection";
 import StockInHistory from "./pages/History/StockInHistory";
+import ForgotPassword from "./components/auth/login/ForgotPassword";
 import AdminConsult from "./pages/AdminAppointments/Consultation/AdminConsult";
 import AdminLab from "./pages/AdminAppointments/Laboratory/AdminLab";
+import ClinicInventory from "./pages/Inventory/clinicInventory";
 import { element } from "prop-types";
 
 function App() {
@@ -42,6 +44,7 @@ function App() {
       path: "/signin",
       element: <SignIn />,
     },
+    { path: "forgot-password", element: <ForgotPassword /> },
     {
       path: "/",
       element: (
@@ -83,8 +86,13 @@ function App() {
         { path: "UsageHistory", element: <UsageHistory /> },
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
+         { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
+        { path: "UsageHistory", element: <UsageHistory /> },
+        { path: "PaidSection", element: <PaidSection /> },
+        { path: "StockInHistory", element: <StockInHistory /> },
         { path: "AdminConsult", element: <AdminConsult /> },
         { path: "AdminLab", element: <AdminLab /> },
+        {path: "clinicInventory", element: <ClinicInventory /> },
       ],
     },
     {

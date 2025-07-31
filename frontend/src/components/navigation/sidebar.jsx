@@ -168,8 +168,21 @@ const Sidebar = () => {
                   } hover:bg-slate-800`}
                 >
                   <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
-                  Inventory
+                  Inventory Items
                 </Link>
+                {permissions?.accessInventory && (
+                  <Link
+                    to="/clinicInventory"
+                    className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                      isActive("/clinicInventory")
+                        ? "bg-slate-800 text-white shadow-sm"
+                        : "text-white"
+                    } hover:bg-slate-800`}
+                  >
+                    <ArchiveBoxIcon className="w-6 h-6 mr-3" />
+                    Clinic Inventory
+                  </Link>
+                )}
 
                 {/* Adding Overall Inventory */}
                 {permissions?.accessOverallInventory && (

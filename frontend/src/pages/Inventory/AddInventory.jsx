@@ -4,8 +4,7 @@ import { database } from "../../firebase/firebase";
 
 // Helper function to generate a random alphanumeric key
 const generateRandomKey = (length = 20) => {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   return Array.from({ length }, () =>
     characters.charAt(Math.floor(Math.random() * characters.length))
   ).join("");
@@ -24,24 +23,17 @@ function AddInventory({ isOpen, toggleModal }) {
   const [defaultCostPrice, setDefaultCostPrice] = useState("");
   const [defaultRetailPrice, setDefaultRetailPrice] = useState("");
   const [specifications, setSpecifications] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (
-      !itemName ||
-      !brand ||
-      !genericName ||
-      !itemCategory ||
-      !itemGroup ||
-      !bigUnit ||
-      !smallUnit ||
-      !conversionFactor ||
-      !defaultDosage ||
-      !defaultCostPrice ||
-      !defaultRetailPrice ||
-      !specifications
-    ) {
-      alert("Please fill out all fields.");
+    if (!itemName || !itemCategory || !itemGroup || !defaultCostPrice || !defaultRetailPrice || !specifications || !quantity) {
+      alert("Please fill out all required fields.");
+      return;
+    }
+
+    if (itemGroup === "Medicine" && (!brand || !genericName || !bigUnit || !smallUnit || !conversionFactor || !defaultDosage)) {
+      alert("Please fill out all medicine fields.");
       return;
     }
 
@@ -51,21 +43,25 @@ function AddInventory({ isOpen, toggleModal }) {
       const inventoryRef = ref(database, `inventoryItems/${uniqueKey}`);
       const inventoryData = {
         itemName,
-        brand,
-        genericName,
         itemCategory,
         itemGroup,
-        unitOfMeasure: {
-          bigUnit,
-          smallUnit,
-          conversionFactor: parseInt(conversionFactor),
-        },
-        defaultDosage,
         defaultCostPrice: parseFloat(defaultCostPrice),
         defaultRetailPrice: parseFloat(defaultRetailPrice),
         specifications,
+        quantity: parseInt(quantity),
         createdAt: new Date().toISOString(),
       };
+
+      if (itemGroup === "Medicine") {
+        inventoryData.brand = brand;
+        inventoryData.genericName = genericName;
+        inventoryData.defaultDosage = defaultDosage;
+        inventoryData.unitOfMeasure = {
+          bigUnit,
+          smallUnit,
+          conversionFactor: parseInt(conversionFactor),
+        };
+      }
 
       await set(inventoryRef, inventoryData);
       alert("Inventory item added successfully!");
@@ -92,6 +88,7 @@ function AddInventory({ isOpen, toggleModal }) {
     setDefaultCostPrice("");
     setDefaultRetailPrice("");
     setSpecifications("");
+    setQuantity("");
   };
 
   if (!isOpen) return null;
@@ -109,40 +106,36 @@ function AddInventory({ isOpen, toggleModal }) {
             onChange={(e) => setItemName(e.target.value)}
             className="border p-2 rounded"
           />
-          <input
-            type="text"
-            placeholder="Brand"
-            value={brand}
-            onChange={(e) => setBrand(e.target.value)}
-            className="border p-2 rounded"
-          />
-          <input
-            type="text"
-            placeholder="Generic Name"
-            value={genericName}
-            onChange={(e) => setGenericName(e.target.value)}
-            className="border p-2 rounded"
-          />
 
-          {/* Item Category as dropdown */}
           <select
             value={itemCategory}
             onChange={(e) => setItemCategory(e.target.value)}
             className="border p-2 rounded"
           >
             <option value="" disabled>Select Item Category</option>
-            <option value="Nebules and Sprays">Nebules and Sprays</option>
-            <option value="Tablets and Capsules">Tablets and Capsules</option>
-            <option value="Syrup, Suspension and Drops">Syrup, Suspension and Drops</option>
-            <option value="Creams and Ointments">Creams and Ointments</option>
-            <option value="Ampoules and Vials">Ampoules and Vials</option>
-            <option value="Eye and Ear Preparation">Eye and Ear Preparation</option>
-            <option value="I.V Fluids">I.V Fluids</option>
-            <option value="Suppositories">Suppositories</option>
-            <option value="Oxygen">Oxygen</option>
+            {itemGroup === "Medicine" ? (
+              <>
+                <option value="Nebules and Sprays">Nebules and Sprays</option>
+                <option value="Tablets and Capsules">Tablets and Capsules</option>
+                <option value="Syrup, Suspension and Drops">Syrup, Suspension and Drops</option>
+                <option value="Creams and Ointments">Creams and Ointments</option>
+                <option value="Ampoules and Vials">Ampoules and Vials</option>
+                <option value="Eye and Ear Preparation">Eye and Ear Preparation</option>
+                <option value="I.V Fluids">I.V Fluids</option>
+                <option value="Suppositories">Suppositories</option>
+                <option value="Oxygen">Oxygen</option>
+              </>
+            ) : (
+              <>
+                <option value="Syringes">Syringes</option>
+                <option value="Cotton and Gauze">Cotton and Gauze</option>
+                <option value="Surgical Tools">Surgical Tools</option>
+                <option value="Bandages and Tape">Bandages and Tape</option>
+                <option value="IV Sets">IV Sets</option>
+              </>
+            )}
           </select>
 
-          {/* Item Group dropdown (Medicine/Supply only) */}
           <select
             value={itemGroup}
             onChange={(e) => setItemGroup(e.target.value)}
@@ -153,44 +146,63 @@ function AddInventory({ isOpen, toggleModal }) {
             <option value="Supply">Supply</option>
           </select>
 
-          <input
-            type="text"
-            placeholder="Big Unit"
-            value={bigUnit}
-            onChange={(e) => setBigUnit(e.target.value)}
-            className="border p-2 rounded"
-          />
-          <input
-            type="text"
-            placeholder="Small Unit"
-            value={smallUnit}
-            onChange={(e) => setSmallUnit(e.target.value)}
-            className="border p-2 rounded"
-          />
+          {itemGroup === "Medicine" && (
+            <>
+              <input
+                type="text"
+                placeholder="Brand"
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                className="border p-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Generic Name"
+                value={genericName}
+                onChange={(e) => setGenericName(e.target.value)}
+                className="border p-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Big Unit"
+                value={bigUnit}
+                onChange={(e) => setBigUnit(e.target.value)}
+                className="border p-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Small Unit"
+                value={smallUnit}
+                onChange={(e) => setSmallUnit(e.target.value)}
+                className="border p-2 rounded"
+              />
+              <input
+                type="number"
+                placeholder="Conversion Factor"
+                value={conversionFactor}
+                onChange={(e) => setConversionFactor(e.target.value)}
+                className="border p-2 rounded"
+              />
+              <input
+                type="text"
+                placeholder="Default Dosage (e.g. 200mg)"
+                value={defaultDosage}
+                onChange={(e) => setDefaultDosage(e.target.value)}
+                className="border p-2 rounded"
+              />
+            </>
+          )}
+
           <input
             type="number"
-            placeholder="Conversion Factor"
-            value={conversionFactor}
-            onChange={(e) => setConversionFactor(e.target.value)}
-            className="border p-2 rounded"
-          />
-          <input
-            type="text"
-            placeholder="Default Dosage (e.g. 200mg)"
-            value={defaultDosage}
-            onChange={(e) => setDefaultDosage(e.target.value)}
-            className="border p-2 rounded"
-          />
-          <input
-            type="number"
-            placeholder="Default Cost Price"
+            placeholder="Cost Price"
             value={defaultCostPrice}
             onChange={(e) => setDefaultCostPrice(e.target.value)}
             className="border p-2 rounded"
           />
           <input
             type="number"
-            placeholder="Default Retail Price"
+            placeholder="Retail Price"
             value={defaultRetailPrice}
             onChange={(e) => setDefaultRetailPrice(e.target.value)}
             className="border p-2 rounded"
@@ -200,6 +212,13 @@ function AddInventory({ isOpen, toggleModal }) {
             placeholder="Specifications"
             value={specifications}
             onChange={(e) => setSpecifications(e.target.value)}
+            className="border p-2 rounded"
+          />
+          <input
+            type="number"
+            placeholder="Quantity"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
             className="border p-2 rounded"
           />
         </div>
