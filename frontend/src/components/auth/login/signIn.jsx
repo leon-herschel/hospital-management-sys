@@ -1,24 +1,24 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { doSignInWithEmailAndPassword } from '../../../firebase/auth';
-import { useAuth } from '../../../context/authContext/authContext';
-import bgImage from '../../../assets/logo.jpg';
+import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { doSignInWithEmailAndPassword } from "../../../firebase/auth";
+import { useAuth } from "../../../context/authContext/authContext";
+import bgImage from "../../../assets/logo.jpg";
 import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
 
 const SignIn = () => {
   const { userLoggedIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'email') setEmail(value);
-    if (name === 'password') setPassword(value);
-  
-    setErrorMessage('');
+    if (name === "email") setEmail(value);
+    if (name === "password") setPassword(value);
+
+    setErrorMessage("");
   };
 
   const onSubmit = async (e) => {
@@ -28,9 +28,9 @@ const SignIn = () => {
       try {
         await doSignInWithEmailAndPassword(email, password);
       } catch (error) {
-        let message = 'An error occurred. Please try again.';
-        if (error.code === 'auth/invalid-credential') {
-          message = 'Invalid password or email.';
+        let message = "An error occurred. Please try again.";
+        if (error.code === "auth/invalid-credential") {
+          message = "Invalid password or email.";
         }
         setErrorMessage(message);
         setIsSigningIn(false);
@@ -40,7 +40,7 @@ const SignIn = () => {
 
   return (
     <div className="bg-slate-900 flex justify-center items-center h-screen">
-      {userLoggedIn && <Navigate to={'/dashboard'} replace={true} />}
+      {userLoggedIn && <Navigate to={"/dashboard"} replace={true} />}
 
       {/* Left: Image */}
       <div className="w-1/2 h-screen hidden lg:block">
@@ -57,7 +57,9 @@ const SignIn = () => {
         <form onSubmit={onSubmit} className="space-y-5">
           {/* Email Input */}
           <div>
-            <label htmlFor="email" className="block text-white">Email</label>
+            <label htmlFor="email" className="block text-white">
+              Email
+            </label>
             <input
               type="email"
               id="email"
@@ -72,10 +74,12 @@ const SignIn = () => {
 
           {/* Password Input */}
           <div>
-            <label htmlFor="password" className="block text-white">Password</label>
+            <label htmlFor="password" className="block text-white">
+              Password
+            </label>
             <div className="relative w-full">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
                 value={password}
@@ -89,7 +93,11 @@ const SignIn = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
               >
-                {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
               </button>
             </div>
           </div>
@@ -103,9 +111,20 @@ const SignIn = () => {
           <button
             type="submit"
             disabled={isSigningIn}
-            className={`w-full px-4 py-2 text-white font-medium rounded-lg ${isSigningIn ? 'bg-blue-900 cursor-not-allowed' : 'bg-blue-800 hover:bg-blue-900 hover:shadow-xl transition duration-300'}`}
+            className={`w-full px-4 py-2 text-white font-medium rounded-lg ${
+              isSigningIn
+                ? "bg-blue-900 cursor-not-allowed"
+                : "bg-blue-800 hover:bg-blue-900 hover:shadow-xl transition duration-300"
+            }`}
           >
-            {isSigningIn ? 'Signing In...' : 'Sign In'}
+            {isSigningIn ? "Signing In..." : "Sign In"}
+          </button>
+          <button
+            type="button"
+            onClick={() => (window.location.href = "/forgot-password")}
+            className="text-blue-300 hover:underline text-sm"
+          >
+            Forgot Password?
           </button>
         </form>
       </div>

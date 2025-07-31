@@ -8,6 +8,7 @@ const UserProfileDropdown = ({ onLogout }) => {
   const { currentUser } = useAuth();
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [clinicName, setClinicName] = useState("");
   const dropdownRef = useRef(null); 
   const iconRef = useRef(null); 
 
@@ -16,10 +17,25 @@ const UserProfileDropdown = ({ onLogout }) => {
       const userRef = ref(database, `users/${currentUser.uid}`);
       const snapshot = await get(userRef);
       if (snapshot.exists()) {
-        setUserData(snapshot.val());
+        const user = snapshot.val();
+        setUserData(user);
+        if (user.clinicAffiliation) {
+          fetchClinicName(user.clinicAffiliation);
+        }
       } else {
         console.log('No user data found in Realtime Database');
       }
+    }
+  };
+
+  const fetchClinicName = async (clinicId) => {
+    const clinicRef = ref(database, `clinics/${clinicId}`);
+    const snapshot = await get(clinicRef);
+    if (snapshot.exists()) {
+      const clinicData = snapshot.val();
+      setClinicName(clinicData.name || clinicId);
+    } else {
+      setClinicName(clinicId); // fallback
     }
   };
 
@@ -71,7 +87,10 @@ const UserProfileDropdown = ({ onLogout }) => {
             {`${userData.firstName || ''} ${userData.lastName || ''}`}
           </div>
           <div className="text-sm text-gray-600 mb-1">{userData.email}</div>
-          <div className="text-sm text-gray-600 mb-1">{userData.department} Department</div>
+          {userData.department && (
+            <div className="text-sm text-gray-600 mb-1">{userData.department} Department</div>
+          )}
+          <div className="text-sm text-gray-600 mb-1">Clinic: {clinicName} </div>
           <div className="text-sm text-gray-600 mb-2">
             {userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
           </div>
