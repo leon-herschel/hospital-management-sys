@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
-import { ref, onValue, remove, update } from "firebase/database";
+import {
+  ref,
+  onValue,
+  remove,
+  update,
+  get,
+  push,
+  query,
+  set,
+} from "firebase/database";
 import { database } from "../../../firebase/firebase";
 import DeleteConfirmationModal from "./DeleteConfirmationModalBooking";
-import EditBookingModal from "./EditBookingModal";
+import ViewBookingModal from "./ViewBookingModal";
 import AddBooking from "./AddBooking";
 import { useNavigate } from "react-router-dom";
 import {
-  PencilIcon,
+  EyeIcon,
   TrashIcon,
   ArrowLeftIcon,
   PlusIcon,
@@ -22,6 +31,7 @@ import {
   ExclamationTriangleIcon,
   FunnelIcon,
   Squares2X2Icon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 
 function AdminConsult() {
@@ -30,11 +40,12 @@ function AdminConsult() {
   const [consultationTypes, setConsultationTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("All");
   const [modal, setModal] = useState(false);
-  const [editModal, setEditModal] = useState(false);
+  const [viewModal, setViewModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentBooking, setCurrentBooking] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState({});
 
   useEffect(() => {
     // Fetch consultation types
@@ -59,9 +70,7 @@ function AdminConsult() {
           ...data[key],
         }));
         bookings.sort((a, b) =>
-          (a.patient?.patientFirstName || "").localeCompare(
-            b.patient?.patientFirstName || ""
-          )
+          (a.patient?.firstName || "").localeCompare(b.patient?.firstName || "")
         );
         setBookingList(bookings);
       } else {
@@ -77,7 +86,7 @@ function AdminConsult() {
   }, []);
 
   const toggleModal = () => setModal(!modal);
-  const toggleEditModal = () => setEditModal(!editModal);
+  const toggleViewModal = () => setViewModal(!viewModal);
   const toggleDeleteModal = () => setDeleteModal(!deleteModal);
 
   const handleDeleteConfirmation = (booking) => {
@@ -94,31 +103,77 @@ function AdminConsult() {
     }
   };
 
-  const handleEdit = (booking) => {
+  const handleView = (booking) => {
     setCurrentBooking(booking);
-    toggleEditModal();
+    toggleViewModal();
   };
 
-  const handleUpdate = async (updatedBooking) => {
-    await update(
-      ref(database, `appointments/consultations/${currentBooking.id}`),
-      updatedBooking
-    );
-    toggleEditModal();
+  // Handle status update
+  const handleStatusUpdate = async (bookingId, newStatus) => {
+    setUpdatingStatus((prev) => ({ ...prev, [bookingId]: true }));
+
+    try {
+      // 1. Update the appointment status
+      await update(ref(database, `appointments/consultations/${bookingId}`), {
+        status: newStatus,
+        ...(newStatus === "Confirmed" && {
+          confirmedAt: new Date().toISOString(),
+        }),
+      });
+
+      // 2. Only push to patients node if status is "Confirmed"
+      if (newStatus === "Confirmed") {
+        // Get the full appointment data
+        const appointmentRef = ref(
+          database,
+          `appointments/consultations/${bookingId}`
+        );
+        const snapshot = await get(appointmentRef);
+        const appointmentData = snapshot.val();
+
+        // Check if appointment data exists
+        if (!appointmentData) {
+          console.error("No appointment data found for bookingId:", bookingId);
+          alert("No appointment data found.");
+          return;
+        }
+
+        // Check if patient data exists
+        if (!appointmentData.patient) {
+          console.error("No patient information found in appointment data");
+          alert("No patient information found.");
+          return;
+        }
+
+        console.log("Appointment data to push:", appointmentData);
+
+        // 3. Set the appointment data directly under bookingId in patients node
+        await set(ref(database, `patients/${bookingId}`), appointmentData);
+
+        console.log(
+          `Status updated to ${newStatus} and appointment data pushed to patients for booking ${bookingId}`
+        );
+      } else {
+        console.log(`Status updated to ${newStatus} for booking ${bookingId}`);
+      }
+    } catch (error) {
+      console.error("Error updating status or pushing to patients:", error);
+      alert("Failed to update status or push to patients.");
+    } finally {
+      setUpdatingStatus((prev) => ({ ...prev, [bookingId]: false }));
+    }
   };
 
   // Filter bookings by selected type and search query
   const filteredBookings = bookingList.filter((booking) => {
     const matchesSearch =
-      (booking.patient?.patientFirstName?.toLowerCase() || "").includes(
+      (booking.patient?.firstName?.toLowerCase() || "").includes(
         searchQuery.toLowerCase()
       ) ||
-      (booking.patient?.patientLastName?.toLowerCase() || "").includes(
+      (booking.patient?.lastName?.toLowerCase() || "").includes(
         searchQuery.toLowerCase()
       ) ||
-      `${booking.patient?.patientFirstName || ""} ${
-        booking.patient?.patientLastName || ""
-      }`
+      `${booking.patient?.firstName || ""} ${booking.patient?.lastName || ""}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
 
@@ -190,7 +245,7 @@ function AdminConsult() {
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Appointment Bookings
+                Consultation Bookings
               </h1>
               <p className="text-gray-600 text-sm mt-1">
                 Manage and track patient appointments by consultation type
@@ -411,9 +466,9 @@ function AdminConsult() {
                   filteredBookings.map((booking, index) => {
                     const statusConfig = getStatusConfig(booking.status);
                     const StatusIcon = statusConfig.icon;
-                    const patientName = `${
-                      booking.patient?.patientFirstName || ""
-                    } ${booking.patient?.patientLastName || ""}`.trim();
+                    const patientName = `${booking.patient?.firstName || ""} ${
+                      booking.patient?.lastName || ""
+                    }`.trim();
 
                     return (
                       <tr
@@ -426,8 +481,7 @@ function AdminConsult() {
                           <div className="flex items-center">
                             <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
                               {(
-                                booking.patient?.patientFirstName?.charAt(0) ||
-                                "P"
+                                booking.patient?.firstName?.charAt(0) || "P"
                               ).toUpperCase()}
                             </div>
                             <div>
@@ -516,21 +570,39 @@ function AdminConsult() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.class}`}
-                          >
-                            <StatusIcon className="h-3 w-3" />
-                            {booking.status || "Pending"}
-                          </span>
+                          <div className="relative">
+                            <select
+                              value={booking.status || "Pending"}
+                              onChange={(e) =>
+                                handleStatusUpdate(booking.id, e.target.value)
+                              }
+                              disabled={updatingStatus[booking.id]}
+                              className={`inline-flex items-center gap-1 px-3 py-1 pr-8 rounded-full text-xs font-medium border appearance-none cursor-pointer ${
+                                statusConfig.class
+                              } ${
+                                updatingStatus[booking.id]
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : "hover:opacity-80"
+                              }`}
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                            {updatingStatus[booking.id] && (
+                              <ArrowPathIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 animate-spin" />
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleEdit(booking)}
-                              className="inline-flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
+                              onClick={() => handleView(booking)}
+                              className="inline-flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
                             >
-                              <PencilIcon className="h-3 w-3" />
-                              Edit
+                              <EyeIcon className="h-3 w-3" />
+                              View
                             </button>
                             <button
                               onClick={() => handleDeleteConfirmation(booking)}
@@ -573,11 +645,10 @@ function AdminConsult() {
           toggleModal={toggleDeleteModal}
           onConfirm={handleDelete}
         />
-        <EditBookingModal
-          isOpen={editModal}
-          toggleModal={toggleEditModal}
+        <ViewBookingModal
+          isOpen={viewModal}
+          toggleModal={toggleViewModal}
           currentBooking={currentBooking}
-          handleUpdate={handleUpdate}
         />
       </div>
     </div>

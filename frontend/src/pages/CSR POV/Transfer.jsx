@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 import Select from "react-select"; // Import react-select
-import { ref, get, set, push, update, onValue } from 'firebase/database';
-import { database } from '../../firebase/firebase';
-import { getAuth } from 'firebase/auth';
+import { ref, get, set, push, update, onValue } from "firebase/database";
+import { database } from "../../firebase/firebase";
+import { getAuth } from "firebase/auth";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAuth } from "../../context/authContext/authContext";
 
@@ -10,7 +10,7 @@ const Transfer = () => {
   const { department } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
-    department: "COVID UNIT",
+    department: "", // Default department
     reason: "",
     timestamp: new Date().toLocaleString(),
   });
@@ -30,11 +30,13 @@ const Transfer = () => {
     const user = auth.currentUser;
     if (user) {
       const userRef = ref(database, `users/${user.uid}`);
-  
+
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.val();
-          const fullName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
+          const fullName = `${userData.firstName || ""} ${
+            userData.lastName || ""
+          }`.trim();
           setFormData((prevData) => ({
             ...prevData,
             name: fullName || user.email, // fallback if names are missing
@@ -48,7 +50,6 @@ const Transfer = () => {
       });
     }
   }, []);
-  
 
   // Fetch department names
   useEffect(() => {
@@ -58,7 +59,7 @@ const Transfer = () => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           const departmentNames = Object.keys(data).filter((dept) =>
-            ["COVID UNIT", "ER", "ICU"].includes(dept)
+            ["Laboratory", "Pharmacy"].includes(dept)
           );
           setDepartments(departmentNames);
         }
@@ -70,18 +71,44 @@ const Transfer = () => {
 
   // Fetch item inventory
   useEffect(() => {
-    const suppliesRef = ref(database, "departments/CSR/localSupplies");
-    const unsubscribe = onValue(suppliesRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const supplies = Object.entries(snapshot.val()).map(([key, value]) => ({
-          ...value,
-          itemKey: key,
-        }));
-        setItems(supplies);
-      }
-    });
+    const clinicRef = ref(database, "clinicInventoryStock");
+    const inventoryRef = ref(database, "inventoryItems");
 
-    return () => unsubscribe();
+    Promise.all([get(clinicRef), get(inventoryRef)])
+      .then(([clinicSnap, inventorySnap]) => {
+        if (clinicSnap.exists() && inventorySnap.exists()) {
+          const clinicData = clinicSnap.val();
+          const inventoryData = inventorySnap.val();
+
+          const mappedItems = [];
+
+          // Go through each clinicInventoryStock group (refKey)
+          Object.entries(clinicData).forEach(([refKey, itemGroup]) => {
+            // itemGroup = { itemKey1: {quantity, status...}, itemKey2: {...} }
+            Object.entries(itemGroup).forEach(([itemKey, stockValue]) => {
+              const fullItemData = inventoryData[itemKey];
+
+              if (fullItemData) {
+                mappedItems.push({
+                  ...fullItemData,
+                  quantity: stockValue.quantity,
+                  itemKey,
+                  refKey,
+                });
+              } else {
+                console.warn(`No inventory data found for itemKey: ${itemKey}`);
+              }
+            });
+          });
+
+          setItems(mappedItems);
+        } else {
+          console.warn("Clinic or Inventory data not found.");
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching inventory:", err);
+      });
   }, []);
 
   const handleInputChange = (e) => {
@@ -110,13 +137,18 @@ const Transfer = () => {
   };
 
   const removeItem = (itemToRemove) => {
-    setSelectedItems(selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey));
+    setSelectedItems(
+      selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey)
+    );
   };
 
   const handleQuantityChange = (item, value) => {
     const newQuantity = Math.max(parseInt(value, 0));
-    if (newQuantity > item.maxQuantity) {
-      alert(`Quantity cannot exceed ${item.maxQuantity}`);
+    const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
+    const maxQuantity = mainInventoryItem?.quantity || 0;
+
+    if (newQuantity > maxQuantity) {
+      alert(`Quantity cannot exceed ${maxQuantity}`);
     } else {
       const updatedItems = selectedItems.map((selectedItem) =>
         selectedItem.itemKey === item.itemKey
@@ -185,7 +217,10 @@ const Transfer = () => {
           reason: formData.reason,
         });
 
-        const mainInventoryRef = ref(database, `departments/CSR/localSupplies/${item.itemKey}`);
+        const mainInventoryRef = ref(
+          database,
+          `clinicInventoryStock/${item.refKey}/${item.itemKey}`
+        );
         const mainInventorySnapshot = await get(mainInventoryRef);
 
         if (mainInventorySnapshot.exists()) {
@@ -198,7 +233,9 @@ const Transfer = () => {
             await update(mainInventoryRef, { quantity: updatedQuantity });
           }
         } else {
-          console.error(`Item ${item.itemName} does not exist in CSR's inventory.`);
+          console.error(
+            `Item ${item.itemName} does not exist in CSR's inventory.`
+          );
         }
       }
 
@@ -277,7 +314,9 @@ const Transfer = () => {
           }`}
         />
         {errorMessages.reasonError && (
-          <p className="text-red-500 text-sm">Please provide a reason for the transfer.</p>
+          <p className="text-red-500 text-sm">
+            Please provide a reason for the transfer.
+          </p>
         )}
       </div>
 
@@ -292,7 +331,7 @@ const Transfer = () => {
         </thead>
         <tbody>
           {selectedItems.map((item) => (
-            <tr key={item.itemKey}>
+            <tr key={item.refKey}>
               <td className="border p-2">{item.itemName}</td>
               <td className="border p-2">
                 <input
