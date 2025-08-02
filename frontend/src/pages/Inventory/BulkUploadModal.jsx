@@ -3,6 +3,7 @@ import Papa from "papaparse";
 import { ref, set } from "firebase/database";
 import { database } from "../../firebase/firebase";
 
+// Generate random 20-character key
 const generateRandomKey = (length = 20) => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   return Array.from({ length }, () =>
@@ -39,18 +40,10 @@ const BulkUploadModal = ({ isOpen, toggleModal, itemGroup }) => {
         const key = generateRandomKey(20);
         const refPath = ref(database, `inventoryItems/${key}`);
 
-        const dataToPush = {
+        const baseData = {
           itemName: row.itemName || "",
-          brand: row.brand || "",
-          genericName: row.genericName || "",
           itemCategory: row.itemCategory || "",
           itemGroup: itemGroup,
-          unitOfMeasure: {
-            bigUnit: row.bigUnit || "",
-            smallUnit: row.smallUnit || "",
-            conversionFactor: parseInt(row.conversionFactor || 1),
-          },
-          defaultDosage: row.defaultDosage || "",
           defaultCostPrice: parseFloat(row.defaultCostPrice || 0),
           defaultRetailPrice: parseFloat(row.defaultRetailPrice || 0),
           specifications: row.specifications || "",
@@ -58,7 +51,18 @@ const BulkUploadModal = ({ isOpen, toggleModal, itemGroup }) => {
           createdAt: new Date().toISOString(),
         };
 
-        await set(refPath, dataToPush);
+        if (itemGroup === "Medicine") {
+          baseData.brand = row.brand || "";
+          baseData.genericName = row.genericName || "";
+          baseData.defaultDosage = row.defaultDosage || "";
+          baseData.unitOfMeasure = {
+            bigUnit: row.bigUnit || "",
+            smallUnit: row.smallUnit || "",
+            conversionFactor: parseInt(row.conversionFactor || 1),
+          };
+        }
+
+        await set(refPath, baseData);
       }
 
       alert("Bulk upload successful!");
@@ -76,12 +80,18 @@ const BulkUploadModal = ({ isOpen, toggleModal, itemGroup }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
-        <h2 className="text-xl font-bold mb-4">
-          Upload {itemGroup} CSV
-        </h2>
-        <input type="file" accept=".csv" onChange={handleCSVUpload} className="mb-4" />
+        <h2 className="text-xl font-bold mb-4">Upload {itemGroup} CSV</h2>
+        <input
+          type="file"
+          accept=".csv"
+          onChange={handleCSVUpload}
+          className="mb-4"
+        />
         <div className="flex justify-end gap-4">
-          <button onClick={toggleModal} className="px-4 py-2 bg-gray-500 text-white rounded">
+          <button
+            onClick={toggleModal}
+            className="px-4 py-2 bg-gray-500 text-white rounded"
+          >
             Cancel
           </button>
           <button
