@@ -1,132 +1,110 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
-import { ref, push, set } from "firebase/database";
-import QRCode from "qrcode";
+import { ref, set } from "firebase/database";
 import { database } from "../../firebase/firebase";
 
-const calculateStatus = (quantity, maxQuantity) => {
-  const percentage = (quantity / maxQuantity) * 100;
-
-  if (percentage > 70) {
-    return "Good";
-  } else if (percentage > 50) {
-    return "Low";
-  } else {
-    return "Very Low";
-  }
+// Generate random 20-character key
+const generateRandomKey = (length = 20) => {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length }, () =>
+    characters.charAt(Math.floor(Math.random() * characters.length))
+  ).join("");
 };
 
-const generateRandomKey = (length) => {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-};
-
-function BulkUploadModal({ isOpen, toggleModal }) {
+const BulkUploadModal = ({ isOpen, toggleModal, itemGroup }) => {
+  const [csvData, setCsvData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const handleFileUpload = async (e) => {
+  const handleCSVUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    setLoading(true);
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data;
-
-        for (const row of rows) {
-          try {
-            // Sanitize and validate numeric fields
-            const rawQuantity = row.quantity ? row.quantity.trim() : "0";
-            const quantityValue = Number(rawQuantity);
-
-            const costPriceValue = Number(row.costPrice);
-            const retailPriceValue = Number(row.retailPrice);
-
-            if (
-              isNaN(quantityValue) ||
-              isNaN(costPriceValue) ||
-              isNaN(retailPriceValue)
-            ) {
-              console.error("Invalid row skipped:", row);
-              continue; // Skip invalid rows
-            }
-
-            const qrKey = generateRandomKey(20);
-            const qrCodeDataUrl = await QRCode.toDataURL(qrKey, { width: 100 });
-
-            const supplyRef = ref(database, "departments/CSR/localSupplies");
-            const newSupplyRef = push(supplyRef);
-
-            const supplyData = {
-              itemName: row.itemName || "",
-              quantity: quantityValue,
-              maxQuantity: quantityValue,
-              brand: row.brand || "",
-              costPrice: costPriceValue,
-              retailPrice: retailPriceValue,
-              status: calculateStatus(quantityValue, quantityValue),
-              qrCode: qrCodeDataUrl,
-            };
-
-            await set(newSupplyRef, supplyData);
-          } catch (error) {
-            console.error("Failed to process row:", row, error);
-          }
-        }
-
-        alert("Bulk supplies uploaded successfully!");
-        setLoading(false);
-        toggleModal();
-      },
-      error: (err) => {
-        console.error("CSV Parsing Error:", err);
-        alert("Failed to parse CSV file.");
-        setLoading(false);
+      complete: function (results) {
+        setCsvData(results.data);
       },
     });
+  };
+
+  const handleSubmit = async () => {
+    if (csvData.length === 0) {
+      alert("No CSV data to upload.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      for (let row of csvData) {
+        const key = generateRandomKey(20);
+        const refPath = ref(database, `inventoryItems/${key}`);
+
+        const baseData = {
+          itemName: row.itemName || "",
+          itemCategory: row.itemCategory || "",
+          itemGroup: itemGroup,
+          defaultCostPrice: parseFloat(row.defaultCostPrice || 0),
+          defaultRetailPrice: parseFloat(row.defaultRetailPrice || 0),
+          specifications: row.specifications || "",
+          quantity: parseInt(row.quantity || 0),
+          createdAt: new Date().toISOString(),
+        };
+
+        if (itemGroup === "Medicine") {
+          baseData.brand = row.brand || "";
+          baseData.genericName = row.genericName || "";
+          baseData.defaultDosage = row.defaultDosage || "";
+          baseData.unitOfMeasure = {
+            bigUnit: row.bigUnit || "",
+            smallUnit: row.smallUnit || "",
+            conversionFactor: parseInt(row.conversionFactor || 1),
+          };
+        }
+
+        await set(refPath, baseData);
+      }
+
+      alert("Bulk upload successful!");
+      toggleModal();
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("There was an error uploading your CSV.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-        <button
-          className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
-          onClick={toggleModal}
-        >
-          &times;
-        </button>
-
-        <h2 className="text-xl font-bold mb-4 text-center">Bulk Upload Supplies</h2>
-
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
+        <h2 className="text-xl font-bold mb-4">Upload {itemGroup} CSV</h2>
         <input
           type="file"
           accept=".csv"
-          onChange={handleFileUpload}
-          disabled={loading}
-          className="w-full border border-gray-300 px-4 py-2 rounded-md"
+          onChange={handleCSVUpload}
+          className="mb-4"
         />
-
-        <p className="mt-2 text-sm text-gray-600">
-          Please upload a CSV file containing the following columns: <br />
-          <strong>itemName, quantity, brand, costPrice, retailPrice</strong>
-        </p>
-
-        {loading && (
-          <p className="text-blue-500 font-semibold mt-4">Uploading...</p>
-        )}
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={toggleModal}
+            className="px-4 py-2 bg-gray-500 text-white rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            {loading ? "Uploading..." : "Upload"}
+          </button>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default BulkUploadModal;

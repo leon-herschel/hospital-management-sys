@@ -3,13 +3,19 @@ import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import AddInventory from "./AddInventory";
 import QRCode from "react-qr-code";
-import { TrashIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
+import ViewMedicineModal from "./ViewMedicineModal";
+import { TrashIcon, PencilSquareIcon, EyeIcon } from "@heroicons/react/24/outline";
+import DateRangePicker from "../../components/DateRangePicker/DateRangePicker";
 
 const Inventory = () => {
   const [inventoryItems, setInventoryItems] = useState([]);
   const [selectedTab, setSelectedTab] = useState("Medicine");
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   useEffect(() => {
     const inventoryRef = ref(database, "inventoryItems");
@@ -27,19 +33,30 @@ const Inventory = () => {
     return () => unsubscribe();
   }, []);
 
-  const filteredItems = inventoryItems.filter(
-    (item) =>
-      item.itemGroup === selectedTab &&
-      item.itemName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredItems = inventoryItems
+    .filter((item) => {
+      const matchesGroup = item.itemGroup === selectedTab;
+      const matchesSearch = item.itemName?.toLowerCase().includes(search.toLowerCase());
 
-  const toggleModal = () => {
-    setShowAddModal(!showAddModal);
+      const createdAtDate = item.createdAt ? new Date(item.createdAt) : null;
+      const inRange =
+        (!startDate || (createdAtDate && createdAtDate >= startDate)) &&
+        (!endDate || (createdAtDate && createdAtDate <= endDate));
+
+      return matchesGroup && matchesSearch && inRange;
+    })
+    .sort((a, b) => a.itemName.localeCompare(b.itemName));
+
+  const toggleModal = () => setShowAddModal(!showAddModal);
+
+  const handleView = (item) => {
+    setSelectedItem(item);
+    setShowViewModal(true);
   };
 
   return (
     <div className="w-full">
-      {/* Tab and Search */}
+      {/* Tabs and Search */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex space-x-2">
           <button
@@ -81,6 +98,16 @@ const Inventory = () => {
         </div>
       </div>
 
+      {/* Date Range Picker */}
+      <div className="flex justify-end mb-4">
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={(date) => setStartDate(date)}
+          onEndDateChange={(date) => setEndDate(date)}
+        />
+      </div>
+
       {/* Table */}
       <div className="relative overflow-x-auto rounded-md shadow-sm">
         <table className="w-full text-sm text-center border border-slate-200">
@@ -88,60 +115,46 @@ const Inventory = () => {
             <tr>
               <th className="px-4 py-2">Item Name</th>
               <th className="px-4 py-2">Brand</th>
-              <th className="px-4 py-2">Generic Name</th>
-              <th className="px-4 py-2">Item Category</th>
-              <th className="px-4 py-2">Item Group</th>
-              <th className="px-4 py-2">Dosage</th>
-              <th className="px-4 py-2">Spec.</th>
-              <th className="px-4 py-2">Cost (₱)</th>
-              <th className="px-4 py-2">Retail (₱)</th>
-              <th className="px-4 py-2">Big Unit</th>
-              <th className="px-4 py-2">Small Unit</th>
-              <th className="px-4 py-2">Conversion</th>
               <th className="px-4 py-2">QR Code</th>
+              <th className="px-4 py-2">Created At</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredItems.length === 0 ? (
               <tr>
-                <td colSpan="14" className="py-4 text-center">
+                <td colSpan="5" className="py-4 text-center">
                   No items found.
                 </td>
               </tr>
             ) : (
               filteredItems.map((item) => (
-                <tr
-                  key={item.id}
-                  className="bg-white border-t hover:bg-slate-100"
-                >
+                <tr key={item.id} className="bg-white border-t hover:bg-slate-100">
                   <td className="px-4 py-2">{item.itemName}</td>
-                  <td className="px-4 py-2">{item.brand}</td>
-                  <td className="px-4 py-2">{item.genericName}</td>
-                  <td className="px-4 py-2">{item.itemCategory}</td>
-                  <td className="px-4 py-2">{item.itemGroup}</td>
-                  <td className="px-4 py-2">{item.defaultDosage}</td>
-                  <td className="px-4 py-2">{item.specifications}</td>
-                  <td className="px-4 py-2">
-                    ₱{Number(item.defaultCostPrice).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-2">
-                    ₱{Number(item.defaultRetailPrice).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-2">
-                    {item.unitOfMeasure?.bigUnit || ""}
-                  </td>
-                  <td className="px-4 py-2">
-                    {item.unitOfMeasure?.smallUnit || ""}
-                  </td>
-                  <td className="px-4 py-2">
-                    {item.unitOfMeasure?.conversionFactor || ""}
-                  </td>
+                  <td className="px-4 py-2">{item.brand || "-"}</td>
                   <td className="px-4 py-2 flex justify-center">
                     <QRCode value={item.id} size={50} />
                   </td>
                   <td className="px-4 py-2">
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleString("en-PH", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-2">
+                      <button
+                        className="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1 rounded-md flex items-center space-x-1"
+                        onClick={() => handleView(item)}
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                        <span>View</span>
+                      </button>
                       <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center space-x-1">
                         <PencilSquareIcon className="w-4 h-4" />
                         <span>Edit</span>
@@ -159,8 +172,11 @@ const Inventory = () => {
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Modals */}
       <AddInventory isOpen={showAddModal} toggleModal={toggleModal} />
+      {showViewModal && selectedItem && (
+        <ViewMedicineModal item={selectedItem} onClose={() => setShowViewModal(false)} />
+      )}
     </div>
   );
 };
