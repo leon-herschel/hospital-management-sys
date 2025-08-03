@@ -934,6 +934,7 @@ function AdminLabAppointments() {
         open={modalOpen && modalType === "view"}
         onClose={closeModal}
         form={editForm}
+        appointmentId={currentId}
       />
 
       <DeleteAppointmentModal

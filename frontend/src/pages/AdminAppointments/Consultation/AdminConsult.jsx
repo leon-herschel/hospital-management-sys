@@ -493,7 +493,7 @@ function AdminConsult() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-700">
-                            <div>{booking.patient?.phone || "N/A"}</div>
+                            <div>{booking.patient?.contactNumber || "N/A"}</div>
                             <div className="text-xs text-gray-500">
                               {booking.patient?.email || ""}
                             </div>

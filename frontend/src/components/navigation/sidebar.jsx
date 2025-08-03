@@ -209,7 +209,7 @@ const Sidebar = () => {
               onClick={toggleAppointmentsDropdown}
             >
               <ClipboardDocumentIcon className="w-6 h-6 mr-3" />
-              <span>Admin Laboratory</span>
+              <span>Appointment Scheduling</span>
               <ChevronDownIcon
                 className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
                   appoinmentsDropdownOpen ? "rotate-180" : ""
@@ -233,7 +233,7 @@ const Sidebar = () => {
                 } hover:bg-slate-800`}
               >
                 <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
-                Admin Laboratory
+                Lab Appointment Request
               </Link>
 
               {/* Admin Consult */}
@@ -246,7 +246,7 @@ const Sidebar = () => {
                 } hover:bg-slate-800`}
               >
                 <CubeIcon className="w-5 h-5 mr-3" />
-                Admin Consultation
+                Patient Appointment Request
               </Link>
             </div>
           </>

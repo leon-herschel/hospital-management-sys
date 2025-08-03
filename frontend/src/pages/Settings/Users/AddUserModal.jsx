@@ -1,9 +1,5 @@
 import { useState, useEffect } from "react";
-<<<<<<< HEAD
-import { ref, get, set } from "firebase/database";
-=======
 import { ref, get, set, push } from "firebase/database";
->>>>>>> origin/main
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import { auth, database } from "../../../firebase/firebase";
@@ -11,15 +7,10 @@ import { auth, database } from "../../../firebase/firebase";
 const AddUserModal = ({ showModal, setShowModal }) => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
-<<<<<<< HEAD
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-=======
   const [selectedClinic, setSelectedClinic] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
->>>>>>> origin/main
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,13 +18,14 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
-<<<<<<< HEAD
-=======
   const [clinics, setClinics] = useState([]);
->>>>>>> origin/main
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Email sending states
+  const [emailStatus, setEmailStatus] = useState("");
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
 
   // Patient-specific states
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -46,103 +38,42 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [emergencyPhone, setEmergencyPhone] = useState("");
 
   useEffect(() => {
-<<<<<<< HEAD
-    const rolesRef = ref(database, "roles");
-    get(rolesRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        setRoles(Object.keys(snapshot.val()));
-      }
-    });
+    const fetchInitialData = async () => {
+      const currentUser = auth.currentUser;
 
-    const departmentsRef = ref(database, "departments");
-    get(departmentsRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        setDepartments(Object.keys(snapshot.val()));
+      if (currentUser) {
+        const userRef = ref(database, `users/${currentUser.uid}`);
+        const userSnap = await get(userRef);
+        const userData = userSnap.val();
+
+        if (userData?.clinicAffiliation) {
+          setSelectedClinic(userData.clinicAffiliation); // auto-fill clinic ID
+        }
       }
-    });
+
+      // Load all clinics
+      const clinicSnap = await get(ref(database, "clinics"));
+      if (clinicSnap.exists()) {
+        const clinicList = Object.entries(clinicSnap.val()).map(
+          ([id, data]) => ({
+            id,
+            name: data.name || id,
+          })
+        );
+        setClinics(clinicList);
+      }
+
+      // Load roles
+      const rolesSnap = await get(ref(database, "roles"));
+      if (rolesSnap.exists()) setRoles(Object.keys(rolesSnap.val()));
+
+      // Load departments
+      const deptSnap = await get(ref(database, "departments"));
+      if (deptSnap.exists()) setDepartments(Object.keys(deptSnap.val()));
+    };
+
+    fetchInitialData();
   }, []);
-
-  const handleCreateAccount = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    if (!validatePassword(password)) {
-      setError(
-        "Password must be at least 6 characters long, contain an uppercase letter, a lowercase letter, and a number."
-      );
-      setIsLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const userId = userCredential.user.uid;
-
-      const userRef = ref(database, `users/${userId}`);
-      await set(userRef, {
-        department: selectedDepartment,
-        firstName,
-        lastName,
-        email,
-        role: selectedRole,
-      });
-
-      resetForm();
-      setSuccess(true);
-      setError("");
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-=======
-  const fetchInitialData = async () => {
-    const currentUser = auth.currentUser;
-
-    if (currentUser) {
-      const userRef = ref(database, `users/${currentUser.uid}`);
-      const userSnap = await get(userRef);
-      const userData = userSnap.val();
-
-      if (userData?.clinicAffiliation) {
-        setSelectedClinic(userData.clinicAffiliation); // auto-fill clinic ID
-      }
-    }
-
-    // Load all clinics
-    const clinicSnap = await get(ref(database, "clinics"));
-    if (clinicSnap.exists()) {
-      const clinicList = Object.entries(clinicSnap.val()).map(
-        ([id, data]) => ({
-          id,
-          name: data.name || id,
-        })
-      );
-      setClinics(clinicList);
-    }
-
-    // Load roles
-    const rolesSnap = await get(ref(database, "roles"));
-    if (rolesSnap.exists()) setRoles(Object.keys(rolesSnap.val()));
-
-    // Load departments
-    const deptSnap = await get(ref(database, "departments"));
-    if (deptSnap.exists()) setDepartments(Object.keys(deptSnap.val()));
-  };
-
-  fetchInitialData();
-}, []);
-
 
   const resetForm = () => {
     setFirstName("");
@@ -163,7 +94,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     setEmergencyRelationship("");
     setEmergencyPhone("");
     setError("");
->>>>>>> origin/main
+    setEmailStatus("");
   };
 
   const validatePassword = (password) => {
@@ -173,20 +104,59 @@ const AddUserModal = ({ showModal, setShowModal }) => {
       /[a-z]/.test(password) &&
       /\d/.test(password)
     );
-<<<<<<< HEAD
   };
 
-  const resetForm = () => {
-    setFirstName("");
-    setLastName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setSelectedDepartment("");
-    setSelectedRole("");
-    setError("");
-=======
->>>>>>> origin/main
+  // Function to send welcome email
+  const sendWelcomeEmail = async (userEmail, userPassword, userRole) => {
+    setIsEmailLoading(true);
+    setEmailStatus("Sending welcome email...");
+
+    let response;
+    try {
+      response = await fetch("http://localhost:5000/add-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          password: userPassword,
+          role: userRole,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setEmailStatus("Welcome email sent successfully!");
+      } else {
+        let errorMessage = "Unknown error";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || "Unknown error";
+        } catch (jsonError) {
+          errorMessage = `Server error (${response.status})`;
+        }
+        setEmailStatus(`Email sending failed: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error("Email sending error:", error);
+      // Check if it's a network error vs server error
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
+        setEmailStatus(
+          "Failed to connect to email service. Please check if the server is running."
+        );
+      } else if (response && !response.ok) {
+        setEmailStatus(
+          `Email service error: ${response.status} ${response.statusText}`
+        );
+      } else {
+        setEmailStatus(
+          "Failed to send welcome email. Please check your connection."
+        );
+      }
+    } finally {
+      setIsEmailLoading(false);
+    }
   };
 
   const closeSuccessModal = () => {
@@ -197,6 +167,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const handleCreateAccount = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setEmailStatus("");
 
     if (!validatePassword(password)) {
       setError(
@@ -274,8 +245,21 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         });
       }
 
-      resetForm();
+      // Send welcome email after successful account creation (optional)
+      try {
+        await sendWelcomeEmail(email, password, selectedRole);
+      } catch (emailError) {
+        console.warn(
+          "Email sending failed, but account was created successfully:",
+          emailError
+        );
+        setEmailStatus(
+          "Account created successfully, but welcome email could not be sent."
+        );
+      }
+
       setSuccess(true);
+      resetForm();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -309,75 +293,6 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                 className="block w-full mb-4 p-2 border rounded-md"
               />
 
-<<<<<<< HEAD
-                <div className="mb-4 relative">
-                  <label className="block text-gray-700">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
-                      placeholder="Enter password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
-                    >
-                      {showPassword ? (
-                        <EyeSlashIcon className="h-5 w-5" />
-                      ) : (
-                        <EyeIcon className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mb-4 relative">
-                  <label className="block text-gray-700">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
-                      placeholder="Re-enter password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeSlashIcon className="h-5 w-5" />
-                      ) : (
-                        <EyeIcon className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {error && (
-                <div className="mb-4 text-red-500 text-sm">{error}</div>
-              )}
-
-              <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-4">
-                  Role & Department
-                </h3>
-                <div className="mb-4">
-                  <label className="block text-gray-700">
-                    Select Department
-                  </label>
-=======
               <label className="block mb-2">Last Name</label>
               <input
                 type="text"
@@ -494,7 +409,6 @@ const AddUserModal = ({ showModal, setShowModal }) => {
               {selectedRole !== "patient" && selectedRole !== "doctor" && (
                 <>
                   <label className="block mb-2">Select Department</label>
->>>>>>> origin/main
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
@@ -513,44 +427,6 @@ const AddUserModal = ({ showModal, setShowModal }) => {
               )}
             </div>
 
-<<<<<<< HEAD
-                <div className="mb-4">
-                  <label className="block text-gray-700">Select Role</label>
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value)}
-                    className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select a role
-                    </option>
-                    {roles.map((role) => (
-                      <option key={role} value={role}>
-                        {role
-                          .split(" ")
-                          .map(
-                            (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1)
-                          )
-                          .join(" ")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <button
-                  type="submit"
-                  className={`bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 ${
-                    isLoading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Creating Account..." : "Create Account"}
-                </button>
-=======
             {selectedRole === "patient" && (
               <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
                 <h3 className="text-lg font-semibold mb-4">Patient Details</h3>
@@ -630,17 +506,38 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                   onChange={(e) => setEmergencyPhone(e.target.value)}
                   className="block w-full mb-4 p-2 border rounded-md"
                 />
->>>>>>> origin/main
               </div>
             )}
 
             {error && <div className="text-red-500 mb-4">{error}</div>}
 
+            {/* Email status display */}
+            {emailStatus && (
+              <div
+                className={`mb-4 p-3 rounded-md ${
+                  emailStatus.includes("successfully")
+                    ? "bg-green-100 text-green-700 border border-green-300"
+                    : emailStatus.includes("Failed") ||
+                      emailStatus.includes("failed")
+                    ? "bg-red-100 text-red-700 border border-red-300"
+                    : "bg-blue-100 text-blue-700 border border-blue-300"
+                }`}
+              >
+                {isEmailLoading && (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                    <span>{emailStatus}</span>
+                  </div>
+                )}
+                {!isEmailLoading && <span>{emailStatus}</span>}
+              </div>
+            )}
+
             <div className="flex justify-center">
               <button
                 type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                disabled={isLoading}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+                disabled={isLoading || isEmailLoading}
               >
                 {isLoading ? "Creating Account..." : "Create Account"}
               </button>
@@ -651,17 +548,24 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
       {success && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-<<<<<<< HEAD
-          <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
-=======
           <div className="bg-white rounded-md p-6 w-full max-w-md text-center shadow-lg">
->>>>>>> origin/main
             <h2 className="text-xl font-bold mb-4">
               Account Created Successfully!
             </h2>
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700 mb-4">
               The user account has been created.
             </p>
+            {emailStatus && (
+              <p
+                className={`text-sm mb-4 ${
+                  emailStatus.includes("successfully")
+                    ? "text-green-600"
+                    : "text-orange-600"
+                }`}
+              >
+                📧 {emailStatus}
+              </p>
+            )}
             <button
               onClick={closeSuccessModal}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"

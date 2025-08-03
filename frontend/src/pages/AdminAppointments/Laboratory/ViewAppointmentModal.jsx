@@ -1,8 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { ref, update, get, set } from "firebase/database";
+import { database } from "../../../firebase/firebase";
 
-function ViewAppointmentModal({ open, onClose, form }) {
+// Simple toast implementation (replace with your preferred toast library)
+const toast = {
+  success: (message) => {
+    console.log("SUCCESS:", message);
+    alert(`✅ ${message}`);
+  },
+  error: (message) => {
+    console.log("ERROR:", message);
+    alert(`❌ ${message}`);
+  },
+  info: (message) => {
+    console.log("INFO:", message);
+    alert(`ℹ️ ${message}`);
+  },
+};
+
+function ViewAppointmentModal({ open, onClose, form, appointmentId }) {
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(form?.status || "Pending");
+
+  // Update currentStatus when form changes
+  React.useEffect(() => {
+    setCurrentStatus(form?.status || "Pending");
+  }, [form?.status]);
+
   const getStatusBadge = (status) => {
     const statusStyles = {
       Confirmed: "bg-blue-100 text-blue-800 border-blue-200",
@@ -21,6 +47,72 @@ function ViewAppointmentModal({ open, onClose, form }) {
         {defaultStatus}
       </span>
     );
+  };
+
+  // Handle status update - same logic as in AdminLabAppointments
+  const handleStatusUpdate = async (newStatus) => {
+    if (!appointmentId) {
+      toast.error("No appointment ID provided");
+      return;
+    }
+
+    setUpdatingStatus(true);
+
+    try {
+      const labRef = ref(database, `appointments/laboratory/${appointmentId}`);
+
+      // Step 1: Update status in appointments
+      await update(labRef, {
+        status: newStatus,
+        ...(newStatus === "Confirmed" && {
+          confirmedAt: new Date().toISOString(),
+        }),
+      });
+
+      // Step 2: If Confirmed, push to patients (after checking for duplicates)
+      if (newStatus === "Confirmed") {
+        const snapshot = await get(labRef);
+        const appointmentData = snapshot.val();
+
+        if (!appointmentData) {
+          console.error("No appointment data found for labId:", appointmentId);
+          toast.error("No appointment data found.");
+          return;
+        }
+
+        const { email } = appointmentData;
+
+        if (!email) {
+          toast.error("No email found in appointment data.");
+          return;
+        }
+
+        // Simplified duplicate check - just check if labId already exists in patients
+        const patientRef = ref(database, `patients/${appointmentId}`);
+        const patientSnapshot = await get(patientRef);
+
+        if (patientSnapshot.exists()) {
+          toast.info("Appointment already exists in patients list.");
+          setCurrentStatus(newStatus);
+          return;
+        }
+
+        const dataToPush = { ...appointmentData, labId: appointmentId };
+        await set(ref(database, `patients/${appointmentId}`), dataToPush);
+
+        toast.success("Status confirmed and patient added successfully.");
+      } else {
+        toast.success(`Status updated to ${newStatus}`);
+      }
+
+      // Update local state
+      setCurrentStatus(newStatus);
+    } catch (error) {
+      console.error("Error updating status or pushing to patients:", error);
+      toast.error("Failed to update status or push to patients.");
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   return (
@@ -69,7 +161,7 @@ function ViewAppointmentModal({ open, onClose, form }) {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    {getStatusBadge(form.status)}
+                    {getStatusBadge(currentStatus)}
                     <button
                       onClick={onClose}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -169,6 +261,96 @@ function ViewAppointmentModal({ open, onClose, form }) {
                     </div>
                   </div>
 
+                  {/* Status Update Section */}
+                  <div className="mt-6 space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2">
+                      🔄 Update Status
+                    </h4>
+                    <div className="flex items-center space-x-4">
+                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Current Status
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={currentStatus}
+                          onChange={(e) => handleStatusUpdate(e.target.value)}
+                          disabled={updatingStatus}
+                          className={`
+                            text-sm font-medium px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer min-w-[120px] shadow-sm pr-8
+                            ${
+                              currentStatus === "Confirmed"
+                                ? "bg-blue-100 text-blue-800 border-blue-200"
+                                : ""
+                            }
+                            ${
+                              currentStatus === "Completed"
+                                ? "bg-green-100 text-green-800 border-green-200"
+                                : ""
+                            }
+                            ${
+                              currentStatus === "Cancelled"
+                                ? "bg-red-100 text-red-800 border-red-200"
+                                : ""
+                            }
+                            ${
+                              currentStatus === "Pending"
+                                ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                : ""
+                            }
+                          `}
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Confirmed">Confirmed</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                          {updatingStatus ? (
+                            <svg
+                              className="animate-spin h-4 w-4 text-gray-400"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                          ) : (
+                            <svg
+                              className="h-4 w-4 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      {updatingStatus && (
+                        <span className="text-sm text-gray-500">
+                          Updating...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Additional Information */}
                   <div className="mt-6 space-y-4">
                     <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2">
@@ -185,12 +367,22 @@ function ViewAppointmentModal({ open, onClose, form }) {
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Notes
+                          Referring Doctor
                         </label>
                         <p className="mt-1 text-sm text-gray-900">
-                          {form.notes || "No additional notes"}
+                          {form.referDoctor
+                            ? `Dr. ${form.referDoctor}`
+                            : "Walk-in"}
                         </p>
                       </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Notes
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {form.notes || "No additional notes"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -203,29 +395,6 @@ function ViewAppointmentModal({ open, onClose, form }) {
                     onClick={onClose}
                   >
                     Close
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                    onClick={() => {
-                      // Add edit functionality here if needed
-                      console.log("Edit appointment:", form);
-                    }}
-                  >
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    Edit Details
                   </button>
                 </div>
               </Dialog.Panel>
