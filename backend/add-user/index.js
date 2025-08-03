@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const generateWelcomeEmail = ({ email, password }) => {
+const generateWelcomeEmail = ({ email, password, role }) => {
   return {
     from: `Hospital Management System <${EMAIL_USER}>`,
     to: email,
@@ -27,7 +27,7 @@ const generateWelcomeEmail = ({ email, password }) => {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; background-color: #f9f9f9;">
         <h2 style="color: #2563eb; text-align: center;">🏥 Welcome to Hospital Management System</h2>
-        <p style="font-size: 16px;">Hello,</p>
+        <p style="font-size: 16px;">Hello, ${role}</p>
 
         <p style="font-size: 15px;">Your account has been successfully created. Here are your login credentials:</p>
 
@@ -61,7 +61,7 @@ const generateWelcomeEmail = ({ email, password }) => {
 // Route for sending welcome email - only email and password
 router.post("/", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     // Validate required fields
     if (!email || !password) {
@@ -71,7 +71,7 @@ router.post("/", async (req, res) => {
     }
 
     // Generate and send welcome email
-    const emailContent = generateWelcomeEmail({ email, password });
+    const emailContent = generateWelcomeEmail({ email, password, role });
     await transporter.sendMail(emailContent);
 
     res.status(200).json({
