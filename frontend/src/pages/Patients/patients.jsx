@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ref, onValue, remove } from "firebase/database";
+import { ref, onValue, remove, update } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import QRCode from "react-qr-code";
 import DeleteConfirmationModal from "./DeleteConfirmationModalPatient";
@@ -20,10 +20,12 @@ function Patient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [department, setDepartment] = useState("");
   const [role, setRole] = useState("");
+  const [userClinicId, setUserClinicId] = useState("");
+
   const permissions = useAccessControl();
   const navigate = useNavigate();
 
-  // Fetch authenticated user's role & department
+  // Fetch authenticated user's info: role, department, clinic
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -34,12 +36,13 @@ function Patient() {
         if (userData) {
           setDepartment(userData.department || "");
           setRole(userData.role || "");
+          setUserClinicId(userData.clinicAffiliation || "");
         }
       });
     }
   }, []);
 
-  // Fetch patients from Firebase
+  // Fetch and filter patients
   useEffect(() => {
     const patientRef = ref(database, "patients");
     const unsubscribe = onValue(patientRef, (snapshot) => {
@@ -56,7 +59,7 @@ function Patient() {
           filteredPatients = allPatients;
         } else {
           filteredPatients = allPatients.filter(
-            (patient) => patient.roomType === department
+            (patient) => patient.clinicAffiliation === userClinicId
           );
         }
 
@@ -71,7 +74,7 @@ function Patient() {
     });
 
     return () => unsubscribe();
-  }, [role, department]);
+  }, [role, department, userClinicId]);
 
   const toggleModal = () => setModal(!modal);
   const toggleEditModal = () => setEditModal(!editModal);
@@ -119,7 +122,6 @@ function Patient() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        
       </div>
 
       <div className="relative overflow-x-auto rounded-md shadow-sm">
@@ -135,7 +137,10 @@ function Patient() {
           <tbody>
             {filteredPatients.length > 0 ? (
               filteredPatients.map((patient) => (
-                <tr key={patient.id} className="bg-white border-b hover:bg-slate-100">
+                <tr
+                  key={patient.id}
+                  className="bg-white border-b hover:bg-slate-100"
+                >
                   <td className="px-6 py-3">{patient.firstName}</td>
                   <td className="px-6 py-3">{patient.lastName}</td>
                   <td className="px-6 py-3">

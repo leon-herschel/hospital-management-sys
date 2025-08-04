@@ -3,7 +3,8 @@ import { ref, get, set, push } from "firebase/database";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import { auth, database } from "../../../firebase/firebase";
-
+import AddRoleModal from "../Roles/AddRoleModal";
+import AddDepartmentModal from "../Departments/AddDepartmentModal";
 const AddUserModal = ({ showModal, setShowModal }) => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
@@ -32,45 +33,46 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyRelationship, setEmergencyRelationship] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [showAddRoleModal, setShowAddRoleModal] = useState(false);
+  const [showAddDepartmentModal, setShowAddDepartmentModal] = useState(false);
 
   useEffect(() => {
-  const fetchInitialData = async () => {
-    const currentUser = auth.currentUser;
+    const fetchInitialData = async () => {
+      const currentUser = auth.currentUser;
 
-    if (currentUser) {
-      const userRef = ref(database, `users/${currentUser.uid}`);
-      const userSnap = await get(userRef);
-      const userData = userSnap.val();
+      if (currentUser) {
+        const userRef = ref(database, `users/${currentUser.uid}`);
+        const userSnap = await get(userRef);
+        const userData = userSnap.val();
 
-      if (userData?.clinicAffiliation) {
-        setSelectedClinic(userData.clinicAffiliation); // auto-fill clinic ID
+        if (userData?.clinicAffiliation) {
+          setSelectedClinic(userData.clinicAffiliation); // auto-fill clinic ID
+        }
       }
-    }
 
-    // Load all clinics
-    const clinicSnap = await get(ref(database, "clinics"));
-    if (clinicSnap.exists()) {
-      const clinicList = Object.entries(clinicSnap.val()).map(
-        ([id, data]) => ({
-          id,
-          name: data.name || id,
-        })
-      );
-      setClinics(clinicList);
-    }
+      // Load all clinics
+      const clinicSnap = await get(ref(database, "clinics"));
+      if (clinicSnap.exists()) {
+        const clinicList = Object.entries(clinicSnap.val()).map(
+          ([id, data]) => ({
+            id,
+            name: data.name || id,
+          })
+        );
+        setClinics(clinicList);
+      }
 
-    // Load roles
-    const rolesSnap = await get(ref(database, "roles"));
-    if (rolesSnap.exists()) setRoles(Object.keys(rolesSnap.val()));
+      // Load roles
+      const rolesSnap = await get(ref(database, "roles"));
+      if (rolesSnap.exists()) setRoles(Object.keys(rolesSnap.val()));
 
-    // Load departments
-    const deptSnap = await get(ref(database, "departments"));
-    if (deptSnap.exists()) setDepartments(Object.keys(deptSnap.val()));
-  };
+      // Load departments
+      const deptSnap = await get(ref(database, "departments"));
+      if (deptSnap.exists()) setDepartments(Object.keys(deptSnap.val()));
+    };
 
-  fetchInitialData();
-}, []);
-
+    fetchInitialData();
+  }, []);
 
   const resetForm = () => {
     setFirstName("");
@@ -198,6 +200,30 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
   if (!showModal) return null;
 
+  const handleAddRole = async (newRole) => {
+    const roleKey = Object.keys(newRole)[0];
+    const roleData = newRole[roleKey];
+  
+    try {
+      await set(ref(database, `roles/${roleKey}`), roleData); // ✅ Save full role object (name + permissions)
+      setRoles((prevRoles) => [...new Set([...prevRoles, roleKey])]); // ✅ Update role list
+      setSelectedRole(roleKey); // optional: auto-select the new role
+    } catch (err) {
+      console.error("Error adding role:", err);
+    }
+  };
+  const handleAddDepartment = async (newDepartment) => {
+    const deptKey = Object.keys(newDepartment)[0];
+    const deptData = newDepartment[deptKey];
+
+    try {
+      await set(ref(database, `departments/${deptKey}`), deptData.permissions);
+      setDepartments((prev) => [...new Set([...prev, deptKey])]); // Refresh departments dropdown
+    } catch (err) {
+      console.error("Error adding department:", err);
+    }
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -297,7 +323,16 @@ const AddUserModal = ({ showModal, setShowModal }) => {
             <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
               <h3 className="text-lg font-semibold mb-4">Clinic & Role</h3>
 
-              <label className="block mb-2">Select Role</label>
+              <label className="block mb-2 flex justify-between items-center">
+                Select Role
+                <button
+                  type="button"
+                  onClick={() => setShowAddRoleModal(true)}
+                  className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600"
+                >
+                  +
+                </button>
+              </label>
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
@@ -337,7 +372,16 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
               {selectedRole !== "patient" && selectedRole !== "doctor" && (
                 <>
-                  <label className="block mb-2">Select Department</label>
+                  <label className="block mb-2 flex justify-between items-center">
+                    Select Department
+                    <button
+                      type="button"
+                      onClick={() => setShowAddDepartmentModal(true)}
+                      className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600"
+                    >
+                      +
+                    </button>
+                  </label>
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
@@ -354,6 +398,18 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                   </select>
                 </>
               )}
+              <AddRoleModal
+                showModal={showAddRoleModal}
+                setShowModal={setShowAddRoleModal}
+                onAddRole={handleAddRole}
+                
+              />
+
+              <AddDepartmentModal
+                showModal={showAddDepartmentModal}
+                setShowModal={setShowAddDepartmentModal}
+                onAddDepartment={handleAddDepartment}
+              />
             </div>
 
             {selectedRole === "patient" && (

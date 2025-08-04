@@ -6,6 +6,8 @@ import DeleteConfirmationModal from "./DeleteConfirmationModalPrescription";
 import { generatePDF } from "./GeneratePDF";
 import MedicineTable from "./MedicineTable"; // Import MedicineTable
 import SupplyTable from "./SupplyTable"; // Import SupplyTable
+import LabResultsModal from "./labResultModal";
+
 
 function ViewPatient() {
   const { id } = useParams();
@@ -29,6 +31,9 @@ function ViewPatient() {
 
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
   const [prescriptionToRemove, setPrescriptionToRemove] = useState(null);
+  const [showLabModal, setShowLabModal] = useState(false);
+  
+  
 
   // Fetch patient data and prescriptions when the component loads
   useEffect(() => {
@@ -174,6 +179,10 @@ function ViewPatient() {
     ? Object.values(patient.suppliesUsed)
     : [];
 
+    const handleSaveLabResult = (labData) => {
+      console.log("Saving lab result:", labData);
+      // Later: Upload to Firebase Storage & save reference under patient
+    };
   return (
     <div className="container mx-auto p-1">
       <button
@@ -260,7 +269,19 @@ function ViewPatient() {
         </div>
       </div>
 
-      {/* Supplies and Medicines */}
+<div className="flex justify-between items-center mt-6 mb-2">
+  <button
+    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+    onClick={() => setShowLabModal(true)}
+  >
+    Add Laboratory Result
+  </button>
+</div>
+<LabResultsModal
+  isOpen={showLabModal}
+  onClose={() => setShowLabModal(false)}
+  onSave={handleSaveLabResult}
+/>
       <div className="mt-4">
         <div className="flex">
           <button

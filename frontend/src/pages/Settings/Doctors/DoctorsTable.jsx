@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { ref, onValue, remove } from 'firebase/database';
+import { ref, onValue, remove, update } from 'firebase/database';
 import { database } from '../../../firebase/firebase';
 import AddDoctorsModal from './AddDoctorsModal';
+import ProfessionalFeeModal from './ProfessionalFeeModal';
 
 const DoctorsTable = () => {
   const [doctors, setDoctors] = useState([]);
   const [showAddDoctorModal, setShowAddDoctorModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [doctorToDelete, setDoctorToDelete] = useState(null);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [showFeeModal, setShowFeeModal] = useState(false);
 
   useEffect(() => {
     const doctorsRef = ref(database, 'doctors');
@@ -40,6 +43,11 @@ const DoctorsTable = () => {
     }
   };
 
+  const openFeeModal = (doctor) => {
+    setSelectedDoctor(doctor);
+    setShowFeeModal(true);
+  };
+
   return (
     <div className="w-full">
       <div className="mb-4 flex justify-between items-center">
@@ -68,9 +76,7 @@ const DoctorsTable = () => {
           <tbody>
             {doctors.map((doc) => (
               <tr key={doc.id} className="bg-white border-b hover:bg-slate-100">
-                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                  {doc.fullName}
-                </td>
+                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{doc.fullName}</td>
                 <td className="px-6 py-4">{doc.specialty}</td>
                 <td className="px-6 py-4 text-green-600">{doc.isGeneralist ? 'Yes' : 'No'}</td>
                 <td className="px-6 py-4 text-green-600">{doc.isSpecialist ? 'Yes' : 'No'}</td>
@@ -82,17 +88,21 @@ const DoctorsTable = () => {
                     ))}
                   </ul>
                 </td>
-                <td className="px-6 py-4 flex justify-center space-x-4">
+                <td className="px-6 py-4 flex flex-col space-y-2 items-center">
                   <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
-                    onClick={() => {
-                      alert('Edit functionality is under construction.');
-                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                    onClick={() => alert("Edit functionality is under construction.")}
                   >
                     Edit
                   </button>
                   <button
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md"
+                    onClick={() => openFeeModal(doc)}
+                  >
+                    Set Professional Fee
+                  </button>
+                  <button
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md"
                     onClick={() => confirmDeleteDoctor(doc)}
                   >
                     Delete
@@ -105,6 +115,13 @@ const DoctorsTable = () => {
       </div>
 
       <AddDoctorsModal showModal={showAddDoctorModal} setShowModal={setShowAddDoctorModal} />
+
+      {showFeeModal && selectedDoctor && (
+        <ProfessionalFeeModal
+          doctor={selectedDoctor}
+          onClose={() => setShowFeeModal(false)}
+        />
+      )}
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
