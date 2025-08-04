@@ -3,7 +3,7 @@ import { ref, get, set, push } from "firebase/database";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import { auth, database } from "../../../firebase/firebase";
-import AddRoleModal from "../Roles/AddRoleModal";
+import UserAddRoleModal from "./userAddModal";
 import AddDepartmentModal from "../Departments/AddDepartmentModal";
 const AddUserModal = ({ showModal, setShowModal }) => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -156,7 +156,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
           firstName,
           lastName,
           fullName: `Dr. ${firstName} ${lastName}`,
-          isGeneralist: true,
+          specialty: 'Generalist',
           clinicAffiliations: [selectedClinic],
           contactNumber,
         });
@@ -203,7 +203,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const handleAddRole = async (newRole) => {
     const roleKey = Object.keys(newRole)[0];
     const roleData = newRole[roleKey];
-  
+
     try {
       await set(ref(database, `roles/${roleKey}`), roleData); // ✅ Save full role object (name + permissions)
       setRoles((prevRoles) => [...new Set([...prevRoles, roleKey])]); // ✅ Update role list
@@ -398,11 +398,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                   </select>
                 </>
               )}
-              <AddRoleModal
+              <UserAddRoleModal
                 showModal={showAddRoleModal}
                 setShowModal={setShowAddRoleModal}
                 onAddRole={handleAddRole}
-                
               />
 
               <AddDepartmentModal

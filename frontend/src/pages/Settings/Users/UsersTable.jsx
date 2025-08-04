@@ -28,17 +28,30 @@ const UsersTable = () => {
   }, []);
 
   const filteredUsers = users.filter(user => {
-    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.toLowerCase();
     const searchLower = searchTerm.toLowerCase();
+  
+    // Debugging line to catch any undefined fields
+    if (
+      typeof user?.email !== 'string' ||
+      typeof user?.firstName !== 'string' ||
+      typeof user?.lastName !== 'string' ||
+      typeof user?.role !== 'string' ||
+      typeof user?.department !== 'string'
+    ) {
+      console.log('⚠️ Malformed user object:', user);
+    }
+  
     return (
-      user.email.toLowerCase().includes(searchLower) || 
-      user.firstName.toLowerCase().includes(searchLower) ||
-      user.lastName.toLowerCase().includes(searchLower) ||
+      (user?.email || '').toLowerCase().includes(searchLower) ||
+      (user?.firstName || '').toLowerCase().includes(searchLower) ||
+      (user?.lastName || '').toLowerCase().includes(searchLower) ||
       fullName.includes(searchLower) ||
-      user.role.toLowerCase().includes(searchLower) ||
-      user.department.toLowerCase().includes(searchLower)
+      (user?.role || '').toLowerCase().includes(searchLower) ||
+      (user?.department || '').toLowerCase().includes(searchLower)
     );
   });
+  
 
   const handleDeleteUser = async () => {
     if (userToDelete) {
@@ -101,7 +114,8 @@ const UsersTable = () => {
                 <td className="px-6 py-4">{`${user.firstName} ${user.lastName}`}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">{user.department}</td>
-                <td className="px-6 py-4">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</td>
+                <td className="px-6 py-4">{(user?.role || "N/A").charAt(0).toUpperCase() + (user?.role || "N/A").slice(1)}
+                </td>
                 <td className="px-6 py-4 flex justify-center space-x-4">
                   <button
                     className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"

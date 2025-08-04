@@ -83,7 +83,7 @@ const Sidebar = () => {
     "/requestS": "Request Stock",
     "/PharmacyTransferHistory": "Transfer History",
     "/CsrTransferHistory": "Transfer History",
-    "/UsageHistory": "Usage History",
+    "/InvetoryTransaction": "Transactions",
     "/PaidSection": "PaidSection",
     "/StockInHistory": "Stock In History",
     "/AdminConsult": "Admin Consultation",
@@ -344,9 +344,9 @@ const Sidebar = () => {
                 <div className="overflow-y-auto max-h-40">
                   {department !== "CSR" && department !== "Pharmacy" && (
                     <Link
-                      to="/UsageHistory"
+                      to="/InventoryTransaction"
                       className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                        isActive("/UsageHistory")
+                        isActive("/InventoryTransaction")
                           ? "bg-slate-800 text-white shadow-sm"
                           : "text-white"
                       } hover:bg-slate-800`}
