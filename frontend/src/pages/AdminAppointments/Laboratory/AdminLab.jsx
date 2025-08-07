@@ -47,7 +47,7 @@ function AdminLabAppointments() {
   const [updatingStatus, setUpdatingStatus] = useState({});
 
   useEffect(() => {
-    const refApp = ref(database, `appointments/laboratory`);
+    const refApp = ref(database, `clinicLabRequests`);
     onValue(refApp, (snap) => {
       const data = snap.val();
       if (data) setAppointments(data);
@@ -76,7 +76,7 @@ function AdminLabAppointments() {
   };
 
   const confirmDelete = () => {
-    remove(ref(database, `appointments/laboratory/${currentId}`));
+    remove(ref(database, `clinicLabRequests/${currentId}`));
     closeModal();
   };
 
@@ -85,7 +85,7 @@ function AdminLabAppointments() {
     setUpdatingStatus((prev) => ({ ...prev, [labId]: true }));
 
     try {
-      const labRef = ref(database, `appointments/laboratory/${labId}`);
+      const labRef = ref(database, `clinicLabRequests/${labId}`);
 
       // Step 1: Update status in appointments
       await update(labRef, {
@@ -241,7 +241,7 @@ function AdminLabAppointments() {
                   d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                 />
               </svg>
-              Add Booking
+              Add Medical Service
             </button>
           </div>
         </div>
@@ -777,7 +777,7 @@ function AdminLabAppointments() {
                     {/* Doctor */}
                     <div className="min-w-0">
                       <p className="text-sm text-gray-900 truncate">
-                        {app.referDoctor ? `Dr. ${app.referDoctor}` : "Walk-in"}
+                        {app.referDoctor ? `${app.referDoctor}` : "Walk-in"}
                       </p>
                     </div>
 

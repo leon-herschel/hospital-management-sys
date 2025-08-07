@@ -12,9 +12,11 @@
   "dependencies": {
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.1.5",
+    "d3": "^7.9.0",
     "firebase": "^10.13.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.5.29",
+    "lucide-react": "^0.536.0",
     "papaparse": "^5.5.3",
     "prop-types": "^15.8.1",
     "qrcode": "^1.5.4",

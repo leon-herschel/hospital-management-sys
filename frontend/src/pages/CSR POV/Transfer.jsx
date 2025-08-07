@@ -191,30 +191,27 @@ const Transfer = () => {
       };
 
       for (const item of selectedItems) {
-        const departmentPath = `departments/${formData.department}/localSupplies/${item.itemKey}`;
-        const localSupplySnapshot = await get(ref(database, departmentPath));
-        let newQuantity = item.quantity;
-
-        if (localSupplySnapshot.exists()) {
-          const existingData = localSupplySnapshot.val();
-          newQuantity += existingData.quantity;
-        }
-
-        await set(ref(database, departmentPath), {
-          ...item,
-          quantity: newQuantity,
-          timestamp: formData.timestamp,
-        });
-
-        const historyPath = `supplyHistoryTransfer`;
+        // Record transaction in inventoryTransactions
+        const historyPath = `inventoryTransactions`;
         const newHistoryRef = push(ref(database, historyPath));
+
+        // Get current user details for the transaction
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+
         await set(newHistoryRef, {
+          itemId: item.itemKey,
           itemName: item.itemName,
-          quantity: item.quantity,
           timestamp: formData.timestamp,
-          sender: formData.name,
-          recipientDepartment: formData.department,
-          reason: formData.reason,
+          destinationDepartment: formData.department,
+          processedByUserId: currentUser?.uid || "",
+          processedByUserFirstName: formData.name.split(" ")[0] || "",
+          processedByUserLastName:
+            formData.name.split(" ").slice(1).join(" ") || "",
+          quantityChanged: -item.quantity, // Negative because it's being transferred out
+          reason: `Transfer to ${formData.department}: ${formData.reason}`,
+          relatedPatientId: null, // This would be null for transfers, or you can omit this field
+          transactionType: "stock_in",
         });
 
         const mainInventoryRef = ref(
@@ -230,7 +227,27 @@ const Transfer = () => {
           if (updatedQuantity < 0) {
             console.error(`Not enough stock in CSR for item: ${item.itemName}`);
           } else {
-            await update(mainInventoryRef, { quantity: updatedQuantity });
+            // Check if there's existing departmentStock for this department
+            let existingDepartmentQuantity = 0;
+            if (
+              currentData.deparmentStock &&
+              currentData.deparmentStock.department === formData.department
+            ) {
+              existingDepartmentQuantity =
+                currentData.deparmentStock.quantity || 0;
+            }
+
+            // Update the clinicInventoryStock with accumulated department quantity
+            await update(mainInventoryRef, {
+              quantity: updatedQuantity,
+              deparmentStock: {
+                department: formData.department,
+                quantity: existingDepartmentQuantity + item.quantity, // Add to existing quantity
+                timestamp: formData.timestamp,
+                transferredBy: formData.name,
+                reason: formData.reason,
+              },
+            });
           }
         } else {
           console.error(
@@ -292,6 +309,7 @@ const Transfer = () => {
             errorMessages.departmentError ? "border-red-500" : ""
           }`}
         >
+          <option value="">Select Department</option>
           {departments.map((dept, index) => (
             <option key={index} value={dept}>
               {dept}

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ref, push, set } from "firebase/database";
+import { ref, push, set, update } from "firebase/database";
 import { database } from "../../../firebase/firebase";
 
 function AddMedicalServices({ open, onClose }) {
   const [serviceType, setServiceType] = useState("consultationTypes");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [serviceFee, setserviceFee] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,14 +17,16 @@ function AddMedicalServices({ open, onClose }) {
     const newServiceRef = push(serviceRef);
 
     const data =
-      serviceType === "specialties" ? { name } : { name, description };
+      serviceType === "specialties"
+        ? { name, serviceFee }
+        : { name, description, serviceFee };
 
     await set(newServiceRef, data);
 
-    // Reset form
     setName("");
     setDescription("");
     setServiceType("consultationTypes");
+    setserviceFee("");
     alert("Medical service added successfully!");
     onClose();
   };
@@ -73,6 +76,18 @@ function AddMedicalServices({ open, onClose }) {
               />
             </div>
           )}
+
+          <div>
+            <label className="block mb-1 font-medium">Service Fee</label>
+            <input
+              type="number"
+              placeholder="Enter fee"
+              className="w-full border px-3 py-2 rounded"
+              value={serviceFee}
+              onChange={(e) => setserviceFee(e.target.value)}
+              required
+            />
+          </div>
 
           <div className="flex justify-end space-x-2">
             <button

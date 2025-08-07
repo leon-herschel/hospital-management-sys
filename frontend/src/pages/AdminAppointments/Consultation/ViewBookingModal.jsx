@@ -107,22 +107,19 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
 
     try {
       // 1. Update the appointment status
-      await update(
-        ref(database, `appointments/consultations/${currentBooking.id}`),
-        {
-          status: newStatus,
-          ...(newStatus === "Confirmed" && {
-            confirmedAt: new Date().toISOString(),
-          }),
-        }
-      );
+      await update(ref(database, `appointments/${currentBooking.id}`), {
+        status: newStatus,
+        ...(newStatus === "Confirmed" && {
+          confirmedAt: new Date().toISOString(),
+        }),
+      });
 
       // 2. Only push to patients node if status is "Confirmed"
       if (newStatus === "Confirmed") {
         // Get the full appointment data
         const appointmentRef = ref(
           database,
-          `appointments/consultations/${currentBooking.id}`
+          `appointments/${currentBooking.id}`
         );
         const snapshot = await get(appointmentRef);
         const appointmentData = snapshot.val();

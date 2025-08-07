@@ -61,7 +61,7 @@ function AdminConsult() {
     });
 
     // Fetch bookings
-    const bookingRef = ref(database, `appointments/consultations`);
+    const bookingRef = ref(database, `appointments`);
     const bookingsUnsubscribe = onValue(bookingRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -96,9 +96,7 @@ function AdminConsult() {
 
   const handleDelete = async () => {
     if (currentBooking) {
-      await remove(
-        ref(database, `appointments/consultations/${currentBooking.id}`)
-      );
+      await remove(ref(database, `appointments/${currentBooking.id}`));
       toggleDeleteModal();
     }
   };
@@ -114,7 +112,7 @@ function AdminConsult() {
 
     try {
       // 1. Update the appointment status
-      await update(ref(database, `appointments/consultations/${bookingId}`), {
+      await update(ref(database, `appointments/${bookingId}`), {
         status: newStatus,
         ...(newStatus === "Confirmed" && {
           confirmedAt: new Date().toISOString(),
@@ -124,10 +122,7 @@ function AdminConsult() {
       // 2. Only push to patients node if status is "Confirmed"
       if (newStatus === "Confirmed") {
         // Get the full appointment data
-        const appointmentRef = ref(
-          database,
-          `appointments/consultations/${bookingId}`
-        );
+        const appointmentRef = ref(database, `appointments/${bookingId}`);
         const snapshot = await get(appointmentRef);
         const appointmentData = snapshot.val();
 

@@ -36,7 +36,11 @@ import ForgotPassword from "./components/auth/login/ForgotPassword";
 import AdminConsult from "./pages/AdminAppointments/Consultation/AdminConsult";
 import AdminLab from "./pages/AdminAppointments/Laboratory/AdminLab";
 import ClinicInventory from "./pages/Inventory/clinicInventory";
+import RequestLabTest from "./pages/AdminAppointments/Laboratory/RequestLabTest";
+import SpecialistAppointments from "./pages/AdminAppointments/Consultation/SpecialistAppointments";
+import LabTestReport from "./pages/AdminAppointments/Laboratory/LabTestReport";
 import { element } from "prop-types";
+import path from "path";
 
 function App() {
   const routesArray = [
@@ -86,13 +90,16 @@ function App() {
         { path: "UsageHistory", element: <UsageHistory /> },
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
-         { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
+        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
         { path: "UsageHistory", element: <UsageHistory /> },
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
         { path: "AdminConsult", element: <AdminConsult /> },
         { path: "AdminLab", element: <AdminLab /> },
-        {path: "clinicInventory", element: <ClinicInventory /> },
+        { path: "clinicInventory", element: <ClinicInventory /> },
+        { path: "RequestLabTest", element: <RequestLabTest /> },
+        { path: "SpecialistAppointments", element: <SpecialistAppointments /> },
+        { path: "LabTestReport", element: <LabTestReport /> },
       ],
     },
     {
