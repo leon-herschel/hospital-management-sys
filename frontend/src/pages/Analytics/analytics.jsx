@@ -1,127 +1,502 @@
 import { useEffect, useState, useMemo } from "react";
 import { ref, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend,
+  LineChart,
+  Line, 
+  ResponsiveContainer,
+  Area,
+  AreaChart
+} from "recharts";
 
 const Analytics = () => {
-  const [medicinesData, setMedicinesData] = useState([]);
-  const [suppliesData, setSuppliesData] = useState([]);
+  const [salesData, setSalesData] = useState({ daily: 0, monthly: 0 });
+  const [salesItemsData, setSalesItemsData] = useState([]);
+  const [medicineUsageData, setMedicineUsageData] = useState([]);
+  const [supplyUsageData, setSupplyUsageData] = useState([]);
+  const [labRequestsData, setLabRequestsData] = useState([]);
+  const [inventoryTransactionsData, setInventoryTransactionsData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUsageData = async () => {
-      setLoading(true); // Set loading state
-      try {
-        const patientsRef = ref(database, "patient");
-        const snapshot = await get(patientsRef);
-
-        if (snapshot.exists()) {
-          const patients = snapshot.val();
-          const medicineUsage = {};
-          const supplyUsage = {};
-
-          // Iterate over each patient to collect medicine and supply usage
-          Object.values(patients).forEach((patient) => {
-            if (patient.medUse) {
-              Object.values(patient.medUse).forEach((medicine) => {
-                const { name, quantity } = medicine;
-                if (medicineUsage[name]) {
-                  medicineUsage[name] += quantity;
-                } else {
-                  medicineUsage[name] = quantity;
-                }
-              });
-            }
-            if (patient.suppliesUsed) {
-              Object.values(patient.suppliesUsed).forEach((supply) => {
-                const { name, quantity } = supply;
-                if (supplyUsage[name]) {
-                  supplyUsage[name] += quantity;
-                } else {
-                  supplyUsage[name] = quantity;
-                }
-              });
-            }
-          });
-
-          // Convert usage objects to sorted arrays
-          const sortedMedicines = Object.entries(medicineUsage)
-            .map(([name, quantity]) => ({ name, value: quantity }))
-            .sort((a, b) => b.value - a.value);
-
-          const sortedSupplies = Object.entries(supplyUsage)
-            .map(([name, quantity]) => ({ name, value: quantity }))
-            .sort((a, b) => b.value - a.value);
-
-          setMedicinesData(sortedMedicines);
-          setSuppliesData(sortedSupplies);
-        }
-      } catch (error) {
-        console.error("Error fetching usage data: ", error);
-      } finally {
-        setLoading(false); // Stop loading state
-      }
-    };
-
-    fetchUsageData();
-  }, []);
-
-  // Memoize the color array and chart data to prevent unnecessary recalculations
   const COLORS = useMemo(
-    () => ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"],
+    () => ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#00ff00"],
     []
   );
 
-  // Memoize the chart content
-  const renderMedicineChart = useMemo(() => (
-    <PieChart width={500} height={500}>
-      <Pie
-        data={medicinesData}
-        cx={250}
-        cy={250}
-        label={({ name, value }) => `${name}: ${value}`}
-        labelLine={false}
-        outerRadius={150}
-        fill="#8884d8"
-        dataKey="value"
-      >
-        {medicinesData.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-        ))}
-      </Pie>
-    </PieChart>
-  ), [medicinesData, COLORS]);
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      setLoading(true);
+      try {
+        // Get current date info
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const today = now.toISOString().split('T')[0];
 
-  const renderSuppliesChart = useMemo(() => (
-    <BarChart
-      width={400}
-      height={300}
-      data={suppliesData}
-      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" />
-      <YAxis />
-      <Tooltip />
-      <Legend />
-      <Bar dataKey="value" fill="#8884d8" />
-    </BarChart>
-  ), [suppliesData]);
+        // Fetch lab requests for sales data
+        const labRequestsRef = ref(database, "clinicLabRequests");
+        const labSnapshot = await get(labRequestsRef);
 
-  if (loading) return <div>Loading...</div>;
+        // Fetch inventory items for detailed item information
+        const inventoryItemsRef = ref(database, "inventoryItems");
+        const itemsSnapshot = await get(inventoryItemsRef);
+
+        // Fetch inventory transactions
+        const inventoryTransactionsRef = ref(database, "inventoryTransactions");
+        const transactionsSnapshot = await get(inventoryTransactionsRef);
+
+        // Process lab requests for sales analytics
+        let dailySales = 0;
+        let monthlySales = 0;
+        const salesByService = {};
+
+        if (labSnapshot.exists()) {
+          const labRequests = labSnapshot.val();
+          
+          Object.values(labRequests).forEach((request) => {
+            const serviceFee = parseFloat(request.serviceFee || 0);
+            const requestDate = request.createdAt?.date || request.requestDate;
+            
+            if (serviceFee > 0) {
+              // Add to sales by service
+              const serviceName = request.labTestName || 'Unknown Service';
+              if (salesByService[serviceName]) {
+                salesByService[serviceName] += serviceFee;
+              } else {
+                salesByService[serviceName] = serviceFee;
+              }
+
+              // Check if it's today's sale
+              if (requestDate === today) {
+                dailySales += serviceFee;
+              }
+
+              // Check if it's this month's sale
+              if (requestDate && new Date(requestDate).getMonth() === currentMonth && 
+                  new Date(requestDate).getFullYear() === currentYear) {
+                monthlySales += serviceFee;
+              }
+            }
+          });
+        }
+
+        // Process inventory transactions for medicine and supply usage
+        const medicineUsage = {};
+        const supplyUsage = {};
+        const transactionsByType = {};
+        
+        // Get inventory items details for categorization
+        const inventoryItems = itemsSnapshot.exists() ? itemsSnapshot.val() : {};
+        
+        if (transactionsSnapshot.exists()) {
+          const transactions = transactionsSnapshot.val();
+          
+          Object.values(transactions).forEach((transaction) => {
+            const type = transaction.transactionType || 'unknown';
+            const quantity = Math.abs(transaction.quantityChanged || 0);
+            const itemId = transaction.itemId;
+            const itemName = transaction.itemName || 'Unknown Item';
+            
+            // Track transaction types
+            if (transactionsByType[type]) {
+              transactionsByType[type] += quantity;
+            } else {
+              transactionsByType[type] = quantity;
+            }
+
+            // Track medicine and supply usage specifically for "usage" transactions
+            if (type.toLowerCase() === 'usage') {
+              // Get item details from inventoryItems
+              const itemDetails = inventoryItems[itemId];
+              const itemCategory = itemDetails?.itemCategory || '';
+              const displayName = itemDetails?.itemName || itemName;
+              const genericName = itemDetails?.genericName;
+              
+              // Use generic name for medicines if available, otherwise use item name
+              const finalDisplayName = genericName && itemCategory.toLowerCase().includes('medicine') 
+                ? `${genericName} (${itemDetails.brand || displayName})`
+                : displayName;
+
+              // Categorize based on itemGroup or itemCategory
+              const itemGroup = itemDetails?.itemGroup?.toLowerCase() || '';
+              
+              if (itemGroup === 'medicine' || itemCategory.toLowerCase().includes('medicine') || 
+                  itemCategory.toLowerCase().includes('tablet') || itemCategory.toLowerCase().includes('capsule')) {
+                // Track medicine usage
+                if (medicineUsage[finalDisplayName]) {
+                  medicineUsage[finalDisplayName] += quantity;
+                } else {
+                  medicineUsage[finalDisplayName] = quantity;
+                }
+              } else if (itemGroup === 'supply' || itemCategory.toLowerCase().includes('supply') ||
+                        itemCategory.toLowerCase().includes('equipment') || itemCategory.toLowerCase().includes('consumable')) {
+                // Track supply usage
+                if (supplyUsage[finalDisplayName]) {
+                  supplyUsage[finalDisplayName] += quantity;
+                } else {
+                  supplyUsage[finalDisplayName] = quantity;
+                }
+              } else {
+                // If category is unclear, try to determine from item name or default to supply
+                if (finalDisplayName.toLowerCase().includes('paracetamol') || 
+                    finalDisplayName.toLowerCase().includes('medicine') ||
+                    finalDisplayName.toLowerCase().includes('tablet') ||
+                    finalDisplayName.toLowerCase().includes('capsule')) {
+                  if (medicineUsage[finalDisplayName]) {
+                    medicineUsage[finalDisplayName] += quantity;
+                  } else {
+                    medicineUsage[finalDisplayName] = quantity;
+                  }
+                } else {
+                  if (supplyUsage[finalDisplayName]) {
+                    supplyUsage[finalDisplayName] += quantity;
+                  } else {
+                    supplyUsage[finalDisplayName] = quantity;
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        // Convert to chart data
+        const sortedSalesItems = Object.entries(salesByService)
+          .map(([service, amount]) => ({ name: service, value: amount, sales: `₱${amount.toLocaleString()}` }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10); // Top 10 services
+
+        const sortedMedicineUsage = Object.entries(medicineUsage)
+          .map(([medicine, quantity]) => ({ name: medicine, value: quantity, usage: `${quantity} units` }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8); // Top 8 medicines
+
+        const sortedSupplyUsage = Object.entries(supplyUsage)
+          .map(([supply, quantity]) => ({ name: supply, value: quantity, usage: `${quantity} units` }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8); // Top 8 supplies
+
+        const transactionsData = Object.entries(transactionsByType)
+          .map(([type, quantity]) => ({ 
+            name: type.replace(/_/g, ' ').toUpperCase(), 
+            value: quantity 
+          }));
+
+        // Set all data
+        setSalesData({ daily: dailySales, monthly: monthlySales });
+        setSalesItemsData(sortedSalesItems);
+        setMedicineUsageData(sortedMedicineUsage);
+        setSupplyUsageData(sortedSupplyUsage);
+        setInventoryTransactionsData(transactionsData);
+
+      } catch (error) {
+        console.error("Error fetching analytics data: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, []);
+
+  // Custom tooltip for sales items
+  const SalesItemTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ 
+          backgroundColor: 'white', 
+          padding: '10px', 
+          border: '1px solid #ccc',
+          borderRadius: '5px',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+        }}>
+          <p style={{ margin: 0, fontWeight: 'bold' }}>{label}</p>
+          <p style={{ margin: 0, color: '#0088FE' }}>
+            Sales: ₱{payload[0].value.toLocaleString()}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tooltip for supply usage
+  const SupplyUsageTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ 
+          backgroundColor: 'white', 
+          padding: '10px', 
+          border: '1px solid #ccc',
+          borderRadius: '5px',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+        }}>
+          <p style={{ margin: 0, fontWeight: 'bold' }}>{payload[0].name}</p>
+          <p style={{ margin: 0, color: '#FFBB28' }}>
+            Used: {payload[0].value} units
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '400px',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        Loading Analytics...
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", justifyContent: "space-around", padding: "20px" }}>
-      {/* Medicines Pie Chart */}
-      <div>
-        <h3>Most Used Medicines</h3>
-        {renderMedicineChart}
+    <div style={{ padding: "20px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
+        Healthcare Analytics Dashboard
+      </h1>
+
+      {/* Sales Overview Cards */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        gap: "20px", 
+        marginBottom: "40px" 
+      }}>
+        <div style={{
+          backgroundColor: "white",
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          textAlign: "center",
+          minWidth: "200px"
+        }}>
+          <h3 style={{ margin: "0 0 10px 0", color: "#0088FE" }}>Today's Sales</h3>
+          <p style={{ fontSize: "24px", fontWeight: "bold", margin: 0, color: "#333" }}>
+            ₱{salesData.daily.toLocaleString()}
+          </p>
+        </div>
+        
+        <div style={{
+          backgroundColor: "white",
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          textAlign: "center",
+          minWidth: "200px"
+        }}>
+          <h3 style={{ margin: "0 0 10px 0", color: "#00C49F" }}>Monthly Sales</h3>
+          <p style={{ fontSize: "24px", fontWeight: "bold", margin: 0, color: "#333" }}>
+            ₱{salesData.monthly.toLocaleString()}
+          </p>
+        </div>
       </div>
 
-      {/* Supplies Bar Chart */}
-      <div>
-        <h3>Most Used Supplies</h3>
-        {renderSuppliesChart}
+      {/* Charts Grid */}
+      <div style={{ 
+        display: "grid", 
+        gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))", 
+        gap: "30px",
+        marginBottom: "30px"
+      }}>
+        
+        {/* Sales by Service - Bar Chart */}
+        <div style={{
+          backgroundColor: "white",
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+        }}>
+          <h3 style={{ textAlign: "center", marginBottom: "20px", color: "#333" }}>
+            Top Services by Sales Revenue
+          </h3>
+          {salesItemsData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={salesItemsData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  fontSize={12}
+                />
+                <YAxis tickFormatter={(value) => `₱${value.toLocaleString()}`} />
+                <Tooltip content={<SalesItemTooltip />} />
+                <Bar dataKey="value" fill="#0088FE" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ textAlign: "center", padding: "50px", color: "#666" }}>
+              No sales data available
+            </div>
+          )}
+        </div>
+
+        {/* Medicine Usage - Pie Chart */}
+        <div style={{
+          backgroundColor: "white",
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+        }}>
+          <h3 style={{ textAlign: "center", marginBottom: "20px", color: "#333" }}>
+            Most Used Medicines
+          </h3>
+          {medicineUsageData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie
+                  data={medicineUsageData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name.length > 15 ? name.substring(0, 15) + '...' : name}: ${value}`}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {medicineUsageData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value, name) => [`${value} units`, 'Usage']} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ textAlign: "center", padding: "50px", color: "#666" }}>
+              No medicine usage data available
+            </div>
+          )}
+        </div>
+
+        {/* Supply Usage - Bar Chart */}
+        <div style={{
+          backgroundColor: "white",
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+        }}>
+          <h3 style={{ textAlign: "center", marginBottom: "20px", color: "#333" }}>
+            Most Used Supplies
+          </h3>
+          {supplyUsageData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={supplyUsageData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  fontSize={12}
+                />
+                <YAxis />
+                <Tooltip formatter={(value) => [`${value} units`, 'Used']} />
+                <Bar dataKey="value" fill="#FFBB28" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ textAlign: "center", padding: "50px", color: "#666" }}>
+              No supply usage data available
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Inventory Transactions Overview */}
+      {inventoryTransactionsData.length > 0 && (
+        <div style={{
+          backgroundColor: "white",
+          padding: "20px",
+          borderRadius: "10px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          marginBottom: "30px"
+        }}>
+          <h3 style={{ textAlign: "center", marginBottom: "20px", color: "#333" }}>
+            Inventory Transaction Types
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={inventoryTransactionsData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#8884d8" 
+                fill="#8884d8" 
+                fillOpacity={0.6}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Summary Statistics */}
+      <div style={{
+        backgroundColor: "white",
+        padding: "20px",
+        borderRadius: "10px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+      }}>
+        <h3 style={{ textAlign: "center", marginBottom: "20px", color: "#333" }}>
+          Quick Statistics
+        </h3>
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+          gap: "20px",
+          textAlign: "center"
+        }}>
+          <div>
+            <h4 style={{ margin: "0 0 10px 0", color: "#0088FE" }}>Total Services</h4>
+            <p style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>
+              {salesItemsData.length}
+            </p>
+          </div>
+          <div>
+            <h4 style={{ margin: "0 0 10px 0", color: "#00C49F" }}>Medicines Used</h4>
+            <p style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>
+              {medicineUsageData.length}
+            </p>
+          </div>
+          <div>
+            <h4 style={{ margin: "0 0 10px 0", color: "#FFBB28" }}>Supplies Used</h4>
+            <p style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>
+              {supplyUsageData.length}
+            </p>
+          </div>
+          <div>
+            <h4 style={{ margin: "0 0 10px 0", color: "#FF8042" }}>Transaction Types</h4>
+            <p style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>
+              {inventoryTransactionsData.length}
+            </p>
+          </div>
+          <div>
+            <h4 style={{ margin: "0 0 10px 0", color: "#8884d8" }}>Avg Daily Revenue</h4>
+            <p style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>
+              ₱{Math.round(salesData.monthly / 30).toLocaleString()}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

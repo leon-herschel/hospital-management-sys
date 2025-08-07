@@ -6,7 +6,7 @@ import { useAccessControl } from "../../components/roles/accessControl";
 import DepartmentsTable from './Departments/DepartmentsTable';
 import ClinicsTable from './Clinics/ClinicTable';
 import DoctorsTable from './Doctors/DoctorsTable';
-
+import SuppliersTable from './Suppliers/SuppliersTable';
 const Settings = () => {
   const [tableView, setTableView] = useState('User Management');
   const permissions = useAccessControl();
@@ -73,6 +73,17 @@ const Settings = () => {
         >
           Doctor Management
         </button>
+        <button
+  onClick={() => handleClick("Supplier Management")}
+  className={`px-6 py-2 rounded-md transition duration-200 ${
+    tableView === "Supplier Management"
+      ? "bg-slate-900 text-white font-bold"
+      : "bg-slate-200 text-gray-900"
+  }`}
+>
+  Supplier Management
+</button>
+
       </div>
 
     
@@ -81,6 +92,8 @@ const Settings = () => {
       {tableView === 'Department Management' && <DepartmentsTable />}
       {tableView === 'Clinic Management' && <ClinicsTable />}
       {tableView === 'Doctor Management' && <DoctorsTable />}
+      {tableView === 'Supplier Management' && <SuppliersTable />}
+
     </div>
   );
 };

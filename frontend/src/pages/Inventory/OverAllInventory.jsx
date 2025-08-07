@@ -11,17 +11,7 @@ const OverAllInventory = () => {
   const permissions = useAccessControl(); 
   const [selectedTab, setSelectedTab] = useState("medicine");
 
-  if (!permissions?.accessOverallInventory) {
-    return <AccessDenied />;
-  }
-
-  if (department === "Pharmacy") {
-    return <OverAllMedicine />;
-  }
-
-  if (department === "CSR") {
-    return <OverAllSupply />;
-  }
+  
   const generatePDF = () => {
   const { startDate, endDate } = dateRange[0];
 
