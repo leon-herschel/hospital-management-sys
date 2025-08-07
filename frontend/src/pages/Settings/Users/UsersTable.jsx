@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ref, onValue, remove } from 'firebase/database';
 import { database } from '../../../firebase/firebase';
+import { Users, Search, Plus, Edit, Trash2, UserCheck, Building, Mail } from 'lucide-react';
 import EditUserModal from './EditUserModal';
 import AddUserModal from './AddUserModal';
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [editedData, setEditedData] = useState({ email: '', department: '', role: '' });
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,36 +24,39 @@ const UsersTable = () => {
         usersList.push({ id: childSnapshot.key, ...childSnapshot.val() });
       });
       setUsers(usersList);
+      setFilteredUsers(usersList);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const filteredUsers = users.filter(user => {
-    const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.toLowerCase();
-    const searchLower = searchTerm.toLowerCase();
-  
-    // Debugging line to catch any undefined fields
-    if (
-      typeof user?.email !== 'string' ||
-      typeof user?.firstName !== 'string' ||
-      typeof user?.lastName !== 'string' ||
-      typeof user?.role !== 'string' ||
-      typeof user?.department !== 'string'
-    ) {
-      console.log('⚠️ Malformed user object:', user);
-    }
-  
-    return (
-      (user?.email || '').toLowerCase().includes(searchLower) ||
-      (user?.firstName || '').toLowerCase().includes(searchLower) ||
-      (user?.lastName || '').toLowerCase().includes(searchLower) ||
-      fullName.includes(searchLower) ||
-      (user?.role || '').toLowerCase().includes(searchLower) ||
-      (user?.department || '').toLowerCase().includes(searchLower)
-    );
-  });
-  
+  useEffect(() => {
+    const filtered = users.filter(user => {
+      const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
+    
+      // Debugging line to catch any undefined fields
+      if (
+        typeof user?.email !== 'string' ||
+        typeof user?.firstName !== 'string' ||
+        typeof user?.lastName !== 'string' ||
+        typeof user?.role !== 'string' ||
+        typeof user?.department !== 'string'
+      ) {
+        console.log('⚠️ Malformed user object:', user);
+      }
+    
+      return (
+        (user?.email || '').toLowerCase().includes(searchLower) ||
+        (user?.firstName || '').toLowerCase().includes(searchLower) ||
+        (user?.lastName || '').toLowerCase().includes(searchLower) ||
+        fullName.includes(searchLower) ||
+        (user?.role || '').toLowerCase().includes(searchLower) ||
+        (user?.department || '').toLowerCase().includes(searchLower)
+      );
+    });
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
 
   const handleDeleteUser = async () => {
     if (userToDelete) {
@@ -77,64 +82,182 @@ const UsersTable = () => {
     setShowDeleteConfirm(true);
   };
 
-  return (
-    <div className="w-full">
-      {/* Search and Add Account Button */}
-      <div className="mb-4 flex justify-between items-center">
-        <input
-          type="text"
-          placeholder="Search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-slate-300 px-4 py-2 rounded-lg"
-        />
-        <button
-          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-          onClick={() => setShowAddUserModal(true)}
-        >
-          Add Account
-        </button>
-      </div>
+  const getUserStats = () => {
+    const totalUsers = users.length;
+    const adminUsers = users.filter(user => user.role === 'admin').length;
+    const activeUsers = users.filter(user => user.status !== 'inactive').length;
+    
+    return {
+      total: totalUsers,
+      admin: adminUsers,
+      active: activeUsers
+    };
+  };
 
-      {/* Table */}
-      <div className="relative overflow-x-auto rounded-md shadow-sm">
-        <table className="w-full text-md text-gray-900 text-center border border-slate-200">
-          <thead className="text-md bg-slate-200">
-            <tr>
-              <th scope="col" className="px-6 py-3">Name</th>
-              <th scope="col" className="px-6 py-3">Email</th>
-              <th scope="col" className="px-6 py-3">Department</th>
-              <th scope="col" className="px-6 py-3">Role</th>
-              <th scope="col" className="px-6 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id} className="bg-white border-b hover:bg-slate-100">
-                <td className="px-6 py-4">{`${user.firstName} ${user.lastName}`}</td>
-                <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">{user.department}</td>
-                <td className="px-6 py-4">{(user?.role || "N/A").charAt(0).toUpperCase() + (user?.role || "N/A").slice(1)}
-                </td>
-                <td className="px-6 py-4 flex justify-center space-x-4">
-                  <button
-                    className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
-                    onClick={() => handleEditClick(user)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
-                    disabled={user.role === 'admin' && user.department === 'Admin'}
-                    onClick={() => confirmDeleteUser(user)}
-                  >
-                    Delete
-                  </button>
-                </td>
+  const getDepartmentIcon = (department) => {
+    const icons = {
+      'Admin': <UserCheck size={20} />,
+      'IT': <Users size={20} />,
+      'HR': <Users size={20} />,
+      'Finance': <Building size={20} />,
+      'Operations': <Building size={20} />
+    };
+    return icons[department] || <Users size={20} />;
+  };
+
+  const stats = getUserStats();
+
+  return (
+    <div className="w-full bg-white rounded-lg shadow-md">
+      <div className="p-6">
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+              <Users size={24} />
+              <span>Users Management</span>
+            </h2>
+            <p className="text-gray-600 mt-1">Manage user accounts and access</p>
+          </div>
+          <button
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md flex items-center space-x-2 transition-colors"
+            onClick={() => setShowAddUserModal(true)}
+          >
+            <Plus size={20} />
+            <span>Add User</span>
+          </button>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+            <h3 className="text-sm font-semibold text-blue-800">Total Users</h3>
+            <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
+            <p className="text-xs text-blue-600">Registered accounts</p>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400">
+            <h3 className="text-sm font-semibold text-purple-800">Admin Users</h3>
+            <p className="text-2xl font-bold text-purple-900">{stats.admin}</p>
+            <p className="text-xs text-purple-600">Administrative access</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+            <h3 className="text-sm font-semibold text-green-800">Active Users</h3>
+            <p className="text-2xl font-bold text-green-900">{stats.active}</p>
+            <p className="text-xs text-green-600">Currently active</p>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={20} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Users Table */}
+        <div className="relative overflow-x-auto rounded-md shadow-sm">
+          <table className="w-full text-sm text-gray-900 text-center border border-gray-200">
+            <thead className="text-sm bg-gray-100">
+              <tr>
+                <th className="px-4 py-3 text-left">User</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Department</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-left">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        user.role === 'admin' ? 'bg-purple-100' : 'bg-blue-100'
+                      }`}>
+                        <Users size={20} className={
+                          user.role === 'admin' ? 'text-purple-600' : 'text-blue-600'
+                        } />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 flex items-center space-x-2">
+                          <span>{`${user.firstName} ${user.lastName}`}</span>
+                          {user.role === 'admin' && (
+                            <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded">
+                              ADMIN
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          User ID: {user.id}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center space-x-1">
+                      <Mail size={14} className="text-gray-400" />
+                      <span className="text-sm">{user.email}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getDepartmentIcon(user.department)}
+                      <span className="text-sm">{user.department}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      user.role === 'admin' 
+                        ? 'bg-purple-100 text-purple-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {(user?.role || "N/A").charAt(0).toUpperCase() + (user?.role || "N/A").slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col space-y-1">
+                      <button
+                        className="px-3 py-1 rounded-md text-xs bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        onClick={() => handleEditClick(user)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                          user.role === 'admin' && user.department === 'Admin'
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-red-600 hover:bg-red-700 text-white'
+                        }`}
+                        disabled={user.role === 'admin' && user.department === 'Admin'}
+                        onClick={() => confirmDeleteUser(user)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-gray-500">
+                    <div className="flex flex-col items-center space-y-2">
+                      <Users size={32} className="text-gray-300" />
+                      <span>No users found.</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Edit User Modal */}
@@ -154,26 +277,36 @@ const UsersTable = () => {
         />
       )}
 
-      {/* Confirmation Modal for Deleting User */}
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-md p-6 w-full max-w-md shadow-lg text-center">
-            <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
-            <p className="text-gray-700">Are you sure you want to delete this user?</p>
-            <p className="mb-6 text-sm text-red-600">Delete function is not complete yet and will not delete a user from Firebase Authentication.</p>
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={handleDeleteUser}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="bg-gray-300 text-black px-4 py-2 rounded-md hover:bg-gray-400"
-              >
-                Cancel
-              </button>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <Users size={24} className="text-red-600" />
+              </div>
+              <h2 className="text-xl font-bold mb-2 text-gray-900">Delete User</h2>
+              <p className="text-gray-600 mb-2">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold">{userToDelete?.firstName} {userToDelete?.lastName}</span>?
+              </p>
+              <p className="mb-6 text-sm text-red-600">
+                Delete function is not complete yet and will not delete a user from Firebase Authentication.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={handleDeleteUser}
+                  className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

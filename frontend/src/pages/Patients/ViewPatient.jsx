@@ -37,8 +37,9 @@ function ViewPatient() {
   const [labTests, setLabTests] = useState([]); // New state for lab tests
   const [medicalServices, setMedicalServices] = useState({}); // New state for medical services
   const [users, setUsers] = useState({}); // New state for users data
-  const [searchQuery, setSearchQuery] = useState('');
-  const [labSearchQuery, setLabSearchQuery] = useState(''); // New search for lab tests
+  const [searchQuery, setSearchQuery] = useState("");
+  const [labSearchQuery, setLabSearchQuery] = useState(""); // New search for lab tests
+  const [medicalConditionsSearchQuery, setMedicalConditionsSearchQuery] = useState(""); // Search for medical conditions
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLabExpanded, setIsLabExpanded] = useState(false); // New expand state for lab tests
 
@@ -49,7 +50,10 @@ function ViewPatient() {
         const patientRef = ref(database, `patients/${id}`);
         const inventoryTransactionsRef = ref(database, "inventoryTransactions");
         const medicalServicesRef = ref(database, "medicalServicesTransactions");
-        const medicalServicesDataRef = ref(database, "medicalServices/laboratoryTests");
+        const medicalServicesDataRef = ref(
+          database,
+          "medicalServices/laboratoryTests"
+        );
         const usersRef = ref(database, "users"); // Add users reference
 
         // Get patient info
@@ -76,21 +80,29 @@ function ViewPatient() {
           const patientTransactions = Object.entries(data)
             .filter(([_, transaction]) => {
               // Filter transactions that are related to this patient
-              return transaction.relatedPatientId?.trim() === id?.trim() && 
-                     transaction.transactionType === "usage";
+              return (
+                transaction.relatedPatientId?.trim() === id?.trim() &&
+                transaction.transactionType === "usage"
+              );
             })
             .map(([key, transaction]) => ({
               id: key,
               itemName: transaction.itemName || "Unknown Item",
               quantity: Math.abs(transaction.quantityChanged) || 0, // Make quantity positive for display
-              processedByUserFirstName: transaction.processedByUserFirstName || "Unknown",
-              processedByUserLastName: transaction.processedByUserLastName || "",
+              processedByUserFirstName:
+                transaction.processedByUserFirstName || "Unknown",
+              processedByUserLastName:
+                transaction.processedByUserLastName || "",
               timestamp: transaction.timestamp || "Unknown",
               reason: transaction.reason || "",
               sourceDepartment: transaction.sourceDepartment || "",
-              transactionType: transaction.transactionType || ""
+              transactionType: transaction.transactionType || "",
             }))
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Sort by newest first
+            .sort(
+              (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime()
+            ); // Sort by newest first
 
           setInventoryItems(patientTransactions);
         });
@@ -101,8 +113,10 @@ function ViewPatient() {
           const patientLabTests = Object.entries(data)
             .filter(([_, transaction]) => {
               // Filter lab test transactions for this patient
-              return transaction.patientId?.trim() === id?.trim() && 
-                     transaction.serviceCategory === "laboratoryTests";
+              return (
+                transaction.patientId?.trim() === id?.trim() &&
+                transaction.serviceCategory === "laboratoryTests"
+              );
             })
             .map(([key, transaction]) => ({
               id: key,
@@ -118,9 +132,13 @@ function ViewPatient() {
               urgentFlag: transaction.urgentFlag || false,
               createdAt: transaction.createdAt || "Unknown",
               updatedAt: transaction.updatedAt || "Unknown",
-              transactionType: transaction.transactionType || ""
+              transactionType: transaction.transactionType || "",
             }))
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Sort by newest first
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            ); // Sort by newest first
 
           setLabTests(patientLabTests);
         });
@@ -144,7 +162,9 @@ function ViewPatient() {
       const user = users[userId];
       const firstName = user.firstName || "";
       const lastName = user.lastName || "";
-      return `${firstName} ${lastName}`.trim() || fallbackName || "Unknown User";
+      return (
+        `${firstName} ${lastName}`.trim() || fallbackName || "Unknown User"
+      );
     }
     return fallbackName || "Unknown User";
   };
@@ -276,37 +296,83 @@ function ViewPatient() {
       completed: "bg-green-100 text-green-800",
       pending: "bg-yellow-100 text-yellow-800",
       in_progress: "bg-blue-100 text-blue-800",
-      cancelled: "bg-red-100 text-red-800"
+      cancelled: "bg-red-100 text-red-800",
     };
-    
+
     return statusColors[status] || "bg-gray-100 text-gray-800";
+  };
+
+  // Function to format medical conditions for display
+  const formatMedicalConditions = () => {
+    if (!patient.medicalConditions) return [];
+
+    if (typeof patient.medicalConditions === "string") {
+      // If it's a string, split by common delimiters and create objects
+      return patient.medicalConditions
+        .split(/[,;]/)
+        .map((condition, index) => ({
+          id: index,
+          condition: condition.trim(),
+          description: "",
+          dateRecorded: "N/A"
+        }))
+        .filter(item => item.condition);
+    }
+
+    if (typeof patient.medicalConditions === "object") {
+      // If it's an object, convert to array format
+      return Object.entries(patient.medicalConditions).map(([key, value], index) => ({
+        id: index,
+        condition: key,
+        description: typeof value === "string" ? value : JSON.stringify(value),
+        dateRecorded: "N/A"
+      }));
+    }
+
+    return [];
   };
 
   if (loading) return <div>Loading...</div>;
   if (!patient) return <div>Patient not found</div>;
 
   // Filter items based on search query
-  const filteredItems = inventoryItems.filter(item => {
-    const itemName = item.itemName || '';
-    const processedBy = `${item.processedByUserFirstName} ${item.processedByUserLastName}`.trim();
-    
-    return itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           processedBy.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredItems = inventoryItems.filter((item) => {
+    const itemName = item.itemName || "";
+    const processedBy =
+      `${item.processedByUserFirstName} ${item.processedByUserLastName}`.trim();
+
+    return (
+      itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      processedBy.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   });
 
   // Filter lab tests based on search query
-  const filteredLabTests = labTests.filter(test => {
+  const filteredLabTests = labTests.filter((test) => {
     const testName = getTestName(test.serviceId, test.serviceName);
     const requestedBy = getUserName(test.requestedBy, test.requestedByName);
-    const department = test.department || '';
-    
-    return testName.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
-           requestedBy.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
-           department.toLowerCase().includes(labSearchQuery.toLowerCase());
+    const department = test.department || "";
+
+    return (
+      testName.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
+      requestedBy.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
+      department.toLowerCase().includes(labSearchQuery.toLowerCase())
+    );
+  });
+
+  // Filter medical conditions based on search query
+  const medicalConditionsList = formatMedicalConditions();
+  const filteredMedicalConditions = medicalConditionsList.filter((condition) => {
+    return (
+      condition.condition.toLowerCase().includes(medicalConditionsSearchQuery.toLowerCase()) ||
+      condition.description.toLowerCase().includes(medicalConditionsSearchQuery.toLowerCase())
+    );
   });
 
   const itemsToShow = isExpanded ? filteredItems : filteredItems.slice(0, 10);
-  const labTestsToShow = isLabExpanded ? filteredLabTests : filteredLabTests.slice(0, 10);
+  const labTestsToShow = isLabExpanded
+    ? filteredLabTests
+    : filteredLabTests.slice(0, 10);
 
   return (
     <div className="container mx-auto p-1">
@@ -316,7 +382,7 @@ function ViewPatient() {
       >
         Back to Patients List
       </button>
-      
+
       <div className="md:flex no-wrap md:-mx-2">
         {/* Left Side */}
         <div className="w-full md:w-3/12 md:mx-2">
@@ -331,9 +397,7 @@ function ViewPatient() {
             <ul className="bg-gray-100 text-gray-600 hover:text-gray-700 hover:shadow py-2 px-3 mt-3 divide-y rounded shadow-sm">
               <li className="flex items-center py-3">
                 <span>Blood Type:</span>
-                <span className="ml-auto">
-                  {patient.bloodType}
-                </span>
+                <span className="ml-auto">{patient.bloodType}</span>
               </li>
             </ul>
           </div>
@@ -383,6 +447,58 @@ function ViewPatient() {
                   <div className="px-4 py-2 font-semibold">Date of Birth</div>
                   <div className="px-4 py-2">{patient.dateOfBirth}</div>
                 </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">Address</div>
+                  <div className="px-4 py-2">{patient.address || "N/A"}</div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">Allergies</div>
+                  <div className="px-4 py-2">{patient.allergies || "None"}</div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="grid grid-cols-2">
+  <div className="px-4 py-2 font-semibold">Medical Conditions</div>
+  <div className="px-4 py-2">
+    {patient.medicalConditions ? (
+      <>
+        {typeof patient.medicalConditions === "object" &&
+          Object.entries(patient.medicalConditions).map(([key, value]) => (
+            <div key={key}>
+              <strong>{key}:</strong> {value}
+            </div>
+          ))}
+      </>
+    ) : (
+      "None"
+    )}
+  </div>
+  </div>
+                </div>
+                <div className="grid grid-cols-2">
+                  <div className="px-4 py-2 font-semibold">
+                    Emergency Contact
+                  </div>
+                  <div className="px-4 py-2">
+                    {patient.emergencyContact ? (
+                      <>
+                        <div>
+                          <strong>Name:</strong>{" "}
+                          {patient.emergencyContact.name || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Phone:</strong>{" "}
+                          {patient.emergencyContact.phone || "N/A"}
+                        </div>
+                        <div>
+                          <strong>Relationship:</strong>{" "}
+                          {patient.emergencyContact.relationship || "N/A"}
+                        </div>
+                      </>
+                    ) : (
+                      "N/A"
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             <button className="block w-full text-blue-800 text-sm font-semibold rounded-lg hover:bg-gray-100 focus:outline-none focus:shadow-outline focus:bg-gray-100 hover:shadow-xs p-3 my-4">
@@ -431,6 +547,16 @@ function ViewPatient() {
             >
               Laboratory Tests History
             </button>
+            <button
+              onClick={() => setActiveTab("medicalConditions")}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "medicalConditions"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Medical Conditions
+            </button>
           </nav>
         </div>
 
@@ -438,8 +564,10 @@ function ViewPatient() {
         <div className="p-6">
           {activeTab === "itemUsage" && (
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Item Usage History</h2>
-              
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Item Usage History
+              </h2>
+
               {/* Search Input */}
               <div className="mb-4">
                 <input
@@ -454,7 +582,9 @@ function ViewPatient() {
               {/* Items Table */}
               {filteredItems.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  {inventoryItems.length === 0 ? "No item usage history found." : "No matching items found."}
+                  {inventoryItems.length === 0
+                    ? "No item usage history found."
+                    : "No matching items found."}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -491,7 +621,8 @@ function ViewPatient() {
                             {item.quantity}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {item.processedByUserFirstName} {item.processedByUserLastName}
+                            {item.processedByUserFirstName}{" "}
+                            {item.processedByUserLastName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatTimestamp(item.timestamp)}
@@ -516,7 +647,9 @@ function ViewPatient() {
                     className="text-blue-600 hover:text-blue-800 underline"
                     onClick={() => setIsExpanded(!isExpanded)}
                   >
-                    {isExpanded ? "Show Less" : `Show All (${filteredItems.length} items)`}
+                    {isExpanded
+                      ? "Show Less"
+                      : `Show All (${filteredItems.length} items)`}
                   </button>
                 </div>
               )}
@@ -525,8 +658,10 @@ function ViewPatient() {
 
           {activeTab === "labTests" && (
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Laboratory Tests History</h2>
-              
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Laboratory Tests History
+              </h2>
+
               {/* Search Input */}
               <div className="mb-4">
                 <input
@@ -541,7 +676,9 @@ function ViewPatient() {
               {/* Lab Tests Table */}
               {filteredLabTests.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  {labTests.length === 0 ? "No laboratory test history found." : "No matching tests found."}
+                  {labTests.length === 0
+                    ? "No laboratory test history found."
+                    : "No matching tests found."}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -584,22 +721,28 @@ function ViewPatient() {
                             {getTestName(test.serviceId, test.serviceName)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(test.status)}`}>
+                            <span
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(
+                                test.status
+                              )}`}
+                            >
                               {test.status}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(test.resultStatus)}`}>
-                              {test.resultStatus}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(test.sampleStatus)}`}>
+                            <span
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(
+                                test.sampleStatus
+                              )}`}
+                            >
                               {test.sampleStatus}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {getUserName(test.requestedBy, test.requestedByName)}
+                            {getUserName(
+                              test.requestedBy,
+                              test.requestedByName
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {test.department}
@@ -635,8 +778,79 @@ function ViewPatient() {
                     className="text-blue-600 hover:text-blue-800 underline"
                     onClick={() => setIsLabExpanded(!isLabExpanded)}
                   >
-                    {isLabExpanded ? "Show Less" : `Show All (${filteredLabTests.length} tests)`}
+                    {isLabExpanded
+                      ? "Show Less"
+                      : `Show All (${filteredLabTests.length} tests)`}
                   </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "medicalConditions" && (
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Medical Conditions
+              </h2>
+
+              {/* Search Input */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  className="border px-4 py-2 rounded w-full"
+                  placeholder="Search medical conditions..."
+                  value={medicalConditionsSearchQuery}
+                  onChange={(e) => setMedicalConditionsSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Medical Conditions Table */}
+              {filteredMedicalConditions.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  {medicalConditionsList.length === 0
+                    ? "No medical conditions recorded."
+                    : "No matching medical conditions found."}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white border border-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Condition
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Description
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date Recorded
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredMedicalConditions.map((condition) => (
+                        <tr key={condition.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {condition.condition}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                            {condition.description || "-"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {condition.dateRecorded}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              Active
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -647,7 +861,15 @@ function ViewPatient() {
       <div className="mt-6">
         <button
           className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-          onClick={() => generatePatientHistoryPDF(patient, inventoryItems, labTests, users, medicalServices)}
+          onClick={() =>
+            generatePatientHistoryPDF(
+              patient,
+              inventoryItems,
+              labTests,
+              users,
+              medicalServices
+            )
+          }
         >
           Generate PDF Report
         </button>

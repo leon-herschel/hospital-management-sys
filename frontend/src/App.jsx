@@ -36,6 +36,7 @@ import ForgotPassword from "./components/auth/login/ForgotPassword";
 import AdminConsult from "./pages/AdminAppointments/Consultation/AdminConsult";
 import AdminLab from "./pages/AdminAppointments/Laboratory/AdminLab";
 import ClinicInventory from "./pages/Inventory/clinicInventory";
+import ChangePasswordPage from "./components/navigation/ChangePassword";
 import { element } from "prop-types";
 
 function App() {
@@ -93,6 +94,7 @@ function App() {
         { path: "AdminConsult", element: <AdminConsult /> },
         { path: "AdminLab", element: <AdminLab /> },
         { path: "clinicInventory", element: <ClinicInventory /> },
+        {path: "change-password", element: <ChangePasswordPage />},
       ],
     },
     {

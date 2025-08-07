@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { ref, set } from "firebase/database";
+import { get, ref as dbRef, set } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import Papa from "papaparse";
-
+import { useEffect } from "react";
 const generateRandomKey = (length = 20) => {
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -22,6 +22,28 @@ function AddSupplyModal({ isOpen, toggleModal }) {
   // Bulk Upload States
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [csvData, setCsvData] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSupplier, setSelectedSupplier] = useState("");
+
+ useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const snapshot = await get(dbRef(database, "suppliers"));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const supplierList = Object.entries(data).map(([id, value]) => ({
+            id,
+            name: value.name || id,
+          }));
+          setSuppliers(supplierList);
+        }
+      } catch (error) {
+        console.error("Failed to fetch suppliers:", error);
+      }
+    };
+
+    fetchSuppliers();
+  }, []);
 
   const handleSubmit = async () => {
     if (
@@ -46,6 +68,7 @@ function AddSupplyModal({ isOpen, toggleModal }) {
         defaultCostPrice: parseFloat(defaultCostPrice),
         defaultRetailPrice: parseFloat(defaultRetailPrice),
         specifications,
+        supplierName: selectedSupplier,
         createdAt: new Date().toISOString(),
       };
 
@@ -100,6 +123,7 @@ function AddSupplyModal({ isOpen, toggleModal }) {
           defaultCostPrice: parseFloat(row.defaultCostPrice || 0),
           defaultRetailPrice: parseFloat(row.defaultRetailPrice || 0),
           specifications: row.specifications || "",
+           supplierName: row.supplierName || "",
           createdAt: new Date().toISOString(),
         };
 
@@ -126,6 +150,7 @@ function AddSupplyModal({ isOpen, toggleModal }) {
       "defaultCostPrice",
       "defaultRetailPrice",
       "specifications",
+      "supplierName",
     ];
 
     const sampleRow = {
@@ -134,6 +159,7 @@ function AddSupplyModal({ isOpen, toggleModal }) {
       defaultCostPrice: 3.5,
       defaultRetailPrice: 5.0,
       specifications: "Sterile, individually packed",
+      supplierName: "SWU Pharmacy",
     };
 
     const csvContent =
@@ -166,6 +192,20 @@ function AddSupplyModal({ isOpen, toggleModal }) {
           // Manual Entry Form
           <>
             <div className="grid grid-cols-2 gap-4">
+              <select
+              value={selectedSupplier}
+              onChange={(e) => setSelectedSupplier(e.target.value)}
+              className="border p-2 rounded"
+            >
+              <option value="" disabled>
+                Select Supplier
+              </option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.name}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
               <input
                 type="text"
                 placeholder="Item Name"

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { ref, set } from "firebase/database";
+import { get, ref as dbRef, set } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import Papa from "papaparse";
+import { useEffect } from "react";
 
 const generateRandomKey = (length = 20) => {
   const characters =
@@ -26,7 +27,29 @@ function AddMedicineModal({ isOpen, toggleModal }) {
   const [loading, setLoading] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [csvData, setCsvData] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSupplier, setSelectedSupplier] = useState("");
 
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const snapshot = await get(dbRef(database, "suppliers"));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const supplierList = Object.entries(data).map(([id, value]) => ({
+            id,
+            name: value.name || id,
+          }));
+          setSuppliers(supplierList);
+        }
+      } catch (error) {
+        console.error("Failed to fetch suppliers:", error);
+      }
+    };
+
+    fetchSuppliers();
+  }, []);
+  
   const handleSubmit = async () => {
     if (
       !itemName ||
@@ -48,7 +71,7 @@ function AddMedicineModal({ isOpen, toggleModal }) {
     try {
       setLoading(true);
       const uniqueKey = generateRandomKey(20);
-      const inventoryRef = ref(database, `inventoryItems/${uniqueKey}`);
+      const inventoryRef = dbRef(database, `inventoryItems/${uniqueKey}`); // Changed from ref to dbRef
       const inventoryData = {
         itemName,
         itemCategory,
@@ -59,6 +82,7 @@ function AddMedicineModal({ isOpen, toggleModal }) {
         defaultCostPrice: parseFloat(defaultCostPrice),
         defaultRetailPrice: parseFloat(defaultRetailPrice),
         specifications,
+        supplierName: selectedSupplier,
         unitOfMeasure: {
           bigUnit,
           smallUnit,
@@ -122,6 +146,7 @@ function AddMedicineModal({ isOpen, toggleModal }) {
           itemGroup: "Medicine",
           brand: row.brand || "",
           genericName: row.genericName || "",
+          supplierName: row.supplierName || "", 
           defaultDosage: row.defaultDosage || "",
           defaultCostPrice: parseFloat(row.defaultCostPrice || 0),
           defaultRetailPrice: parseFloat(row.defaultRetailPrice || 0),
@@ -134,7 +159,7 @@ function AddMedicineModal({ isOpen, toggleModal }) {
           createdAt: new Date().toISOString(),
         };
 
-        await set(ref(database, `inventoryItems/${key}`), data);
+        await set(dbRef(database, `inventoryItems/${key}`), data); // Changed from ref to dbRef
       }
 
       alert("Bulk medicine upload successful!");
@@ -163,6 +188,7 @@ function AddMedicineModal({ isOpen, toggleModal }) {
       "defaultCostPrice",
       "defaultRetailPrice",
       "specifications",
+      "supplierName",
     ];
 
     const sampleRow = {
@@ -177,6 +203,7 @@ function AddMedicineModal({ isOpen, toggleModal }) {
       defaultCostPrice: 2.5,
       defaultRetailPrice: 5,
       specifications: "Used for fever and pain",
+      supplierName: "Health Supplies Inc.",
     };
 
     const csvContent =
@@ -207,6 +234,20 @@ function AddMedicineModal({ isOpen, toggleModal }) {
         {!isBulkMode ? (
           <>
             <div className="grid grid-cols-2 gap-4">
+              <select
+                value={selectedSupplier}
+                onChange={(e) => setSelectedSupplier(e.target.value)}
+                className="border p-2 rounded"
+              >
+                <option value="" disabled>
+                  Select Supplier
+                </option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.name}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
                 placeholder="Item Name"

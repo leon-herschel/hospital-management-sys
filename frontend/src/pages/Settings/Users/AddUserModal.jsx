@@ -35,6 +35,8 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [emergencyPhone, setEmergencyPhone] = useState("");
   const [showAddRoleModal, setShowAddRoleModal] = useState(false);
   const [showAddDepartmentModal, setShowAddDepartmentModal] = useState(false);
+  const [address, setAddress] = useState("");
+  const [prcId, setPrcId] = useState("");
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -76,6 +78,8 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
   const resetForm = () => {
     setFirstName("");
+    setAddress("");
+    setAddress("");
     setLastName("");
     setEmail("");
     setPassword("");
@@ -92,6 +96,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     setEmergencyContactName("");
     setEmergencyRelationship("");
     setEmergencyPhone("");
+    setPrcId("");
     setError("");
   };
 
@@ -156,9 +161,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
           firstName,
           lastName,
           fullName: `Dr. ${firstName} ${lastName}`,
-          specialty: 'Generalist',
+          specialty: "Generalist",
           clinicAffiliations: [selectedClinic],
           contactNumber,
+          prcId
         });
       }
 
@@ -169,6 +175,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
           lastName,
           dateOfBirth,
           gender,
+          address,
           bloodType,
           contactNumber,
           allergies: allergies
@@ -348,6 +355,18 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                   </option>
                 ))}
               </select>
+              {selectedRole === "doctor" && (
+                <>
+                  <label className="block mb-2">PRC License Number</label>
+                  <input
+                    type="text"
+                    value={prcId}
+                    onChange={(e) => setPrcId(e.target.value)}
+                    required
+                    className="block w-full mb-4 p-2 border rounded-md"
+                  />
+                </>
+              )}
 
               {selectedRole !== "patient" && (
                 <>
@@ -414,7 +433,14 @@ const AddUserModal = ({ showModal, setShowModal }) => {
             {selectedRole === "patient" && (
               <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
                 <h3 className="text-lg font-semibold mb-4">Patient Details</h3>
-
+                <label className="block mb-2">Address</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  required
+                  className="block w-full mb-4 p-2 border rounded-md"
+                />
                 <label className="block mb-2">Date of Birth</label>
                 <input
                   type="date"

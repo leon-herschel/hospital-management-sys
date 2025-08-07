@@ -9,6 +9,8 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
   const [accessPatients, setAccessPatients] = useState(false);
   const [accessSettings, setAccessSettings] = useState(false);
   const [accessBilling, setAccessBilling] = useState(false); // Fixed naming here
+  const [accessLaboratory, setAccessLaboratory] = useState(false); // New state for Laboratory access
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -21,7 +23,8 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
           accessInventoryHistory,
           accessPatients,
           accessSettings,
-          accessBilling, // This now matches the state variable
+          accessBilling,
+          accessLaboratory, // This now matches the state variable
         },
       },
     };
@@ -120,6 +123,15 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">Access Settings</span>
+            </label>
+             <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessLaboratory}
+                onChange={() => setAccessLaboratory(!accessLaboratory)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Laboratory</span>
             </label>
           </div>
           <div className="flex justify-center">
