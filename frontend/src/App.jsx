@@ -28,7 +28,6 @@ import OverallInventory from "./pages/Inventory/OverAllInventory";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
 import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
 import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory";
-import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
 import InventoryTransaction from "./pages/History/InventoryTransaction";
 import PaidSection from "./pages/Billing/PaidSection";
 import StockInHistory from "./pages/History/StockInHistory";
@@ -87,14 +86,8 @@ function App() {
           path: "PharmacyTransferHistory",
           element: <PharmacyTransferHistory />,
         },
-        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
-        { path: "UsageHistory", element: <UsageHistory /> },
-
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
-        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
-        { path: "UsageHistory", element: <UsageHistory /> },
-        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
         { path: "InventoryTransaction", element: <InventoryTransaction /> },
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
