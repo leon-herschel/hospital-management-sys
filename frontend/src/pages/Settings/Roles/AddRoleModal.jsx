@@ -8,6 +8,8 @@ const AddRoleModal = ({ showModal, setShowModal, onAddRole }) => {
   const [canDelete, setCanDelete] = useState(false); 
   const [canView, setCanView] = useState(false); 
 
+  
+
     const handleSubmit = (e) => {
         e.preventDefault();
 

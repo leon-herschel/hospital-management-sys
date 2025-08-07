@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/authContext/authContext';
+import { useNavigate } from 'react-router-dom'; // Add this import
 import { ref, get } from 'firebase/database';
 import { database } from '../../firebase/firebase'; 
 import { UserIcon } from '@heroicons/react/16/solid';
 
 const UserProfileDropdown = ({ onLogout }) => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate(); // Add this hook
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [userData, setUserData] = useState(null);
   const [clinicName, setClinicName] = useState("");
@@ -47,6 +49,11 @@ const UserProfileDropdown = ({ onLogout }) => {
     setDropdownVisible(prevState => !prevState);
   };
 
+  const handleChangePasswordClick = () => {
+    setDropdownVisible(false);
+    navigate('/change-password'); // Navigate to change password page
+  };
+
   // closes dropdown when clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -69,45 +76,77 @@ const UserProfileDropdown = ({ onLogout }) => {
 
   return (
     <div className="relative">
+      {/* Profile Icon with Avatar-like Design */}
       <div
         ref={iconRef}
-        className="cursor-pointer"
+        className="cursor-pointer group"
         onClick={handleDropdownToggle}
       >
-        <UserIcon className="w-7 h-7 text-gray-800 hover:text-gray-900" />
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+          <UserIcon className="w-5 h-5 text-white" />
+        </div>
       </div>
 
-      {/* Dropdown Menu */}
+      {/* Enhanced Dropdown Menu */}
       {dropdownVisible && userData && (
         <div 
           ref={dropdownRef} 
-          className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg p-2"
+          className="absolute right-0 mt-3 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl p-0 z-50 overflow-hidden"
         >
-          <div className="font-bold mb-1">
-            {`${userData.firstName || ''} ${userData.lastName || ''}`}
-          </div>
-          <div className="text-sm text-gray-600 mb-1">{userData.email}</div>
-          {userData.department && (
-            <div className="text-sm text-gray-600 mb-1">{userData.department} Department</div>
-          )}
-          <div className="text-sm text-gray-600 mb-1">Clinic: {clinicName} </div>
-          <div className="text-sm text-gray-600 mb-2">
-            {userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
+          {/* Profile Header */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-4 text-white">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <UserIcon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div className="font-semibold text-lg">
+                  {`${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User'}
+                </div>
+                <div className="text-blue-100 text-sm">
+                  {userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <hr className="border-t border-gray-200 my-2" />
+          {/* User Details */}
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+            <div className="space-y-1">
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="w-4 h-4 mr-2">📧</span>
+                <span className="truncate">{userData.email}</span>
+              </div>
+              {userData.department && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <span className="w-4 h-4 mr-2">🏥</span>
+                  <span>{userData.department} Department</span>
+                </div>
+              )}
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="w-4 h-4 mr-2">🏢</span>
+                <span className="truncate">{clinicName}</span>
+              </div>
+            </div>
+          </div>
 
-          <ul className="space-y-1">
-            <li>
-              <a
-                href="#"
-                className="block px-2 py-2 rounded-sm text-gray-900 hover:bg-gray-200"
-                onClick={onLogout} 
-              >
-                Logout
-              </a>
-            </li>
-          </ul>
+          {/* Menu Items */}
+          <div className="py-2">
+            <button
+              className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+              onClick={handleChangePasswordClick}
+            >
+              <span className="w-5 h-5 mr-3">🔐</span>
+              Change Password
+            </button>
+            <button
+              className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+              onClick={onLogout}
+            >
+              <span className="w-5 h-5 mr-3">🚪</span>
+              Logout
+            </button>
+          </div>
         </div>
       )}
     </div>

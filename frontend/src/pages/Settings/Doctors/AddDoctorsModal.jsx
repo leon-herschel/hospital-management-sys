@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
-import { ref, get, push, set } from "firebase/database";
-import { database } from "../../../firebase/firebase";
+import { ref, get, set, push } from "firebase/database";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { database, auth } from "../../../firebase/firebase";
 import { XMarkIcon, CheckCircleIcon } from "@heroicons/react/24/solid";
 
 const AddDoctorsModal = ({ showModal, setShowModal }) => {
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [contactNumber, setContactNumber] = useState("+63");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [clinicAffiliations, setClinicAffiliations] = useState([]);
   const [clinicOptions, setClinicOptions] = useState([]);
   const [clinicSearch, setClinicSearch] = useState("");
-  const [userId, setUserId] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchClinics = async () => {
@@ -43,41 +48,79 @@ const AddDoctorsModal = ({ showModal, setShowModal }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     if (!isValidPHNumber(contactNumber)) {
-      alert("Invalid contact number. Must start with +639 and be 13 characters long.");
+      setError("Invalid contact number. Must start with +639 and be 13 characters long.");
       return;
     }
 
-    const newDoctor = {
-      userId,
-      fullName,
-      specialty: "Generalist",
-      isGeneralist: true,
-      isSpecialist: false,
-      contactNumber,
-      clinicAffiliations,
-    };
+    if (!email || !password || !confirmPassword) {
+      setError("Email and password fields are required.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
 
     try {
-      const newDocRef = push(ref(database, "doctors"));
-      await set(newDocRef, newDoctor);
+      // Create account in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userId = userCredential.user.uid;
 
-      setShowSuccessModal(true); // Show success modal before closing
+      const fullName = `Dr. ${firstName} ${lastName}`;
 
+      // Save to Realtime DB: doctors/
+      const doctorRef = push(ref(database, "doctors"));
+      await set(doctorRef, {
+        userId,
+        firstName,
+        lastName,
+        fullName,
+        specialty: "Generalist",
+        isGeneralist: true,
+        isSpecialist: false,
+        contactNumber,
+        clinicAffiliations,
+      });
+
+      // Save to Realtime DB: users/
+      await set(ref(database, `users/${userId}`), {
+        firstName,
+        lastName,
+        contactNumber,
+        email,
+        role: "doctor",
+        clinicAffiliation: clinicAffiliations[0] || null,
+        department: null,
+        createdAt: new Date().toISOString(),
+      });
+
+      setShowSuccessModal(true);
       setTimeout(() => {
         setShowSuccessModal(false);
         setShowModal(false);
       }, 2000);
 
       // Reset form
-      setUserId("");
-      setFullName("");
+      setFirstName("");
+      setLastName("");
       setContactNumber("+63");
       setClinicAffiliations([]);
       setClinicSearch("");
-    } catch (error) {
-      console.error("Error adding doctor:", error);
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      console.error("Error creating doctor account:", err);
+      setError(err.message);
     }
   };
 
@@ -103,36 +146,59 @@ const AddDoctorsModal = ({ showModal, setShowModal }) => {
 
             <h2 className="text-2xl font-bold mb-6">Add Doctor</h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4 max-h-[500px] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto">
               <div>
-                <label className="block text-gray-700">User ID</label>
+                <label className="block text-gray-700">First Name</label>
                 <input
                   type="text"
                   required
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   className="w-full mt-1 p-2 border border-gray-300 rounded-md"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700">Full Name</label>
+                <label className="block text-gray-700">Last Name</label>
                 <input
                   type="text"
                   required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   className="w-full mt-1 p-2 border border-gray-300 rounded-md"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700">Doctor Type</label>
+                <label className="block text-gray-700">Email</label>
                 <input
-                  type="text"
-                  readOnly
-                  value="Generalist"
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700">Confirm Password</label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
                 />
               </div>
 
@@ -209,6 +275,8 @@ const AddDoctorsModal = ({ showModal, setShowModal }) => {
                   ))}
                 </div>
               </div>
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
 
               <div className="flex justify-center mt-4">
                 <button
