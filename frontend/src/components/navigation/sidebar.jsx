@@ -88,6 +88,9 @@ const Sidebar = () => {
     "/StockInHistory": "Stock In History",
     "/AdminConsult": "Admin Consultation",
     "/AdminLab": "Admin Laboratory",
+    "/RequestLabTest": "Request Lab Test",
+    "/SpecialistAppointments": "Specialist Appointments",
+    "/LabTestReport": "Lab Test Report",
   };
 
   let currentTitle = "Overview";
@@ -209,7 +212,7 @@ const Sidebar = () => {
               onClick={toggleAppointmentsDropdown}
             >
               <ClipboardDocumentIcon className="w-6 h-6 mr-3" />
-              <span>Admin Laboratory</span>
+              <span>Appointment Scheduling</span>
               <ChevronDownIcon
                 className={`w-5 h-5 ml-auto transform transition-transform duration-200 ${
                   appoinmentsDropdownOpen ? "rotate-180" : ""
@@ -218,36 +221,73 @@ const Sidebar = () => {
             </div>
 
             <div
-              className={`ml-2 overflow-hidden transition-all duration-300 ease-in-out ${
+              className={`ml-2 transition-all duration-300 ease-in-out overflow-hidden ${
                 appoinmentsDropdownOpen
-                  ? "max-h-40 opacity-100"
+                  ? "max-h-60 opacity-100"
                   : "max-h-0 opacity-0"
               }`}
             >
-              <Link
-                to="/AdminLab"
-                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                  isActive("/inventory")
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-white"
-                } hover:bg-slate-800`}
-              >
-                <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
-                Admin Laboratory
-              </Link>
+              <div className="overflow-y-auto max-h-56 pr-1">
+                <Link
+                  to="/AdminLab"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/inventory")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                  Lab Appointment Request
+                </Link>
 
-              {/* Admin Consult */}
-              <Link
-                to="/AdminConsult"
-                className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
-                  isActive("/AdminConsult")
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-white"
-                } hover:bg-slate-800`}
-              >
-                <CubeIcon className="w-5 h-5 mr-3" />
-                Admin Consultation
-              </Link>
+                <Link
+                  to="/SpecialistAppointments"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/inventory")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                  Specialist Appointment Request
+                </Link>
+
+                <Link
+                  to="/RequestLabTest"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/inventory")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                  Lab Doctor Request
+                </Link>
+
+                <Link
+                  to="/AdminConsult"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/AdminConsult")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <CubeIcon className="w-5 h-5 mr-3" />
+                  Patient Appointment Request
+                </Link>
+
+                <Link
+                  to="/LabTestReport"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/LabTestReport")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <CubeIcon className="w-5 h-5 mr-3" />
+                  Laboratory Test Report
+                </Link>
+              </div>
             </div>
           </>
 

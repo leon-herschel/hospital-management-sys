@@ -24,6 +24,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Email sending states
+  const [emailStatus, setEmailStatus] = useState("");
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+
   // Patient-specific states
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
@@ -98,6 +102,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     setEmergencyPhone("");
     setPrcId("");
     setError("");
+    setEmailStatus("");
   };
 
   const validatePassword = (password) => {
@@ -109,6 +114,59 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     );
   };
 
+  // Function to send welcome email
+  const sendWelcomeEmail = async (userEmail, userPassword, userRole) => {
+    setIsEmailLoading(true);
+    setEmailStatus("Sending welcome email...");
+
+    let response;
+    try {
+      response = await fetch("http://localhost:5000/add-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          password: userPassword,
+          role: userRole,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setEmailStatus("Welcome email sent successfully!");
+      } else {
+        let errorMessage = "Unknown error";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || "Unknown error";
+        } catch (jsonError) {
+          errorMessage = `Server error (${response.status})`;
+        }
+        setEmailStatus(`Email sending failed: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error("Email sending error:", error);
+      // Check if it's a network error vs server error
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
+        setEmailStatus(
+          "Failed to connect to email service. Please check if the server is running."
+        );
+      } else if (response && !response.ok) {
+        setEmailStatus(
+          `Email service error: ${response.status} ${response.statusText}`
+        );
+      } else {
+        setEmailStatus(
+          "Failed to send welcome email. Please check your connection."
+        );
+      }
+    } finally {
+      setIsEmailLoading(false);
+    }
+  };
+
   const closeSuccessModal = () => {
     setSuccess(false);
     setShowModal(false);
@@ -117,6 +175,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const handleCreateAccount = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setEmailStatus("");
 
     if (!validatePassword(password)) {
       setError(
@@ -196,8 +255,21 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         });
       }
 
-      resetForm();
+      // Send welcome email after successful account creation (optional)
+      try {
+        await sendWelcomeEmail(email, password, selectedRole);
+      } catch (emailError) {
+        console.warn(
+          "Email sending failed, but account was created successfully:",
+          emailError
+        );
+        setEmailStatus(
+          "Account created successfully, but welcome email could not be sent."
+        );
+      }
+
       setSuccess(true);
+      resetForm();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -521,11 +593,33 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
             {error && <div className="text-red-500 mb-4">{error}</div>}
 
+            {/* Email status display */}
+            {emailStatus && (
+              <div
+                className={`mb-4 p-3 rounded-md ${
+                  emailStatus.includes("successfully")
+                    ? "bg-green-100 text-green-700 border border-green-300"
+                    : emailStatus.includes("Failed") ||
+                      emailStatus.includes("failed")
+                    ? "bg-red-100 text-red-700 border border-red-300"
+                    : "bg-blue-100 text-blue-700 border border-blue-300"
+                }`}
+              >
+                {isEmailLoading && (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                    <span>{emailStatus}</span>
+                  </div>
+                )}
+                {!isEmailLoading && <span>{emailStatus}</span>}
+              </div>
+            )}
+
             <div className="flex justify-center">
               <button
                 type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                disabled={isLoading}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+                disabled={isLoading || isEmailLoading}
               >
                 {isLoading ? "Creating Account..." : "Create Account"}
               </button>
@@ -540,9 +634,20 @@ const AddUserModal = ({ showModal, setShowModal }) => {
             <h2 className="text-xl font-bold mb-4">
               Account Created Successfully!
             </h2>
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700 mb-4">
               The user account has been created.
             </p>
+            {emailStatus && (
+              <p
+                className={`text-sm mb-4 ${
+                  emailStatus.includes("successfully")
+                    ? "text-green-600"
+                    : "text-orange-600"
+                }`}
+              >
+                📧 {emailStatus}
+              </p>
+            )}
             <button
               onClick={closeSuccessModal}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"

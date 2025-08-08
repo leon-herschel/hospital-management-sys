@@ -28,7 +28,6 @@ import OverallInventory from "./pages/Inventory/OverAllInventory";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
 import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
 import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory";
-import CsrTransferHistory from "./pages/CSR POV/CsrTransferHistory";
 import InventoryTransaction from "./pages/History/InventoryTransaction";
 import PaidSection from "./pages/Billing/PaidSection";
 import StockInHistory from "./pages/History/StockInHistory";
@@ -37,7 +36,11 @@ import AdminConsult from "./pages/AdminAppointments/Consultation/AdminConsult";
 import AdminLab from "./pages/AdminAppointments/Laboratory/AdminLab";
 import ClinicInventory from "./pages/Inventory/clinicInventory";
 import ChangePasswordPage from "./components/navigation/ChangePassword";
+import RequestLabTest from "./pages/AdminAppointments/Laboratory/RequestLabTest";
+import SpecialistAppointments from "./pages/AdminAppointments/Consultation/SpecialistAppointments";
+import LabTestReport from "./pages/AdminAppointments/Laboratory/LabTestReport";
 import { element } from "prop-types";
+import path from "path";
 
 function App() {
   const routesArray = [
@@ -83,18 +86,19 @@ function App() {
           path: "PharmacyTransferHistory",
           element: <PharmacyTransferHistory />,
         },
-        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
-
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
-        { path: "CsrTransferHistory", element: <CsrTransferHistory /> },
         { path: "InventoryTransaction", element: <InventoryTransaction /> },
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
         { path: "AdminConsult", element: <AdminConsult /> },
         { path: "AdminLab", element: <AdminLab /> },
         { path: "clinicInventory", element: <ClinicInventory /> },
-        {path: "change-password", element: <ChangePasswordPage />},
+        { path: "clinicInventory", element: <ClinicInventory /> },
+        { path: "change-password", element: <ChangePasswordPage /> },
+        { path: "RequestLabTest", element: <RequestLabTest /> },
+        { path: "LabTestReport", element: <LabTestReport /> },
+        { path: "SpecialistAppointments", element: <SpecialistAppointments /> },
       ],
     },
     {

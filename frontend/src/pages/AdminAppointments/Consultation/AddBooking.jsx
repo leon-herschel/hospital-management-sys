@@ -32,7 +32,7 @@ function AddBooking({ isOpen, toggleModal }) {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    const doctorRef = ref(database, "Appointments/Doctors");
+    const doctorRef = ref(database, "doctors");
     return onValue(doctorRef, (snapshot) => {
       const data = snapshot.val();
       const list = data ? Object.values(data).map((d) => d.Name) : [];
@@ -41,7 +41,7 @@ function AddBooking({ isOpen, toggleModal }) {
   }, []);
 
   useEffect(() => {
-    const bookingRef = ref(database, "Appointments/Patients");
+    const bookingRef = ref(database, "appointments");
     return onValue(bookingRef, (snapshot) => {
       const data = snapshot.val();
       const dates = data
@@ -89,7 +89,7 @@ function AddBooking({ isOpen, toggleModal }) {
 
     setSubmitting(true);
 
-    const newBookingRef = push(ref(database, "Appointments/Patients"));
+    const newBookingRef = push(ref(database, "appointments"));
     const bookingId = newBookingRef.key;
 
     const payload = {
@@ -109,7 +109,7 @@ function AddBooking({ isOpen, toggleModal }) {
       await set(newBookingRef, payload);
 
       if (doctor && !doctorList.includes(doctor)) {
-        const newDoctorRef = push(ref(database, "Appointments/Doctors"));
+        const newDoctorRef = push(ref(database, "doctors"));
         await set(newDoctorRef, { Name: doctor });
       }
 
