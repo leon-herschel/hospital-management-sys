@@ -3,3 +3,5 @@ node_modules
 /backend/firebaseAdmin.js
 /backend/roles.js
 /backend/server.js
+/backend/.env
+/backend/add-user/index.js
