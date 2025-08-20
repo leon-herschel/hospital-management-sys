@@ -1,14 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  ref,
-  onValue,
-  remove,
-  update,
-  get,
-  push,
-  query,
-  set,
-} from "firebase/database";
+import { ref, onValue, remove, update, get } from "firebase/database";
 import { database } from "../../../firebase/firebase";
 import DeleteConfirmationModal from "./DeleteConfirmationModalBooking";
 import ViewBookingModal from "./ViewBookingModal";
@@ -46,8 +37,24 @@ function AdminConsult() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState({});
+  const [patientsMap, setPatientsMap] = useState({});
+  const [doctorsMap, setDoctorsMap] = useState({}); // Add doctors mapping
 
   useEffect(() => {
+    // Fetch patients
+    const patientsRef = ref(database, "patients");
+    const unsubscribePatients = onValue(patientsRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      setPatientsMap(data);
+    });
+
+    // Fetch doctors
+    const doctorsRef = ref(database, "doctors");
+    const unsubscribeDoctors = onValue(doctorsRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      setDoctorsMap(data);
+    });
+
     // Fetch consultation types
     const typesRef = ref(database, "medicalServices/consultationTypes");
     const typesUnsubscribe = onValue(typesRef, (snapshot) => {
@@ -60,17 +67,47 @@ function AdminConsult() {
       }
     });
 
+    return () => {
+      unsubscribePatients();
+      unsubscribeDoctors();
+      typesUnsubscribe();
+    };
+  }, []);
+
+  // Separate useEffect for bookings to ensure patients and doctors are loaded first
+  useEffect(() => {
+    if (
+      Object.keys(patientsMap).length === 0 &&
+      Object.keys(doctorsMap).length === 0
+    ) {
+      return; // Wait for patients and doctors to load
+    }
+
     // Fetch bookings
-    const bookingRef = ref(database, `appointments`);
+    const bookingRef = ref(database, "appointments");
     const bookingsUnsubscribe = onValue(bookingRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const bookings = Object.keys(data).map((key) => ({
-          id: key,
-          ...data[key],
-        }));
+        const bookings = Object.keys(data).map((key) => {
+          const booking = data[key];
+
+          // Map patient data using patientId
+          const patientData = patientsMap[booking.patientId] || {};
+
+          // Map doctor data using doctorId
+          const doctorData = doctorsMap[booking.doctorId] || {};
+
+          return {
+            id: key,
+            ...booking,
+            patient: patientData, // Patient info mapped from patientId
+            doctor: doctorData, // Doctor info mapped from doctorId
+          };
+        });
+
+        // Sort by patient first name
         bookings.sort((a, b) =>
-          (a.patient?.firstName || "").localeCompare(b.patient?.firstName || "")
+          (a.patient.firstName || "").localeCompare(b.patient.firstName || "")
         );
         setBookingList(bookings);
       } else {
@@ -80,10 +117,9 @@ function AdminConsult() {
     });
 
     return () => {
-      typesUnsubscribe();
       bookingsUnsubscribe();
     };
-  }, []);
+  }, [patientsMap, doctorsMap]);
 
   const toggleModal = () => setModal(!modal);
   const toggleViewModal = () => setViewModal(!viewModal);
@@ -106,12 +142,10 @@ function AdminConsult() {
     toggleViewModal();
   };
 
-  // Handle status update
   const handleStatusUpdate = async (bookingId, newStatus) => {
     setUpdatingStatus((prev) => ({ ...prev, [bookingId]: true }));
-
     try {
-      // 1. Update the appointment status
+      // Update appointment status
       await update(ref(database, `appointments/${bookingId}`), {
         status: newStatus,
         ...(newStatus === "Confirmed" && {
@@ -119,65 +153,54 @@ function AdminConsult() {
         }),
       });
 
-      // 2. Only push to patients node if status is "Confirmed"
       if (newStatus === "Confirmed") {
-        // Get the full appointment data
         const appointmentRef = ref(database, `appointments/${bookingId}`);
         const snapshot = await get(appointmentRef);
         const appointmentData = snapshot.val();
 
-        // Check if appointment data exists
-        if (!appointmentData) {
-          console.error("No appointment data found for bookingId:", bookingId);
-          alert("No appointment data found.");
-          return;
-        }
+        if (!appointmentData) throw new Error("Appointment not found");
+        if (!appointmentData.patientId)
+          throw new Error("patientId missing in appointment");
 
-        // Check if patient data exists
-        if (!appointmentData.patient) {
-          console.error("No patient information found in appointment data");
-          alert("No patient information found.");
-          return;
-        }
+        const patientRef = ref(
+          database,
+          `patients/${appointmentData.patientId}`
+        );
+        const patientSnap = await get(patientRef);
+        if (!patientSnap.exists()) throw new Error("Patient not found");
 
-        console.log("Appointment data to push:", appointmentData);
+        // Example: Append appointmentId to patient's confirmedAppointments list
+        const patientData = patientSnap.val();
+        const updatedAppointments = [
+          ...(patientData.confirmedAppointments || []),
+          bookingId,
+        ];
 
-        // 3. Set the appointment data directly under bookingId in patients node
-        await set(ref(database, `patients/${bookingId}`), appointmentData);
+        await update(patientRef, {
+          confirmedAppointments: updatedAppointments,
+        });
 
         console.log(
-          `Status updated to ${newStatus} and appointment data pushed to patients for booking ${bookingId}`
+          `Status updated and linked to patient ${appointmentData.patientId}`
         );
-      } else {
-        console.log(`Status updated to ${newStatus} for booking ${bookingId}`);
       }
     } catch (error) {
-      console.error("Error updating status or pushing to patients:", error);
-      alert("Failed to update status or push to patients.");
+      console.error("Error updating status:", error);
+      alert(error.message || "Failed to update status");
     } finally {
       setUpdatingStatus((prev) => ({ ...prev, [bookingId]: false }));
     }
   };
 
-  // Filter bookings by selected type and search query
   const filteredBookings = bookingList.filter((booking) => {
-    const matchesSearch =
-      (booking.patient?.firstName?.toLowerCase() || "").includes(
-        searchQuery.toLowerCase()
-      ) ||
-      (booking.patient?.lastName?.toLowerCase() || "").includes(
-        searchQuery.toLowerCase()
-      ) ||
-      `${booking.patient?.firstName || ""} ${booking.patient?.lastName || ""}`
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
+    const name = `${booking.patient?.firstName || ""} ${
+      booking.patient?.lastName || ""
+    }`.toLowerCase();
+    const matchesSearch = name.includes(searchQuery.toLowerCase());
     const matchesType = selectedType === "All" || booking.type === selectedType;
-
     return matchesSearch && matchesType;
   });
 
-  // Get statistics for current filter
   const getStats = () => {
     const currentBookings =
       selectedType === "All"
@@ -461,6 +484,7 @@ function AdminConsult() {
                   filteredBookings.map((booking, index) => {
                     const statusConfig = getStatusConfig(booking.status);
                     const StatusIcon = statusConfig.icon;
+                    // Use the mapped patient data
                     const patientName = `${booking.patient?.firstName || ""} ${
                       booking.patient?.lastName || ""
                     }`.trim();
@@ -483,12 +507,19 @@ function AdminConsult() {
                               <div className="text-sm font-semibold text-gray-900">
                                 {patientName || "N/A"}
                               </div>
+                              <div className="text-xs text-gray-500">
+                                ID: {booking.patientId || "N/A"}
+                              </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-700">
-                            <div>{booking.patient?.contactNumber || "N/A"}</div>
+                            <div>
+                              {booking.patient?.contactNumber ||
+                                booking.patient?.phone ||
+                                "N/A"}
+                            </div>
                             <div className="text-xs text-gray-500">
                               {booking.patient?.email || ""}
                             </div>
@@ -535,11 +566,22 @@ function AdminConsult() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {booking.doctor || "N/A"}
+                            {/* Use mapped doctor data */}
+                            {booking.doctor?.fullName ||
+                              booking.doctor?.firstName +
+                                " " +
+                                booking.doctor?.lastName ||
+                              booking.doctor ||
+                              "N/A"}
                           </div>
                           <div className="text-xs text-gray-500">
                             {booking.clinicName || ""}
                           </div>
+                          {booking.doctor?.prcId && (
+                            <div className="text-xs text-gray-400">
+                              PRC: {booking.doctor.prcId}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">

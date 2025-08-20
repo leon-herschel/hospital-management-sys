@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef} from 'react';
-import Select from 'react-select'; // Import react-select
-import { ref, get, set, push, update, onValue } from 'firebase/database';
-import { database } from '../../firebase/firebase';
-import { getAuth } from 'firebase/auth';
+import { useState, useEffect, useRef } from "react";
+import Select from "react-select"; // Import react-select
+import { ref, get, set, push, update, onValue } from "firebase/database";
+import { database } from "../../firebase/firebase";
+import { getAuth } from "firebase/auth";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAuth } from "../../context/authContext/authContext";
 
@@ -61,10 +61,12 @@ const TransferMed = () => {
     const medicineRef = ref(database, "departments/Pharmacy/localMeds");
     const unsubscribe = onValue(medicineRef, (snapshot) => {
       if (snapshot.exists()) {
-        const medicines = Object.entries(snapshot.val()).map(([key, value]) => ({
-          ...value,
-          itemKey: key,
-        }));
+        const medicines = Object.entries(snapshot.val()).map(
+          ([key, value]) => ({
+            ...value,
+            itemKey: key,
+          })
+        );
         setItems(medicines);
       }
     });
@@ -98,7 +100,9 @@ const TransferMed = () => {
   };
 
   const removeItem = (itemToRemove) => {
-    setSelectedItems(selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey));
+    setSelectedItems(
+      selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey)
+    );
   };
 
   const handleQuantityChange = (item, value) => {
@@ -177,7 +181,10 @@ const TransferMed = () => {
           reason: formData.reason,
         });
 
-        const mainInventoryRef = ref(database, `departments/Pharmacy/localMeds/${item.itemKey}`);
+        const mainInventoryRef = ref(
+          database,
+          `departments/Pharmacy/localMeds/${item.itemKey}`
+        );
         const mainInventorySnapshot = await get(mainInventoryRef);
 
         if (mainInventorySnapshot.exists()) {
@@ -185,12 +192,16 @@ const TransferMed = () => {
           const updatedQuantity = currentData.quantity - item.quantity;
 
           if (updatedQuantity < 0) {
-            console.error(`Not enough stock in Pharmacy for item: ${item.itemName}`);
+            console.error(
+              `Not enough stock in Pharmacy for item: ${item.itemName}`
+            );
           } else {
             await update(mainInventoryRef, { quantity: updatedQuantity });
           }
         } else {
-          console.error(`Item ${item.itemName} does not exist in Pharmacy's inventory.`);
+          console.error(
+            `Item ${item.itemName} does not exist in Pharmacy's inventory.`
+          );
         }
       }
 
@@ -269,7 +280,9 @@ const TransferMed = () => {
           }`}
         />
         {errorMessages.reasonError && (
-          <p className="text-red-500 text-sm">Please provide a reason for the transfer.</p>
+          <p className="text-red-500 text-sm">
+            Please provide a reason for the transfer.
+          </p>
         )}
       </div>
 

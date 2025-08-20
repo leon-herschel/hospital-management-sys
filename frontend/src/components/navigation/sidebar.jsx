@@ -91,6 +91,7 @@ const Sidebar = () => {
     "/RequestLabTest": "Request Lab Test",
     "/SpecialistAppointments": "Specialist Appointments",
     "/LabTestReport": "Lab Test Report",
+    "/AdminSpecialist": "Admin Specialist",
   };
 
   let currentTitle = "Overview";
@@ -250,6 +251,18 @@ const Sidebar = () => {
                 >
                   <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
                   Specialist Appointment Request
+                </Link>
+
+                <Link
+                  to="/AdminSpecialist"
+                  className={`flex items-center px-4 py-2 mt-2 mx-3 rounded-md ${
+                    isActive("/inventory")
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-white"
+                  } hover:bg-slate-800`}
+                >
+                  <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
+                  Admin Specialist
                 </Link>
 
                 <Link

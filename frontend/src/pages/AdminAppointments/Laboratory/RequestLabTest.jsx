@@ -114,115 +114,106 @@ function RequestLabTest() {
 
   const timeSlots = generateTimeSlots();
 
+  // Helper function to get doctor's full name
+  const getDoctorFullName = (doctorData) => {
+    if (!doctorData) return "Doctor";
+
+    // Try different name combinations in order of preference
+    if (doctorData.fullName) return doctorData.fullName;
+    if (doctorData.name) return doctorData.name;
+
+    // Construct from firstName/lastName
+    const firstName = doctorData.firstName || "";
+    const lastName = doctorData.lastName || "";
+    const constructedName = `${firstName} ${lastName}`.trim();
+
+    return constructedName || "Doctor";
+  };
+
   // Fetch user data using async/await
   const fetchUserData = async (user) => {
     try {
-      // Try doctors collection first
-      const doctorRef = ref(database, `doctors/${user.uid}`);
-      const doctorSnapshot = await get(doctorRef);
+      // Get user data
+      const userRef = ref(database, `users/${user.uid}`);
+      const userSnapshot = await get(userRef);
 
-      if (doctorSnapshot.exists()) {
-        const doctorData = doctorSnapshot.val();
-        setState((prev) => ({ ...prev, currentDoctor: doctorData }));
-
-        // Get doctor name with multiple fallbacks
-        const doctorName =
-          doctorData.fullName ||
-          doctorData.name ||
-          `${doctorData.firstName || ""} ${doctorData.lastName || ""}`.trim() ||
-          "Doctor";
-
-        // Set doctor information in form
-        setForm((prev) => ({
-          ...prev,
-          referDoctor: doctorName,
-          userId: user.uid,
-        }));
-
-        // Fetch clinic data if doctor has clinic affiliation
-        if (doctorData.clinic) {
-          await fetchClinicData(doctorData.clinic);
-        }
-      } else {
-        // Fallback to users collection
-        const userRef = ref(database, `users/${user.uid}`);
-        const userSnapshot = await get(userRef);
-
-        if (userSnapshot.exists()) {
-          const userData = userSnapshot.val();
-          if (userData.role === "doctor") {
-            // Set user data as doctor data
-            setState((prev) => ({ ...prev, currentDoctor: userData }));
-
-            // Get user name with multiple fallbacks
-            const userName =
-              userData.fullName ||
-              userData.name ||
-              `${userData.firstName || ""} ${userData.lastName || ""}`.trim() ||
-              "Doctor";
-
-            setForm((prev) => ({
-              ...prev,
-              referDoctor: userName,
-              userId: user.uid,
-            }));
-
-            // Fetch clinic data if user has clinic affiliation
-            if (userData.clinicAffiliation) {
-              await fetchClinicData(userData.clinicAffiliation);
-            }
-          } else {
-            // User not authorized, redirect
-            navigate("/login");
-          }
-        } else {
-          // No user data found, redirect
-          navigate("/login");
-        }
+      if (!userSnapshot.exists()) {
+        console.error("No user data found");
+        navigate("/login");
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      navigate("/login");
-    }
-  };
 
-  // Fetch clinic data using async/await
-  const fetchClinicData = async (clinicId) => {
-    try {
-      const clinicRef = ref(database, `clinics/${clinicId}`);
-      const snapshot = await get(clinicRef);
+      const userData = userSnapshot.val();
+      console.log("Current user data:", userData);
 
-      if (snapshot.exists()) {
-        const clinicData = snapshot.val();
-        setState((prev) => ({ ...prev, currentClinic: clinicData }));
+      const doctorFullName = getDoctorFullName(userData);
+      let clinicId = (userData.clinicAffiliation || "").trim();
 
-        setForm((prev) => ({
+      if (!clinicId) {
+        console.warn("Doctor has no clinic affiliation");
+        setState((prev) => ({
           ...prev,
-          clinic: clinicData.name || clinicId,
-          clinicId: clinicId,
-          addressLine: clinicData.addressLine || "",
-          type: clinicData.type || "",
+          currentDoctor: userData,
+          currentClinic: null,
         }));
-      } else {
-        // Fallback if clinic data not found
         setForm((prev) => ({
           ...prev,
-          clinic: clinicId,
-          clinicId: clinicId,
+          referDoctor: doctorFullName,
+          userId: user.uid,
+          clinic: "No Clinic",
+          clinicId: "",
           addressLine: "",
           type: "",
         }));
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching clinic data:", error);
-      // Set fallback values
+
+      // Fetch clinic data directly from clinics node
+      const clinicRef = ref(database, `clinics/${clinicId}`);
+      const clinicSnapshot = await get(clinicRef);
+
+      if (!clinicSnapshot.exists()) {
+        console.warn(`Clinic data not found for ID: ${clinicId}`);
+        setState((prev) => ({
+          ...prev,
+          currentDoctor: userData,
+          currentClinic: null,
+        }));
+        setForm((prev) => ({
+          ...prev,
+          referDoctor: doctorFullName,
+          userId: user.uid,
+          clinic: `Clinic ID: ${clinicId}`,
+          clinicId,
+          addressLine: "",
+          type: "",
+        }));
+        return;
+      }
+
+      const clinicData = clinicSnapshot.val();
+      console.log("Clinic data found:", clinicData);
+
+      // Merge user and clinic data into state
+      setState((prev) => ({
+        ...prev,
+        currentDoctor: userData,
+        currentClinic: clinicData,
+      }));
+
+      // Update form
       setForm((prev) => ({
         ...prev,
-        clinic: clinicId,
-        clinicId: clinicId,
-        addressLine: "",
-        type: "",
+        referDoctor: doctorFullName,
+        userId: user.uid,
+        clinic: clinicData.name || "Unknown Clinic",
+        clinicId,
+        addressLine: clinicData.addressLine || clinicData.address || "",
+        type: clinicData.type || "",
       }));
+    } catch (error) {
+      console.error("Error in fetchUserData:", error);
+      navigate("/login");
     }
   };
 
@@ -481,14 +472,7 @@ function RequestLabTest() {
         nameParts.length === 1 ? "" : nameParts[nameParts.length - 1];
 
       // Ensure all required fields have fallback values
-      const doctorName =
-        form.referDoctor ||
-        state.currentDoctor?.fullName ||
-        state.currentDoctor?.name ||
-        `${state.currentDoctor?.firstName || ""} ${
-          state.currentDoctor?.lastName || ""
-        }`.trim() ||
-        "Doctor";
+      const doctorName = getDoctorFullName(state.currentDoctor);
 
       const clinicName =
         form.clinic || state.currentClinic?.name || "Unknown Clinic";
@@ -528,6 +512,7 @@ function RequestLabTest() {
       alert("✅ Lab test request submitted successfully!");
 
       // Reset form but keep doctor and clinic info
+      const doctorFullName = getDoctorFullName(state.currentDoctor);
       setForm({
         labTestName: "",
         labTestId: "",
@@ -536,15 +521,18 @@ function RequestLabTest() {
         contactNumber: "",
         dateOfBirth: "",
         bloodType: "",
-        referDoctor: doctorName, // Keep the doctor name
+        referDoctor: doctorFullName,
         userId: form.userId,
         slotNumber: "",
         notes: "",
-        clinic: clinicName, // Keep the clinic name
+        clinic: clinicName,
         clinicId: form.clinicId,
-        addressLine: state.currentClinic?.addressLine || "",
+        addressLine:
+          state.currentClinic?.addressLine ||
+          state.currentClinic?.address ||
+          "",
         type: state.currentClinic?.type || "",
-        createdAt: getCurrentDateTime(), // This ensures it's always current
+        createdAt: getCurrentDateTime(),
       });
 
       setState((prev) => ({
@@ -656,8 +644,13 @@ function RequestLabTest() {
               </h3>
               <p>
                 <strong>Name:</strong> Dr.{" "}
-                {state.currentDoctor.lastName || state.currentDoctor.fullName}
+                {getDoctorFullName(state.currentDoctor)}
               </p>
+              {state.currentDoctor.specialty && (
+                <p>
+                  <strong>Specialty:</strong> {state.currentDoctor.specialty}
+                </p>
+              )}
             </div>
           )}
 
@@ -670,7 +663,8 @@ function RequestLabTest() {
                 <strong>Name:</strong> {state.currentClinic.name}
               </p>
               <p>
-                <strong>Address:</strong> {state.currentClinic.addressLine}
+                <strong>Address:</strong>{" "}
+                {state.currentClinic.addressLine || state.currentClinic.address}
               </p>
               <p>
                 <strong>Type:</strong> {state.currentClinic.type}
@@ -987,7 +981,9 @@ function RequestLabTest() {
                     </p>
                     <p>
                       <strong>Address:</strong>{" "}
-                      {state.currentClinic?.addressLine || "Not provided"}
+                      {state.currentClinic?.addressLine ||
+                        state.currentClinic?.address ||
+                        "Not provided"}
                     </p>
                     <p>
                       <strong>Type:</strong>{" "}

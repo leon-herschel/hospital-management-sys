@@ -39,6 +39,7 @@ import ChangePasswordPage from "./components/navigation/ChangePassword";
 import RequestLabTest from "./pages/AdminAppointments/Laboratory/RequestLabTest";
 import SpecialistAppointments from "./pages/AdminAppointments/Consultation/SpecialistAppointments";
 import LabTestReport from "./pages/AdminAppointments/Laboratory/LabTestReport";
+import AdminSpecialist from "./pages/AdminAppointments/Consultation/AdminSpecialist";
 import { element } from "prop-types";
 import path from "path";
 
@@ -99,6 +100,7 @@ function App() {
         { path: "RequestLabTest", element: <RequestLabTest /> },
         { path: "LabTestReport", element: <LabTestReport /> },
         { path: "SpecialistAppointments", element: <SpecialistAppointments /> },
+        { path: "AdminSpecialist", element: <AdminSpecialist /> },
       ],
     },
     {
