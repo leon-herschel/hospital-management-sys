@@ -1,23 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { useState, useEffect, useRef } from "react";
 import Select from "react-select"; // Import react-select
-import { ref, get, set, push, update, onValue } from "firebase/database";
-import { database } from "../../firebase/firebase";
+import { ref, get, set, push, update } from "firebase/database";
 import { getAuth } from "firebase/auth";
-import { ref, get, set, push, update, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import { getAuth } from "firebase/auth";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAuth } from "../../context/authContext/authContext";
 import {
   Send,
-  Plus,
   Trash2,
   Package,
   User,
   Building,
   MessageSquare,
-  Search,
   AlertCircle,
   CheckCircle,
   Loader,
@@ -27,8 +21,7 @@ const Transfer = () => {
   const { department } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
-    department: "", // Default department
-    department: "", // Default department
+    department: "",
     reason: "",
     timestamp: new Date().toLocaleString(),
   });
@@ -49,8 +42,6 @@ const Transfer = () => {
     const user = auth.currentUser;
     if (user) {
       const userRef = ref(database, `users/${user.uid}`);
-
-
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.val();
@@ -95,7 +86,6 @@ const Transfer = () => {
 
   // Fetch item inventory - Modified to filter by user's clinic
   useEffect(() => {
-    // Only fetch inventory if we have the user's clinic ID
     if (!userClinicId) return;
 
     const clinicRef = ref(database, `clinicInventoryStock/${userClinicId}`);
@@ -109,7 +99,6 @@ const Transfer = () => {
 
           const mappedItems = [];
 
-          // Go through each item in the user's clinic inventory
           Object.entries(clinicData).forEach(([itemKey, stockValue]) => {
             const fullItemData = inventoryData[itemKey];
 
@@ -118,7 +107,7 @@ const Transfer = () => {
                 ...fullItemData,
                 quantity: stockValue.quantity,
                 itemKey,
-                refKey: userClinicId, // Use the user's clinic ID as refKey
+                refKey: userClinicId,
               });
             } else {
               console.warn(`No inventory data found for itemKey: ${itemKey}`);
@@ -128,14 +117,14 @@ const Transfer = () => {
           setItems(mappedItems);
         } else {
           console.warn("Clinic or Inventory data not found for this clinic.");
-          setItems([]); // Clear items if no data found
+          setItems([]);
         }
       })
       .catch((err) => {
         console.error("Error fetching inventory:", err);
-        setItems([]); // Clear items on error
+        setItems([]);
       });
-  }, [userClinicId]); // Dependency on userClinicId
+  }, [userClinicId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -146,7 +135,6 @@ const Transfer = () => {
     const newItem = items.find((item) => item.itemKey === selectedOption.value);
     if (newItem) {
       addItem(newItem);
-      // Clear the select value
       if (selectRef.current) {
         selectRef.current.clearValue();
       }
@@ -154,12 +142,10 @@ const Transfer = () => {
   };
 
   const addItem = (itemToAdd) => {
-    // Check if the item is already in the selectedItems array
     if (selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
-      alert("This item has already been selected."); // Show an alert
-      return; // Exit the function
+      alert("This item has already been selected.");
+      return;
     }
-    // Add the new item if not already selected
     setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
   };
 
@@ -167,31 +153,24 @@ const Transfer = () => {
     setSelectedItems(
       selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey)
     );
-    setSelectedItems(
-      selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey)
-    );
   };
 
   const handleQuantityChange = (item, value) => {
-    const newQuantity = Math.max(parseInt(value, 0));
+    const newQuantity = Math.max(parseInt(value, 10) || 0);
     const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
     const maxQuantity = mainInventoryItem?.quantity || 0;
 
     if (newQuantity > maxQuantity) {
       alert(`Quantity cannot exceed ${maxQuantity}`);
-    const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
-    const maxQuantity = mainInventoryItem?.quantity || 0;
-
-    if (newQuantity > maxQuantity) {
-      alert(`Quantity cannot exceed ${maxQuantity}`);
-    } else {
-      const updatedItems = selectedItems.map((selectedItem) =>
-        selectedItem.itemKey === item.itemKey
-          ? { ...selectedItem, quantity: newQuantity }
-          : selectedItem
-      );
-      setSelectedItems(updatedItems);
+      return;
     }
+
+    const updatedItems = selectedItems.map((selectedItem) =>
+      selectedItem.itemKey === item.itemKey
+        ? { ...selectedItem, quantity: newQuantity }
+        : selectedItem
+    );
+    setSelectedItems(updatedItems);
   };
 
   const validateInputs = () => {
@@ -218,31 +197,14 @@ const Transfer = () => {
     setSubmitting(true);
 
     try {
-      const transferData = {
-        name: formData.name,
-        reason: formData.reason,
-        timestamp: formData.timestamp,
-        recipientDepartment: formData.department,
-      };
-
       for (const item of selectedItems) {
-        // Record transaction in inventoryTransactions
-        const historyPath = `inventoryTransactions`;
-        // Record transaction in inventoryTransactions
         const historyPath = `inventoryTransactions`;
         const newHistoryRef = push(ref(database, historyPath));
 
-        // Get current user details for the transaction
-        const auth = getAuth();
-        const currentUser = auth.currentUser;
-
-
-        // Get current user details for the transaction
         const auth = getAuth();
         const currentUser = auth.currentUser;
 
         await set(newHistoryRef, {
-          itemId: item.itemKey,
           itemId: item.itemKey,
           itemName: item.itemName,
           timestamp: formData.timestamp,
@@ -251,16 +213,12 @@ const Transfer = () => {
           processedByUserFirstName: formData.name.split(" ")[0] || "",
           processedByUserLastName:
             formData.name.split(" ").slice(1).join(" ") || "",
-          quantityChanged: -item.quantity, // Negative because it's being transferred out
+          quantityChanged: -item.quantity,
           reason: `Transfer to ${formData.department}: ${formData.reason}`,
-          relatedPatientId: null, // This would be null for transfers, or you can omit this field
+          relatedPatientId: null,
           transactionType: "transfer_stock",
         });
 
-        const mainInventoryRef = ref(
-          database,
-          `clinicInventoryStock/${item.refKey}/${item.itemKey}`
-        );
         const mainInventoryRef = ref(
           database,
           `clinicInventoryStock/${item.refKey}/${item.itemKey}`
@@ -272,9 +230,8 @@ const Transfer = () => {
           const updatedQuantity = currentData.quantity - item.quantity;
 
           if (updatedQuantity < 0) {
-            console.error(`Not enough stock in CSR for item: ${item.itemName}`);
+            console.error(`Not enough stock for item: ${item.itemName}`);
           } else {
-            // Check if there's existing departmentStock for this department
             let existingDepartmentQuantity = 0;
             if (
               currentData.departmentStock &&
@@ -284,7 +241,6 @@ const Transfer = () => {
                 currentData.departmentStock[formData.department];
             }
 
-            // Update the clinicInventoryStock with accumulated department quantity
             await update(mainInventoryRef, {
               quantity: updatedQuantity,
               departmentStock: {
@@ -295,9 +251,6 @@ const Transfer = () => {
             });
           }
         } else {
-          console.error(
-            `Item ${item.itemName} does not exist in CSR's inventory.`
-          );
           console.error(
             `Item ${item.itemName} does not exist in CSR's inventory.`
           );
@@ -505,13 +458,13 @@ const Transfer = () => {
                   <td colSpan="3" className="p-4">
                     {selectOptions.length > 0 ? (
                       <Select
-                        key={selectedItems.length} // Force re-render when items change
+                        key={selectedItems.length}
                         options={selectOptions}
                         onChange={handleSelectChange}
                         placeholder="Search and select item..."
                         className="w-full"
                         ref={selectRef}
-                        value={null} // Always keep it uncontrolled/cleared
+                        value={null}
                         isClearable={true}
                         isSearchable={true}
                         menuPortalTarget={document.body}
