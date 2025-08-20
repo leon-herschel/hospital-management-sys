@@ -152,7 +152,13 @@ const Sidebar = () => {
                 : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
             }`}
           >
-            <HomeIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/dashboard") ? "text-blue-400" : "text-slate-400 group-hover:text-blue-400"}`} />
+            <HomeIcon
+              className={`w-5 h-5 mr-3 transition-colors ${
+                isActive("/dashboard")
+                  ? "text-blue-400"
+                  : "text-slate-400 group-hover:text-blue-400"
+              }`}
+            />
             <span>Overview</span>
             {isActive("/dashboard") && (
               <div className="ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
@@ -174,7 +180,9 @@ const Sidebar = () => {
                 <span>Inventory</span>
                 <ChevronDownIcon
                   className={`w-4 h-4 ml-auto transform transition-all duration-300 ${
-                    inventoryDropdownOpen ? "rotate-180 text-emerald-400" : "text-slate-500"
+                    inventoryDropdownOpen
+                      ? "rotate-180 text-emerald-400"
+                      : "text-slate-500"
                   }`}
                 />
               </div>
@@ -197,7 +205,7 @@ const Sidebar = () => {
                   <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
                   Inventory Items
                 </Link>
-                
+
                 {permissions?.accessInventory && (
                   <Link
                     to="/clinicInventory"
@@ -229,74 +237,75 @@ const Sidebar = () => {
             </div>
           )}
 
-        {/* Appointment Scheduling Dropdown */}
-{permissions?.accessLaboratory && ( // ✅ Only show if user has lab access
-  <div className="space-y-1">
-    <div
-      className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl cursor-pointer transition-all duration-200 ${
-        appoinmentsDropdownOpen
-          ? "bg-slate-800/60 text-white"
-          : "text-slate-300 hover:text-white hover:bg-slate-800/60"
-      } border border-transparent hover:border-slate-600/30`}
-      onClick={toggleAppointmentsDropdown}
-    >
-      <CalendarDaysIcon className="w-5 h-5 mr-3 text-slate-400 group-hover:text-purple-400 transition-colors" />
-      <span>Appointments</span>
-      <ChevronDownIcon
-        className={`w-4 h-4 ml-auto transform transition-all duration-300 ${
-          appoinmentsDropdownOpen ? "rotate-180 text-purple-400" : "text-slate-500"
-        }`}
-      />
-    </div>
+          {/* Appointment Scheduling Dropdown */}
+          {permissions?.accessLaboratory && ( // ✅ Only show if user has lab access
+            <div className="space-y-1">
+              <div
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl cursor-pointer transition-all duration-200 ${
+                  appoinmentsDropdownOpen
+                    ? "bg-slate-800/60 text-white"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                } border border-transparent hover:border-slate-600/30`}
+                onClick={toggleAppointmentsDropdown}
+              >
+                <CalendarDaysIcon className="w-5 h-5 mr-3 text-slate-400 group-hover:text-purple-400 transition-colors" />
+                <span>Appointments</span>
+                <ChevronDownIcon
+                  className={`w-4 h-4 ml-auto transform transition-all duration-300 ${
+                    appoinmentsDropdownOpen
+                      ? "rotate-180 text-purple-400"
+                      : "text-slate-500"
+                  }`}
+                />
+              </div>
 
-    <div
-      className={`ml-4 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
-        appoinmentsDropdownOpen
-          ? "max-h-96 opacity-100 mb-2"
-          : "max-h-0 opacity-0"
-      }`}
-    >
-      <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
-        <Link
-          to="/AdminLab"
-          className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-            isActive("/AdminLab")
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-          }`}
-        >
-          <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
-          Lab Appointment Request
-        </Link>
+              <div
+                className={`ml-4 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
+                  appoinmentsDropdownOpen
+                    ? "max-h-96 opacity-100 mb-2"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
+                  <Link
+                    to="/AdminLab"
+                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                      isActive("/AdminLab")
+                        ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                    Lab Appointment Request
+                  </Link>
 
-        <Link
-          to="/RequestLabTest"
-          className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-            isActive("/RequestLabTest")
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-          }`}
-        >
-          <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
-          Lab Doctor Request
-        </Link>
+                  <Link
+                    to="/RequestLabTest"
+                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                      isActive("/RequestLabTest")
+                        ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                    Lab Doctor Request
+                  </Link>
 
-        <Link
-          to="/LabTestReport"
-          className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-            isActive("/LabTestReport")
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-          }`}
-        >
-          <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
-          Lab Test Reports
-        </Link>
-      </div>
-    </div>
-  </div>
-)}
-
+                  <Link
+                    to="/LabTestReport"
+                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                      isActive("/LabTestReport")
+                        ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                    Lab Test Reports
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Transfer Supply */}
           {(department === "" || department === "Admin") && (
@@ -308,7 +317,13 @@ const Sidebar = () => {
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <ArrowsRightLeftIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/Transfer") ? "text-orange-400" : "text-slate-400 group-hover:text-orange-400"}`} />
+              <ArrowsRightLeftIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/Transfer")
+                    ? "text-orange-400"
+                    : "text-slate-400 group-hover:text-orange-400"
+                }`}
+              />
               <span>Transfer Supply</span>
             </Link>
           )}
@@ -323,7 +338,13 @@ const Sidebar = () => {
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <BeakerIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/transferMed") ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400"}`} />
+              <BeakerIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/transferMed")
+                    ? "text-teal-400"
+                    : "text-slate-400 group-hover:text-teal-400"
+                }`}
+              />
               <span>Transfer Medicine</span>
             </Link>
           )}
@@ -338,7 +359,13 @@ const Sidebar = () => {
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <ClockIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/ViewRequest") ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400"}`} />
+              <ClockIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/ViewRequest")
+                    ? "text-amber-400"
+                    : "text-slate-400 group-hover:text-amber-400"
+                }`}
+              />
               <span>Pending Supply Requests</span>
             </Link>
           )}
@@ -353,7 +380,13 @@ const Sidebar = () => {
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <ClockIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/ViewMedReq") ? "text-pink-400" : "text-slate-400 group-hover:text-pink-400"}`} />
+              <ClockIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/ViewMedReq")
+                    ? "text-pink-400"
+                    : "text-slate-400 group-hover:text-pink-400"
+                }`}
+              />
               <span>Pending Medicine Requests</span>
             </Link>
           )}
@@ -367,7 +400,13 @@ const Sidebar = () => {
                 : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
             }`}
           >
-            <InboxStackIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/requestS") ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400"}`} />
+            <InboxStackIcon
+              className={`w-5 h-5 mr-3 transition-colors ${
+                isActive("/requestS")
+                  ? "text-indigo-400"
+                  : "text-slate-400 group-hover:text-indigo-400"
+              }`}
+            />
             <span>Request Stock</span>
           </Link>
 
@@ -381,7 +420,13 @@ const Sidebar = () => {
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <DocumentTextIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/InventoryTransaction") ? "text-green-400" : "text-slate-400 group-hover:text-green-400"}`} />
+              <DocumentTextIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/InventoryTransaction")
+                    ? "text-green-400"
+                    : "text-slate-400 group-hover:text-green-400"
+                }`}
+              />
               <span>Inventory Transactions</span>
             </Link>
           )}
@@ -396,60 +441,66 @@ const Sidebar = () => {
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <UserGroupIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/patients") ? "text-violet-400" : "text-slate-400 group-hover:text-violet-400"}`} />
+              <UserGroupIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/patients")
+                    ? "text-violet-400"
+                    : "text-slate-400 group-hover:text-violet-400"
+                }`}
+              />
               <span>Patients</span>
             </Link>
           )}
 
           {/* Billing */}
           {/* Billing Section */}
-{permissions?.accessBilling && (
-  <Link
-    to="/billing"
-    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-      isActive("/billing")
-        ? "bg-gradient-to-r from-emerald-600/20 to-green-600/20 text-white border border-emerald-500/30 shadow-lg shadow-emerald-500/20"
-        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-    }`}
-  >
-    <CreditCardIcon
-      className={`w-5 h-5 mr-3 transition-colors ${
-        isActive("/billing")
-          ? "text-emerald-400"
-          : "text-slate-400 group-hover:text-emerald-400"
-      }`}
-    />
-    <span>Billing</span>
-  </Link>
-)}
+          {permissions?.accessBilling && (
+            <Link
+              to="/billing"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/billing")
+                  ? "bg-gradient-to-r from-emerald-600/20 to-green-600/20 text-white border border-emerald-500/30 shadow-lg shadow-emerald-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <CreditCardIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/billing")
+                    ? "text-emerald-400"
+                    : "text-slate-400 group-hover:text-emerald-400"
+                }`}
+              />
+              <span>Billing</span>
+            </Link>
+          )}
 
-{/* Billing Paid Section */}
-{permissions?.accessBilling && (
-  <Link
-    to="/PaidSection"
-    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-      isActive("/PaidSection")
-        ? "bg-gradient-to-r from-green-600/20 to-teal-600/20 text-white border border-green-500/30 shadow-lg shadow-green-500/20"
-        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-    }`}
-  >
-    <BanknotesIcon
-      className={`w-5 h-5 mr-3 transition-colors ${
-        isActive("/PaidSection")
-          ? "text-green-400"
-          : "text-slate-400 group-hover:text-green-400"
-      }`}
-    />
-    <span>Billing Paid Section</span>
-  </Link>
-)}
-<Link
-  to="/generate-medical-certificate"
-  className="flex items-center px-4 py-3 text-gray-700 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md group"
->
-  <ClipboardDocumentCheckIcon className="w-5 h-5 mr-3 text-blue-600 group-hover:text-blue-700" />
-  <span className="font-medium">Medical Certificate</span>
-</Link>
+          {/* Billing Paid Section */}
+          {permissions?.accessBilling && (
+            <Link
+              to="/PaidSection"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/PaidSection")
+                  ? "bg-gradient-to-r from-green-600/20 to-teal-600/20 text-white border border-green-500/30 shadow-lg shadow-green-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <BanknotesIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/PaidSection")
+                    ? "text-green-400"
+                    : "text-slate-400 group-hover:text-green-400"
+                }`}
+              />
+              <span>Billing Paid Section</span>
+            </Link>
+          )}
+          <Link
+            to="/generate-medical-certificate"
+            className="flex items-center px-4 py-3 text-gray-700 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md group"
+          >
+            <ClipboardDocumentCheckIcon className="w-5 h-5 mr-3 text-blue-600 group-hover:text-blue-700" />
+            <span className="font-medium">Medical Certificate</span>
+          </Link>
 
           {/* Analytics */}
           <Link
@@ -460,7 +511,13 @@ const Sidebar = () => {
                 : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
             }`}
           >
-            <ChartBarIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/analytics") ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-400"}`} />
+            <ChartBarIcon
+              className={`w-5 h-5 mr-3 transition-colors ${
+                isActive("/analytics")
+                  ? "text-cyan-400"
+                  : "text-slate-400 group-hover:text-cyan-400"
+              }`}
+            />
             <span>Analytics</span>
           </Link>
 
@@ -474,7 +531,13 @@ const Sidebar = () => {
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <Cog8ToothIcon className={`w-5 h-5 mr-3 transition-colors ${isActive("/settings") ? "text-gray-400" : "text-slate-400 group-hover:text-gray-400"}`} />
+              <Cog8ToothIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/settings")
+                    ? "text-gray-400"
+                    : "text-slate-400 group-hover:text-gray-400"
+                }`}
+              />
               <span>Settings</span>
             </Link>
           )}

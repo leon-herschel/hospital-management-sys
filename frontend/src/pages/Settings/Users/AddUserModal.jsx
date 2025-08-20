@@ -159,7 +159,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
       }
     } catch (error) {
       console.error("Email sending error:", error);
-      
+
       // Handle different types of network errors
       if (error.name === "TypeError" && error.message.includes("fetch")) {
         setEmailStatus(
@@ -184,7 +184,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     e.preventDefault();
     setIsLoading(true);
     setEmailStatus("");
-    
+
     if (selectedRole === "doctor" && !hasAgreed) {
       setShowAgreement(true);
       setIsLoading(false);
@@ -309,7 +309,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
       console.error("Error adding role:", err);
     }
   };
-  
+
   const handleAddDepartment = async (newDepartment) => {
     const deptKey = Object.keys(newDepartment)[0];
     const deptData = newDepartment[deptKey];
@@ -456,7 +456,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                     required
                     className="block w-full mb-4 p-2 border rounded-md"
                   />
-                  
+
                   <label className="block mb-2">Upload PRC ID</label>
                   <input
                     type="file"
@@ -516,7 +516,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                 </>
               )}
 
-              {(selectedRole !== "patient") && (
+              {selectedRole !== "patient" && (
                 <>
                   <label className="block mb-2 flex justify-between items-center">
                     Select Department
@@ -531,7 +531,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                    required={selectedRole === "doctor" || (selectedRole !== "patient" && selectedRole !== "doctor")}
+                    required={
+                      selectedRole === "doctor" ||
+                      (selectedRole !== "patient" && selectedRole !== "doctor")
+                    }
                     className="block w-full mb-4 p-2 border rounded-md"
                   >
                     <option value="" disabled>
@@ -721,4 +724,4 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   );
 };
 
-export default AddUserModal;  
+export default AddUserModal;

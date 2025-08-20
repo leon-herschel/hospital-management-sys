@@ -1,22 +1,34 @@
 import { useState, useEffect, useRef } from "react";
 import Select from "react-select"; // Import react-select
-import { ref, get, set, push, update, onValue } from "firebase/database";
-import { database } from "../../firebase/firebase";
+import { ref, get, set, push, update } from "firebase/database";
 import { getAuth } from "firebase/auth";
+import { database } from "../../firebase/firebase";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAuth } from "../../context/authContext/authContext";
+import {
+  Send,
+  Trash2,
+  Package,
+  User,
+  Building,
+  MessageSquare,
+  AlertCircle,
+  CheckCircle,
+  Loader,
+} from "lucide-react";
 
 const Transfer = () => {
   const { department } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
-    department: "", // Default department
+    department: "",
     reason: "",
     timestamp: new Date().toLocaleString(),
   });
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
+  const [userClinicId, setUserClinicId] = useState(null); // Add state for user's clinic
   const selectRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessages, setErrorMessages] = useState({
@@ -24,19 +36,22 @@ const Transfer = () => {
     reasonError: false,
   });
 
-  // Fetch user details
+  // Fetch user details and clinic
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
       const userRef = ref(database, `users/${user.uid}`);
-
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.val();
           const fullName = `${userData.firstName || ""} ${
             userData.lastName || ""
           }`.trim();
+
+          // Set user's clinic ID from clinicAffiliation
+          setUserClinicId(userData.clinicAffiliation);
+
           setFormData((prevData) => ({
             ...prevData,
             name: fullName || user.email, // fallback if names are missing
@@ -59,7 +74,7 @@ const Transfer = () => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           const departmentNames = Object.keys(data).filter((dept) =>
-            ["Laboratory", "Pharmacy"].includes(dept)
+            ["Laboratory", "Pharmacy", "Nurse"].includes(dept)
           );
           setDepartments(departmentNames);
         }
@@ -69,9 +84,11 @@ const Transfer = () => {
       });
   }, []);
 
-  // Fetch item inventory
+  // Fetch item inventory - Modified to filter by user's clinic
   useEffect(() => {
-    const clinicRef = ref(database, "clinicInventoryStock");
+    if (!userClinicId) return;
+
+    const clinicRef = ref(database, `clinicInventoryStock/${userClinicId}`);
     const inventoryRef = ref(database, "inventoryItems");
 
     Promise.all([get(clinicRef), get(inventoryRef)])
@@ -82,34 +99,32 @@ const Transfer = () => {
 
           const mappedItems = [];
 
-          // Go through each clinicInventoryStock group (refKey)
-          Object.entries(clinicData).forEach(([refKey, itemGroup]) => {
-            // itemGroup = { itemKey1: {quantity, status...}, itemKey2: {...} }
-            Object.entries(itemGroup).forEach(([itemKey, stockValue]) => {
-              const fullItemData = inventoryData[itemKey];
+          Object.entries(clinicData).forEach(([itemKey, stockValue]) => {
+            const fullItemData = inventoryData[itemKey];
 
-              if (fullItemData) {
-                mappedItems.push({
-                  ...fullItemData,
-                  quantity: stockValue.quantity,
-                  itemKey,
-                  refKey,
-                });
-              } else {
-                console.warn(`No inventory data found for itemKey: ${itemKey}`);
-              }
-            });
+            if (fullItemData) {
+              mappedItems.push({
+                ...fullItemData,
+                quantity: stockValue.quantity,
+                itemKey,
+                refKey: userClinicId,
+              });
+            } else {
+              console.warn(`No inventory data found for itemKey: ${itemKey}`);
+            }
           });
 
           setItems(mappedItems);
         } else {
-          console.warn("Clinic or Inventory data not found.");
+          console.warn("Clinic or Inventory data not found for this clinic.");
+          setItems([]);
         }
       })
       .catch((err) => {
         console.error("Error fetching inventory:", err);
+        setItems([]);
       });
-  }, []);
+  }, [userClinicId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -120,19 +135,17 @@ const Transfer = () => {
     const newItem = items.find((item) => item.itemKey === selectedOption.value);
     if (newItem) {
       addItem(newItem);
-
-      // Clear the selected option
-      selectRef.current.clearValue();
+      if (selectRef.current) {
+        selectRef.current.clearValue();
+      }
     }
   };
 
   const addItem = (itemToAdd) => {
-    // Check if the item is already in the selectedItems array
     if (selectedItems.find((item) => item.itemKey === itemToAdd.itemKey)) {
-      alert("This item has already been selected."); // Show an alert
-      return; // Exit the function
+      alert("This item has already been selected.");
+      return;
     }
-    // Add the new item if not already selected
     setSelectedItems([...selectedItems, { ...itemToAdd, quantity: 1 }]);
   };
 
@@ -143,20 +156,21 @@ const Transfer = () => {
   };
 
   const handleQuantityChange = (item, value) => {
-    const newQuantity = Math.max(parseInt(value, 0));
+    const newQuantity = Math.max(parseInt(value, 10) || 0);
     const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
     const maxQuantity = mainInventoryItem?.quantity || 0;
 
     if (newQuantity > maxQuantity) {
       alert(`Quantity cannot exceed ${maxQuantity}`);
-    } else {
-      const updatedItems = selectedItems.map((selectedItem) =>
-        selectedItem.itemKey === item.itemKey
-          ? { ...selectedItem, quantity: newQuantity }
-          : selectedItem
-      );
-      setSelectedItems(updatedItems);
+      return;
     }
+
+    const updatedItems = selectedItems.map((selectedItem) =>
+      selectedItem.itemKey === item.itemKey
+        ? { ...selectedItem, quantity: newQuantity }
+        : selectedItem
+    );
+    setSelectedItems(updatedItems);
   };
 
   const validateInputs = () => {
@@ -183,19 +197,10 @@ const Transfer = () => {
     setSubmitting(true);
 
     try {
-      const transferData = {
-        name: formData.name,
-        reason: formData.reason,
-        timestamp: formData.timestamp,
-        recipientDepartment: formData.department,
-      };
-
       for (const item of selectedItems) {
-        // Record transaction in inventoryTransactions
         const historyPath = `inventoryTransactions`;
         const newHistoryRef = push(ref(database, historyPath));
 
-        // Get current user details for the transaction
         const auth = getAuth();
         const currentUser = auth.currentUser;
 
@@ -208,10 +213,10 @@ const Transfer = () => {
           processedByUserFirstName: formData.name.split(" ")[0] || "",
           processedByUserLastName:
             formData.name.split(" ").slice(1).join(" ") || "",
-          quantityChanged: -item.quantity, // Negative because it's being transferred out
+          quantityChanged: -item.quantity,
           reason: `Transfer to ${formData.department}: ${formData.reason}`,
-          relatedPatientId: null, // This would be null for transfers, or you can omit this field
-          transactionType: "stock_in",
+          relatedPatientId: null,
+          transactionType: "transfer_stock",
         });
 
         const mainInventoryRef = ref(
@@ -225,27 +230,23 @@ const Transfer = () => {
           const updatedQuantity = currentData.quantity - item.quantity;
 
           if (updatedQuantity < 0) {
-            console.error(`Not enough stock in CSR for item: ${item.itemName}`);
+            console.error(`Not enough stock for item: ${item.itemName}`);
           } else {
-            // Check if there's existing departmentStock for this department
             let existingDepartmentQuantity = 0;
             if (
-              currentData.deparmentStock &&
-              currentData.deparmentStock.department === formData.department
+              currentData.departmentStock &&
+              currentData.departmentStock[formData.department]
             ) {
               existingDepartmentQuantity =
-                currentData.deparmentStock.quantity || 0;
+                currentData.departmentStock[formData.department];
             }
 
-            // Update the clinicInventoryStock with accumulated department quantity
             await update(mainInventoryRef, {
               quantity: updatedQuantity,
-              deparmentStock: {
-                department: formData.department,
-                quantity: existingDepartmentQuantity + item.quantity, // Add to existing quantity
-                timestamp: formData.timestamp,
-                transferredBy: formData.name,
-                reason: formData.reason,
+              departmentStock: {
+                ...currentData.departmentStock,
+                [formData.department]:
+                  existingDepartmentQuantity + item.quantity,
               },
             });
           }
@@ -270,120 +271,241 @@ const Transfer = () => {
     return <AccessDenied />;
   }
 
-  const selectOptions = items.map((item) => ({
-    value: item.itemKey,
-    label: `${item.itemName} (Max Quantity: ${item.quantity})`,
-  }));
+  const selectOptions = items
+    .filter(
+      (item) =>
+        !selectedItems.find((selected) => selected.itemKey === item.itemKey)
+    )
+    .map((item) => ({
+      value: item.itemKey,
+      label: `${item.itemName} (Max Quantity: ${item.quantity})`,
+    }));
 
   return (
-    <div className="max-w-full mx-auto mt-2 bg-white rounded-lg shadow-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Create a new stock transfer</h1>
-        <button
-          className="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-          onClick={handleTransfer}
-          disabled={submitting}
-        >
-          {submitting ? "Processing..." : "Transfer"}
-        </button>
+    <div className="max-w-6xl mx-auto mt-4 bg-white rounded-lg shadow-lg overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Package size={24} />
+            <h1 className="text-2xl font-bold">Create Stock Transfer</h1>
+          </div>
+          <button
+            className={`flex items-center gap-2 px-6 py-3 rounded-md font-medium transition-all duration-200 ${
+              submitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700 transform hover:scale-105"
+            }`}
+            onClick={handleTransfer}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <Loader size={18} className="animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Send size={18} />
+                Transfer
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block font-semibold mb-1">Transferred By:</label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          readOnly
-          className="border p-2 w-full rounded"
-        />
-      </div>
+      <div className="p-6">
+        {/* Form Fields */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Transferred By */}
+          <div>
+            <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+              <User size={18} />
+              Transferred By:
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              readOnly
+              className="border border-gray-300 p-3 w-full rounded-md bg-gray-50"
+            />
+          </div>
 
-      <div className="mb-4">
-        <label className="block font-semibold mb-1">To Department</label>
-        <select
-          name="department"
-          value={formData.department}
-          onChange={handleInputChange}
-          className={`border p-2 w-full rounded ${
-            errorMessages.departmentError ? "border-red-500" : ""
-          }`}
-        >
-          <option value="">Select Department</option>
-          {departments.map((dept, index) => (
-            <option key={index} value={dept}>
-              {dept}
-            </option>
-          ))}
-        </select>
-        {errorMessages.departmentError && (
-          <p className="text-red-500 text-sm">Please select a department.</p>
-        )}
-      </div>
+          {/* To Department */}
+          <div>
+            <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+              <Building size={18} />
+              To Department *
+            </label>
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleInputChange}
+              className={`border p-3 w-full rounded-md transition-colors ${
+                errorMessages.departmentError
+                  ? "border-red-500 bg-red-50"
+                  : "border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              }`}
+            >
+              <option value="">Select Department</option>
+              {departments.map((dept, index) => (
+                <option key={index} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+            {errorMessages.departmentError && (
+              <div className="flex items-center gap-1 mt-1 text-red-500 text-sm">
+                <AlertCircle size={14} />
+                Please select a department.
+              </div>
+            )}
+          </div>
 
-      <div className="mb-4">
-        <label className="block font-semibold mb-1">Reason for transfer</label>
-        <input
-          name="reason"
-          value={formData.reason}
-          onChange={handleInputChange}
-          className={`border p-2 w-full rounded ${
-            errorMessages.reasonError ? "border-red-500" : ""
-          }`}
-        />
-        {errorMessages.reasonError && (
-          <p className="text-red-500 text-sm">
-            Please provide a reason for the transfer.
-          </p>
-        )}
-      </div>
+          {/* Reason */}
+          <div>
+            <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+              <MessageSquare size={18} />
+              Reason for Transfer *
+            </label>
+            <input
+              name="reason"
+              value={formData.reason}
+              onChange={handleInputChange}
+              placeholder="Enter reason for transfer"
+              className={`border p-3 w-full rounded-md transition-colors ${
+                errorMessages.reasonError
+                  ? "border-red-500 bg-red-50"
+                  : "border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              }`}
+            />
+            {errorMessages.reasonError && (
+              <div className="flex items-center gap-1 mt-1 text-red-500 text-sm">
+                <AlertCircle size={14} />
+                Please provide a reason for the transfer.
+              </div>
+            )}
+          </div>
+        </div>
 
-      <h2 className="font-semibold text-lg mb-2">Selected Items</h2>
-      <table className="w-full border-collapse border">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2">Selected Supplies</th>
-            <th className="border p-2">Quantity</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {selectedItems.map((item) => (
-            <tr key={item.refKey}>
-              <td className="border p-2">{item.itemName}</td>
-              <td className="border p-2">
-                <input
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => handleQuantityChange(item, e.target.value)}
-                  className="border border-gray-300 rounded p-1 w-16"
-                />
-              </td>
-              <td className="border p-2">
-                <button
-                  onClick={() => removeItem(item)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
-          <tr>
-            <td className="border p-2">
-              <Select
-                options={selectOptions}
-                onChange={handleSelectChange}
-                placeholder="Search and select item..."
-                className="w-full"
-                ref={selectRef}
-              />
-            </td>
-            <td className="border p-2"></td>
-            <td className="border p-2"></td>
-          </tr>
-        </tbody>
-      </table>
+        {/* Selected Items Table */}
+        <div className="bg-gray-50 rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Package size={20} className="text-gray-700" />
+            <h2 className="font-semibold text-lg text-gray-700">
+              Selected Items
+            </h2>
+            {selectedItems.length > 0 && (
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+                {selectedItems.length} item
+                {selectedItems.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          <div className="bg-white rounded-md border overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Item Name
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Quantity
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedItems.map((item, index) => (
+                  <tr
+                    key={item.itemKey}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    <td className="p-4 font-medium">{item.itemName}</td>
+                    <td className="p-4">
+                      <input
+                        type="number"
+                        min="1"
+                        max={
+                          items.find((i) => i.itemKey === item.itemKey)
+                            ?.quantity || 1
+                        }
+                        value={item.quantity}
+                        onChange={(e) =>
+                          handleQuantityChange(item, e.target.value)
+                        }
+                        className="border border-gray-300 rounded-md p-2 w-20 text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </td>
+                    <td className="p-4">
+                      <button
+                        onClick={() => removeItem(item)}
+                        className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md transition-colors"
+                      >
+                        <Trash2 size={16} />
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Add Item Row */}
+                <tr className="border-t-2 border-gray-200">
+                  <td colSpan="3" className="p-4">
+                    {selectOptions.length > 0 ? (
+                      <Select
+                        key={selectedItems.length}
+                        options={selectOptions}
+                        onChange={handleSelectChange}
+                        placeholder="Search and select item..."
+                        className="w-full"
+                        ref={selectRef}
+                        value={null}
+                        isClearable={true}
+                        isSearchable={true}
+                        menuPortalTarget={document.body}
+                        styles={{
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                          menu: (base) => ({ ...base, zIndex: 9999 }),
+                          control: (base) => ({ ...base, minHeight: "42px" }),
+                          option: (base, state) => ({
+                            ...base,
+                            backgroundColor: state.isFocused
+                              ? "#f3f4f6"
+                              : "white",
+                            color: "black",
+                            cursor: "pointer",
+                          }),
+                        }}
+                        menuPlacement="auto"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2 text-gray-500 justify-center py-4">
+                        <CheckCircle size={18} />
+                        All available items have been selected
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {selectedItems.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Package size={48} className="mx-auto mb-4 text-gray-300" />
+                <p className="text-lg">No items selected</p>
+                <p className="text-sm">
+                  Use the search field above to add items to transfer
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

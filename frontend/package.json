@@ -12,6 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.1.5",
+    "caniuse-lite": "^1.0.30001731",
     "d3": "^7.9.0",
     "firebase": "^10.13.1",
     "jspdf": "^2.5.1",

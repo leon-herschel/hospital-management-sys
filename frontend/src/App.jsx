@@ -40,7 +40,7 @@ import SpecialistAppointments from "./pages/AdminAppointments/Consultation/Speci
 import LabTestReport from "./pages/AdminAppointments/Laboratory/LabTestReport";
 import DoctorProfile from "./pages/Settings/Doctors/DoctorProfile";
 import Inventory from "./pages/Inventory/InventoryItems";
-import GenerateMedicalCertificate from "./pages/Settings/Doctors/GenerateMedicalCertificate"
+import GenerateMedicalCertificate from "./pages/Settings/Doctors/GenerateMedicalCertificate";
 import { element } from "prop-types";
 import path from "path";
 
@@ -62,7 +62,7 @@ function App() {
         { path: "dashboard", element: <Dashboard /> },
         { path: "patients", element: <Patients /> },
         { path: "patients/:id", element: <ViewPatient /> },
-       {path: "inventory", element: <Inventory /> },
+        { path: "inventory", element: <Inventory /> },
         { path: "analytics", element: <Analytics /> },
         { path: "settings", element: <Settings /> },
         { path: "users", element: <UsersTable /> },
@@ -101,8 +101,11 @@ function App() {
         { path: "RequestLabTest", element: <RequestLabTest /> },
         { path: "LabTestReport", element: <LabTestReport /> },
         { path: "SpecialistAppointments", element: <SpecialistAppointments /> },
-        {path: "doctor-profile", element: <DoctorProfile />},
-        { path: "generate-medical-certificate", element: <GenerateMedicalCertificate /> }
+        { path: "doctor-profile", element: <DoctorProfile /> },
+        {
+          path: "generate-medical-certificate",
+          element: <GenerateMedicalCertificate />,
+        },
       ],
     },
     {
