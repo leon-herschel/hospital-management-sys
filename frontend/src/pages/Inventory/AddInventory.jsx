@@ -10,7 +10,7 @@ const generateRandomKey = (length = 20) => {
   ).join("");
 };
 
-function AddInventory({ isOpen, toggleModal }) {
+async function AddInventory({ isOpen, toggleModal }) {
   const [itemName, setItemName] = useState("");
   const [brand, setBrand] = useState("");
   const [genericName, setGenericName] = useState("");
@@ -25,6 +25,23 @@ function AddInventory({ isOpen, toggleModal }) {
   const [specifications, setSpecifications] = useState("");
   const [loading, setLoading] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
+
+  // Before saving to Firebase
+const maxQuantity = formData.quantity; // initial max quantity is the starting quantity
+
+// Status calculation
+let status = "Good";
+if (formData.quantity < maxQuantity / 2) {
+  status = "Low";
+}
+
+await set(newRef, {
+  ...formData,
+  maxQuantity: maxQuantity,
+  status: status,
+  createdAt: Date.now(),
+});
+
 
   const handleSubmit = async () => {
     if (!itemName || !itemCategory || !itemGroup || !defaultCostPrice || !defaultRetailPrice || !specifications) {

@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react';
-import { ref, get, set, remove } from 'firebase/database';
-import { database } from '../../../firebase/firebase';
-import { Shield, Search, Plus, Edit, Trash2, Eye, UserCheck } from 'lucide-react';
-import AddRoleModal from './AddRoleModal';
-import EditRoleModal from './EditRoleModal';
+import { useState, useEffect } from "react";
+import { ref, get, set, remove } from "firebase/database";
+import { database } from "../../../firebase/firebase";
+import {
+  Shield,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  UserCheck,
+} from "lucide-react";
+import AddRoleModal from "./AddRoleModal";
+import EditRoleModal from "./EditRoleModal";
 
 const RolesTable = () => {
   const [roles, setRoles] = useState([]);
@@ -13,11 +21,11 @@ const RolesTable = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchRoles = async () => {
-      const rolesRef = ref(database, 'roles');
+      const rolesRef = ref(database, "roles");
       const snapshot = await get(rolesRef);
       if (snapshot.exists()) {
         const rolesList = [];
@@ -25,7 +33,7 @@ const RolesTable = () => {
           rolesList.push({ id: childSnapshot.key, ...childSnapshot.val() });
         });
         setRoles(rolesList);
-        setFilteredRoles(rolesList); 
+        setFilteredRoles(rolesList);
       }
     };
 
@@ -34,54 +42,55 @@ const RolesTable = () => {
 
   useEffect(() => {
     setFilteredRoles(
-      roles.filter(role =>
+      roles.filter((role) =>
         role.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
   }, [searchTerm, roles]);
 
   const handleAddRole = async (newRole) => {
-    const roleName = Object.keys(newRole)[0]; 
-    const roleData = newRole[roleName]; 
+    const roleName = Object.keys(newRole)[0];
+    const roleData = newRole[roleName];
 
-    setRoles((prevRoles) => [
-        ...prevRoles,
-        { id: roleName, ...roleData } 
-    ]);
+    setRoles((prevRoles) => [...prevRoles, { id: roleName, ...roleData }]);
 
-    const roleRef = ref(database, `roles/${roleName}`); 
+    const roleRef = ref(database, `roles/${roleName}`);
     try {
-        await set(roleRef, roleData); 
+      await set(roleRef, roleData);
     } catch (error) {
-        console.error('Error adding role to database:', error);
+      console.error("Error adding role to database:", error);
     }
   };
 
   const handleEditRole = (roleId, updatedRole) => {
     const roleRef = ref(database, `roles/${roleId}`);
-  
+
     const roleData = {
       name: updatedRole.name,
       permissions: {
         canAdd: updatedRole.permissions.canAdd,
         canEdit: updatedRole.permissions.canEdit,
         canDelete: updatedRole.permissions.canDelete,
-        canView: updatedRole.permissions.canView
-      }
+        canView: updatedRole.permissions.canView,
+      },
     };
-  
+
     set(roleRef, roleData)
       .then(() => {
         setRoles((prevRoles) =>
-          prevRoles.map((role) => (role.id === roleId ? { id: roleId, ...roleData } : role))
+          prevRoles.map((role) =>
+            role.id === roleId ? { id: roleId, ...roleData } : role
+          )
         );
         setFilteredRoles((prevFiltered) =>
-          prevFiltered.map((role) => (role.id === roleId ? { id: roleId, ...roleData } : role))
+          prevFiltered.map((role) =>
+            role.id === roleId ? { id: roleId, ...roleData } : role
+          )
         );
-        setShowEditRoleModal(false); 
+        setShowEditRoleModal(false);
       })
       .catch((error) => {
-        console.error('Error updating role:', error);
+        console.error("Error updating role:", error);
       });
   };
 
@@ -90,12 +99,16 @@ const RolesTable = () => {
       try {
         const roleRef = ref(database, `roles/${roleToDelete.id}`);
         await remove(roleRef);
-        setRoles((prevRoles) => prevRoles.filter(role => role.id !== roleToDelete.id));
-        setFilteredRoles((prevFiltered) => prevFiltered.filter(role => role.id !== roleToDelete.id));
+        setRoles((prevRoles) =>
+          prevRoles.filter((role) => role.id !== roleToDelete.id)
+        );
+        setFilteredRoles((prevFiltered) =>
+          prevFiltered.filter((role) => role.id !== roleToDelete.id)
+        );
         setRoleToDelete(null);
         setShowDeleteConfirm(false);
       } catch (error) {
-        console.error('Error deleting role:', error.message);
+        console.error("Error deleting role:", error.message);
       }
     }
   };
@@ -110,20 +123,23 @@ const RolesTable = () => {
       canAdd: <Plus size={14} />,
       canEdit: <Edit size={14} />,
       canDelete: <Trash2 size={14} />,
-      canView: <Eye size={14} />
+      canView: <Eye size={14} />,
     };
     return icons[permissionType] || <Shield size={14} />;
   };
 
   const getRoleStats = () => {
     const totalRoles = roles.length;
-    const adminRoles = roles.filter(role => role.id === 'admin').length;
+   const adminRoles = roles.filter(
+    (role) => role.id === "admin" || role.id === "superadmin"
+  ).length;
+
     const customRoles = totalRoles - adminRoles;
-    
+
     return {
       total: totalRoles,
       admin: adminRoles,
-      custom: customRoles
+      custom: customRoles,
     };
   };
 
@@ -138,7 +154,9 @@ const RolesTable = () => {
               <Shield size={24} />
               <span>Roles Management</span>
             </h2>
-            <p className="text-gray-600 mt-1">Manage user roles and permissions</p>
+            <p className="text-gray-600 mt-1">
+              Manage user roles and permissions
+            </p>
           </div>
           <button
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md flex items-center space-x-2 transition-colors"
@@ -157,12 +175,16 @@ const RolesTable = () => {
             <p className="text-xs text-blue-600">System roles</p>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400">
-            <h3 className="text-sm font-semibold text-purple-800">Admin Roles</h3>
+            <h3 className="text-sm font-semibold text-purple-800">
+              Admin Roles
+            </h3>
             <p className="text-2xl font-bold text-purple-900">{stats.admin}</p>
             <p className="text-xs text-purple-600">Administrative access</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-            <h3 className="text-sm font-semibold text-green-800">Custom Roles</h3>
+            <h3 className="text-sm font-semibold text-green-800">
+              Custom Roles
+            </h3>
             <p className="text-2xl font-bold text-green-900">{stats.custom}</p>
             <p className="text-xs text-green-600">User-defined roles</p>
           </div>
@@ -199,20 +221,31 @@ const RolesTable = () => {
             </thead>
             <tbody>
               {filteredRoles.map((role) => (
-                <tr key={role.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                <tr
+                  key={role.id}
+                  className="bg-white border-b hover:bg-gray-50 transition-colors"
+                >
                   <td className="px-4 py-3 text-left">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        role.id === 'admin' ? 'bg-purple-100' : 'bg-blue-100'
-                      }`}>
-                        <Shield size={20} className={
-                          role.id === 'admin' ? 'text-purple-600' : 'text-blue-600'
-                        } />
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          role.id === "admin" || role.id === "superadmin" ? "bg-purple-100" : "bg-blue-100"
+                        }`}
+                      >
+                        <Shield
+                          size={20}
+                          className={
+                            role.id === "admin" || role.id === "superadmin"
+                              ? "text-purple-600"
+                              : "text-blue-600"
+                          }
+                        />
                       </div>
                       <div>
                         <div className="font-medium text-gray-900 flex items-center space-x-2">
                           <span>{role.name}</span>
-                          {role.id === 'admin' && (
+                          {(role.id === "admin" ||
+                            role.id === "superadmin") && (
                             <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded">
                               SYSTEM
                             </span>
@@ -226,41 +259,57 @@ const RolesTable = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('canAdd')}
-                      <span className={`text-sm font-medium ${
-                        role.permissions?.canAdd ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {role.permissions?.canAdd ? 'Yes' : 'No'}
+                      {getPermissionIcon("canAdd")}
+                      <span
+                        className={`text-sm font-medium ${
+                          role.permissions?.canAdd
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {role.permissions?.canAdd ? "Yes" : "No"}
                       </span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('canEdit')}
-                      <span className={`text-sm font-medium ${
-                        role.permissions?.canEdit ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {role.permissions?.canEdit ? 'Yes' : 'No'}
+                      {getPermissionIcon("canEdit")}
+                      <span
+                        className={`text-sm font-medium ${
+                          role.permissions?.canEdit
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {role.permissions?.canEdit ? "Yes" : "No"}
                       </span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('canDelete')}
-                      <span className={`text-sm font-medium ${
-                        role.permissions?.canDelete ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {role.permissions?.canDelete ? 'Yes' : 'No'}
+                      {getPermissionIcon("canDelete")}
+                      <span
+                        className={`text-sm font-medium ${
+                          role.permissions?.canDelete
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {role.permissions?.canDelete ? "Yes" : "No"}
                       </span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('canView')}
-                      <span className={`text-sm font-medium ${
-                        role.permissions?.canView ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {role.permissions?.canView ? 'Yes' : 'No'}
+                      {getPermissionIcon("canView")}
+                      <span
+                        className={`text-sm font-medium ${
+                          role.permissions?.canView
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {role.permissions?.canView ? "Yes" : "No"}
                       </span>
                     </div>
                   </td>
@@ -268,11 +317,13 @@ const RolesTable = () => {
                     <div className="flex flex-col space-y-1">
                       <button
                         className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          role.id === 'admin' 
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          role.id === "admin" || role.id === "superadmin"
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-700 text-white"
                         }`}
-                        disabled={role.id === 'admin'}
+                        disabled={
+                          role.id === "admin" || role.id === "superadmin"
+                        }
                         onClick={() => {
                           setSelectedRole(role);
                           setShowEditRoleModal(true);
@@ -281,16 +332,16 @@ const RolesTable = () => {
                         Edit
                       </button>
                       <button
-                        className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          role.id === 'admin'
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-red-600 hover:bg-red-700 text-white'
-                        }`}
-                        disabled={role.id === 'admin'}
-                        onClick={() => confirmDeleteRole(role)}
-                      >
-                        Delete
-                      </button>
+  className={`px-3 py-1 rounded-md text-xs transition-colors ${
+    role.id === "admin" || role.id === "superadmin"
+      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+      : "bg-red-600 hover:bg-red-700 text-white"
+  }`}
+  disabled={role.id === "admin" || role.id === "superadmin"}
+  onClick={() => confirmDeleteRole(role)}
+>
+  Delete
+</button>
                     </div>
                   </td>
                 </tr>
@@ -316,7 +367,7 @@ const RolesTable = () => {
         setShowModal={setShowAddRoleModal}
         onAddRole={handleAddRole}
       />
-      
+
       <EditRoleModal
         showModal={showEditRoleModal}
         setShowModal={setShowEditRoleModal}
@@ -332,7 +383,9 @@ const RolesTable = () => {
               <div className="w-12 h-12 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
                 <Shield size={24} className="text-red-600" />
               </div>
-              <h2 className="text-xl font-bold mb-2 text-gray-900">Delete Role</h2>
+              <h2 className="text-xl font-bold mb-2 text-gray-900">
+                Delete Role
+              </h2>
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete the role{" "}
                 <span className="font-semibold">{roleToDelete?.name}</span>?
