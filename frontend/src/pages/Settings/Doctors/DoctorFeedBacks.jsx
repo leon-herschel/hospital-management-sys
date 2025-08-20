@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, update } from "firebase/database";
 import { database } from "../../../firebase/firebase";
 import { 
   Star, 
@@ -13,7 +13,11 @@ import {
   Eye,
   Clock,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Check,
+  Flag,
+  AlertCircle,
+  MoreVertical
 } from "lucide-react";
 
 const DoctorFeedbacks = ({ doctors, clinicsMap }) => {
@@ -24,6 +28,8 @@ const DoctorFeedbacks = ({ doctors, clinicsMap }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(null);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -49,6 +55,23 @@ const DoctorFeedbacks = ({ doctors, clinicsMap }) => {
 
     return () => unsubscribe();
   }, []);
+
+  const updateFeedbackStatus = async (feedbackId, newStatus) => {
+    try {
+      setUpdatingStatus(feedbackId);
+      const feedbackRef = ref(database, `feedback/${feedbackId}`);
+      await update(feedbackRef, { 
+        status: newStatus,
+        updatedAt: Date.now()
+      });
+      setShowDropdown(null);
+    } catch (error) {
+      console.error('Error updating feedback status:', error);
+      alert('Failed to update status. Please try again.');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
 
   const getDoctorName = (doctorId) => {
     const doctor = doctors.find(doc => doc.id === doctorId);
@@ -99,11 +122,59 @@ const DoctorFeedbacks = ({ doctors, clinicsMap }) => {
     }
   };
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'reviewed':
+        return <Check size={12} />;
+      case 'flagged':
+        return <Flag size={12} />;
+      default:
+        return <Clock size={12} />;
+    }
+  };
+
   const getRatingColor = (rating) => {
     if (rating >= 4) return 'text-green-600';
     if (rating >= 3) return 'text-yellow-600';
     return 'text-red-600';
   };
+
+  const StatusDropdown = ({ feedback, onClose }) => (
+    <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+      <div className="py-1">
+        {feedback.status !== 'reviewed' && (
+          <button
+            onClick={() => updateFeedbackStatus(feedback.id, 'reviewed')}
+            disabled={updatingStatus === feedback.id}
+            className="w-full px-4 py-2 text-sm text-left text-green-700 hover:bg-green-50 flex items-center space-x-2"
+          >
+            <Check size={14} />
+            <span>Mark Reviewed</span>
+          </button>
+        )}
+        {feedback.status !== 'flagged' && (
+          <button
+            onClick={() => updateFeedbackStatus(feedback.id, 'flagged')}
+            disabled={updatingStatus === feedback.id}
+            className="w-full px-4 py-2 text-sm text-left text-red-700 hover:bg-red-50 flex items-center space-x-2"
+          >
+            <Flag size={14} />
+            <span>Flag</span>
+          </button>
+        )}
+        {feedback.status !== 'pending' && (
+          <button
+            onClick={() => updateFeedbackStatus(feedback.id, 'pending')}
+            disabled={updatingStatus === feedback.id}
+            className="w-full px-4 py-2 text-sm text-left text-yellow-700 hover:bg-yellow-50 flex items-center space-x-2"
+          >
+            <Clock size={14} />
+            <span>Mark Pending</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   // Filter feedbacks
   const filteredFeedbacks = feedbacks.filter(feedback => {
@@ -136,6 +207,15 @@ const DoctorFeedbacks = ({ doctors, clinicsMap }) => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowDropdown(null);
+    if (showDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showDropdown]);
 
   if (loading) {
     return (
@@ -328,18 +408,45 @@ const DoctorFeedbacks = ({ doctors, clinicsMap }) => {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(feedback.status)}`}>
-                      {feedback.status || 'pending'}
-                    </span>
+                    <div className="flex items-center justify-center space-x-1">
+                      <span className={`inline-flex items-center space-x-1 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(feedback.status)}`}>
+                        {getStatusIcon(feedback.status || 'pending')}
+                        <span>{feedback.status || 'pending'}</span>
+                      </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => setSelectedFeedback(feedback)}
-                      className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors text-xs mx-auto"
-                    >
-                      <Eye size={14} />
-                      <span>View</span>
-                    </button>
+                    <div className="flex items-center justify-center space-x-2">
+                      <button
+                        onClick={() => setSelectedFeedback(feedback)}
+                        className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors text-xs"
+                      >
+                        <Eye size={14} />
+                        <span>View</span>
+                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDropdown(showDropdown === feedback.id ? null : feedback.id);
+                          }}
+                          disabled={updatingStatus === feedback.id}
+                          className="flex items-center justify-center p-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50"
+                        >
+                          {updatingStatus === feedback.id ? (
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <MoreVertical size={16} className="text-gray-600" />
+                          )}
+                        </button>
+                        {showDropdown === feedback.id && (
+                          <StatusDropdown 
+                            feedback={feedback} 
+                            onClose={() => setShowDropdown(null)} 
+                          />
+                        )}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -487,15 +594,46 @@ const DoctorFeedbacks = ({ doctors, clinicsMap }) => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Status</p>
-                  <span className={`px-2 py-1 text-sm font-medium rounded ${getStatusColor(selectedFeedback.status)}`}>
-                    {selectedFeedback.status || 'pending'}
+                  <span className={`inline-flex items-center space-x-1 px-2 py-1 text-sm font-medium rounded ${getStatusColor(selectedFeedback.status)}`}>
+                    {getStatusIcon(selectedFeedback.status || 'pending')}
+                    <span>{selectedFeedback.status || 'pending'}</span>
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+            <div className="flex justify-between items-center mt-6 pt-4 border-t">
+              <div className="flex space-x-2">
+                {selectedFeedback.status !== 'reviewed' && (
+                  <button
+                    onClick={() => updateFeedbackStatus(selectedFeedback.id, 'reviewed')}
+                    disabled={updatingStatus === selectedFeedback.id}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updatingStatus === selectedFeedback.id ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Check size={16} />
+                    )}
+                    <span>Mark Reviewed</span>
+                  </button>
+                )}
+                {selectedFeedback.status !== 'flagged' && (
+                  <button
+                    onClick={() => updateFeedbackStatus(selectedFeedback.id, 'flagged')}
+                    disabled={updatingStatus === selectedFeedback.id}
+                    className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updatingStatus === selectedFeedback.id ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Flag size={16} />
+                    )}
+                    <span>Flag</span>
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setSelectedFeedback(null)}
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"

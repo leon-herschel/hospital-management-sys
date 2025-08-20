@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ref, onValue } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
+
 
 const ViewBill = ({ billing, onClose }) => {
   const [billingItems, setBillingItems] = useState([]);
@@ -10,7 +12,28 @@ const ViewBill = ({ billing, onClose }) => {
   const [services, setServices] = useState([]);
   const [consultations, setConsultations] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('cash'); // default is cash
+  
+  // New states for cash payment
+  const [cashReceived, setCashReceived] = useState('');
+  const [change, setChange] = useState(0);
+  const [showChangeCalculator, setShowChangeCalculator] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  // Add state at the top
+const [patientQrCode, setPatientQrCode] = useState('');
 
+// Generate QR code for patientId
+useEffect(() => {
+  if (billing?.patientId) {
+    QRCode.toDataURL(billing.patientId, { width: 100 })
+      .then(url => setPatientQrCode(url))
+      .catch(err => console.error('QR Code generation error:', err));
+  } else {
+    setPatientQrCode('');
+  }
+}, [billing?.patientId]);
+
+
+  
 
   useEffect(() => {
     if (billing && billing.billedItems) {
@@ -47,17 +70,114 @@ const ViewBill = ({ billing, onClose }) => {
       setBillingItems(billing.billedItems);
     }
   }, [billing]);
-const handleSimulateGCashPayment = () => {
-  alert("Redirecting to GCash... (simulation)");
-  
-  // TODO: Replace this with actual GCash integration
-  // Example: open a new tab with GCash payment link
-};
 
-  const handleGenerateBIRReceipt = () => {
+  // Calculate change when cash received changes
+  useEffect(() => {
+    if (cashReceived && !isNaN(cashReceived)) {
+      const receivedAmount = parseFloat(cashReceived);
+      const totalAmount = billing.amount || 0;
+      const calculatedChange = receivedAmount - totalAmount;
+      setChange(calculatedChange);
+      
+      // Clear any previous errors
+      if (receivedAmount >= totalAmount) {
+        setPaymentError('');
+      } else {
+        setPaymentError(`Insufficient amount. Need ₱${(totalAmount - receivedAmount).toFixed(2)} more.`);
+      }
+    } else {
+      setChange(0);
+      setPaymentError('');
+    }
+  }, [cashReceived, billing.amount]);
+
+  // Handle payment method change
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    if (method === 'cash') {
+      setShowChangeCalculator(true);
+    } else {
+      setShowChangeCalculator(false);
+      setCashReceived('');
+      setChange(0);
+      setPaymentError('');
+    }
+  };
+
+  const handleSimulateGCashPayment = () => {
+    alert("Redirecting to GCash... (simulation)");
+    
+    // TODO: Replace this with actual GCash integration
+    // Example: open a new tab with GCash payment link
+  };
+
+  // Quick amount buttons for cash received
+  const handleQuickAmount = (amount) => {
+    setCashReceived(amount.toString());
+  };
+
+  // Generate suggested amounts (round up to nearest denominations)
+  const generateSuggestedAmounts = () => {
+    const totalAmount = billing.amount || 0;
+    const suggestions = [];
+    
+    // Exact amount
+    suggestions.push(totalAmount);
+    
+    // Round up to nearest 50
+    const roundTo50 = Math.ceil(totalAmount / 50) * 50;
+    if (roundTo50 > totalAmount) suggestions.push(roundTo50);
+    
+    // Round up to nearest 100
+    const roundTo100 = Math.ceil(totalAmount / 100) * 100;
+    if (roundTo100 > totalAmount && roundTo100 !== roundTo50) suggestions.push(roundTo100);
+    
+    // Round up to nearest 500
+    const roundTo500 = Math.ceil(totalAmount / 500) * 500;
+    if (roundTo500 > totalAmount && roundTo500 !== roundTo100) suggestions.push(roundTo500);
+    
+    // Common large bills
+    [1000, 2000, 5000].forEach(amount => {
+      if (amount > totalAmount && !suggestions.includes(amount)) {
+        suggestions.push(amount);
+      }
+    });
+    
+    return suggestions.slice(0, 4); // Return max 4 suggestions
+  };
+
+  const handleGenerateBIRReceipt = async () => {
+    // Validate cash payment if cash method is selected
+    if (paymentMethod === 'cash') {
+      if (!cashReceived || isNaN(cashReceived)) {
+        alert('Please enter the cash amount received.');
+        return;
+      }
+      
+      const receivedAmount = parseFloat(cashReceived);
+      const totalAmount = billing.amount || 0;
+      
+      if (receivedAmount < totalAmount) {
+        alert(`Insufficient cash received. Need ₱${(totalAmount - receivedAmount).toFixed(2)} more.`);
+        return;
+      }
+    }
+
     const doc = new jsPDF();
     let y = 20;
-
+doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text(billing.clinicName || 'Cebu Doctors\' University Hospital', 105, y, { align: 'center' });
+    y += 8;
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Osmeña Boulevard, Cebu City, Philippines', 105, y, { align: 'center' });
+    y += 5;
+    doc.text('Tel: (032) 255-5555 | Email: info@cdu.edu.ph', 105, y, { align: 'center' });
+    y += 5;
+    doc.text('TIN: 123-456-789-000', 105, y, { align: 'center' });
+    y += 15;
     // BIR Header
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
@@ -72,19 +192,7 @@ const handleSimulateGCashPayment = () => {
     y += 10;
 
     // Hospital/Clinic Information
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text(billing.clinicName || 'Cebu Doctors\' University Hospital', 105, y, { align: 'center' });
-    y += 8;
     
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text('Osmeña Boulevard, Cebu City, Philippines', 105, y, { align: 'center' });
-    y += 5;
-    doc.text('Tel: (032) 255-5555 | Email: info@cdu.edu.ph', 105, y, { align: 'center' });
-    y += 5;
-    doc.text('TIN: 123-456-789-000', 105, y, { align: 'center' });
-    y += 15;
 
     // Receipt Details
     doc.setFontSize(10);
@@ -105,13 +213,19 @@ const handleSimulateGCashPayment = () => {
     doc.setFont(undefined, 'normal');
     doc.text(`Patient: ${billing.patientFullName || 'N/A'}`, 15, y);
     y += 6;
-    doc.text(`Patient ID: ${billing.patientId || 'N/A'}`, 15, y);
+
+    if (billing.patientId) {
+    const qrDataUrl = await QRCode.toDataURL(billing.patientId, { width: 50 });
+    doc.addImage(qrDataUrl, 'PNG', 15, y, 20, 20); // 20x20 mm QR code
+    y += 25; // move down after QR code
+  } else {
+    doc.text("Patient ID: N/A", 15, y);
     y += 6;
     doc.text(`Address: _________________________________`, 15, y);
     y += 6;
     doc.text(`TIN: _______________________`, 15, y);
     y += 15;
-
+  }
     // Items Table Header
     doc.setFont(undefined, 'bold');
     doc.text('QTY', 15, y);
@@ -144,8 +258,8 @@ const handleSimulateGCashPayment = () => {
         doc.text(quantity.toString(), 15, y);
         doc.text('pc', 35, y);
         doc.text(item.itemName || 'Medicine', 55, y);
-        doc.text(`₱${unitPrice.toFixed(2)}`, 130, y);
-        doc.text(`₱${amount.toFixed(2)}`, 170, y);
+        doc.text(`P${unitPrice.toFixed(2)}`, 130, y);
+        doc.text(`P${amount.toFixed(2)}`, 170, y);
         y += 6;
       });
       y += 3;
@@ -167,8 +281,8 @@ const handleSimulateGCashPayment = () => {
         doc.text(quantity.toString(), 15, y);
         doc.text('pc', 35, y);
         doc.text(item.itemName || 'Medical Supply', 55, y);
-        doc.text(`₱${unitPrice.toFixed(2)}`, 130, y);
-        doc.text(`₱${amount.toFixed(2)}`, 170, y);
+        doc.text(`P${unitPrice.toFixed(2)}`, 130, y);
+        doc.text(`P${amount.toFixed(2)}`, 170, y);
         y += 6;
       });
       y += 3;
@@ -190,8 +304,8 @@ const handleSimulateGCashPayment = () => {
         doc.text(quantity.toString(), 15, y);
         doc.text('svc', 35, y);
         doc.text(item.itemName || 'Medical Service', 55, y);
-        doc.text(`₱${unitPrice.toFixed(2)}`, 130, y);
-        doc.text(`₱${amount.toFixed(2)}`, 170, y);
+        doc.text(`P${unitPrice.toFixed(2)}`, 130, y);
+        doc.text(`P${amount.toFixed(2)}`, 170, y);
         y += 6;
       });
       y += 3;
@@ -213,8 +327,8 @@ const handleSimulateGCashPayment = () => {
         doc.text(quantity.toString(), 15, y);
         doc.text('svc', 35, y);
         doc.text(item.itemName || 'Consultation', 55, y);
-        doc.text(`₱${unitPrice.toFixed(2)}`, 130, y);
-        doc.text(`₱${amount.toFixed(2)}`, 170, y);
+        doc.text(`P${unitPrice.toFixed(2)}`, 130, y);
+        doc.text(`P${amount.toFixed(2)}`, 170, y);
         y += 6;
       });
       y += 3;
@@ -231,11 +345,11 @@ const handleSimulateGCashPayment = () => {
 
     doc.setFont(undefined, 'normal');
     doc.text('Vatable Sales:', 130, y);
-    doc.text(`₱${vatableSales.toFixed(2)}`, 170, y);
+    doc.text(`P${vatableSales.toFixed(2)}`, 170, y);
     y += 6;
 
     doc.text('VAT (12%):', 130, y);
-    doc.text(`₱${vatAmount.toFixed(2)}`, 170, y);
+    doc.text(`P${vatAmount.toFixed(2)}`, 170, y);
     y += 6;
 
     doc.line(130, y, 195, y);
@@ -243,16 +357,27 @@ const handleSimulateGCashPayment = () => {
 
     doc.setFont(undefined, 'bold');
     doc.text('TOTAL AMOUNT DUE:', 130, y);
-    doc.text(`₱${totalAmount.toFixed(2)}`, 170, y);
+    doc.text(`P${totalAmount.toFixed(2)}`, 170, y);
     y += 15;
 
     // Payment Information
     doc.setFont(undefined, 'normal');
     doc.text(`Payment Status: ${billing.status?.toUpperCase() || 'UNPAID'}`, 15, y);
     y += 6;
-   doc.text(`Payment Method: ${paymentMethod === 'gcash' ? 'GCash' : 'Cash / Check / Credit Card'}`, 15, y);
+    doc.text(`Payment Method: ${paymentMethod === 'gcash' ? 'GCash' : 'Cash / Check / Credit Card'}`, 15, y);
+    y += 6;
 
-    y += 15;
+    // Add cash payment details if cash method
+    if (paymentMethod === 'cash' && cashReceived) {
+      doc.text(`Cash Received: P${parseFloat(cashReceived).toFixed(2)}`, 15, y);
+      y += 6;
+      if (change > 0) {
+        doc.text(`Change Given: P${change.toFixed(2)}`, 15, y);
+        y += 6;
+      }
+    }
+
+    y += 10;
 
     // BIR Footer
     doc.setFontSize(8);
@@ -279,16 +404,40 @@ const handleSimulateGCashPayment = () => {
         
         {/* Patient Information */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">Patient Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <p><strong>Patient Name:</strong> {billing.patientFullName}</p>
-            <p><strong>Patient ID:</strong> {billing.patientId}</p>
-            <p><strong>Total Amount:</strong> ₱{billing.amount ? billing.amount.toFixed(2) : '0.00'}</p>
+  <h3 className="text-lg font-semibold mb-2">Patient Information</h3>
+
+  <div className="grid grid-cols-2 gap-4">
+    <p><strong>Patient Name:</strong> {billing.patientFullName}</p>
+    <p><strong>Status:</strong> {billing.status}</p>
+
+    {/* Row with Total Amount, Date, and QR code on the right */}
+    <div className="col-span-2 flex justify-between items-start">
+      <div>
+        <p><strong>Total Amount:</strong> ₱{billing.amount ? billing.amount.toFixed(2) : '0.00'}</p>
+        <p><strong>Date:</strong> {new Date(billing.transactionDate || new Date()).toLocaleDateString('en-PH')}</p>
+        <p><strong>Clinic:</strong> {billing.clinicName}</p>
+      </div>
+
+      <div>
+        {patientQrCode ? (
+          <img
+            src={patientQrCode}
+            alt="Patient QR Code"
+            className="w-24 h-24 border rounded"
+          />
+        ) : (
+          <p className="text-gray-500 text-sm">No Patient ID</p>
+        )}
+      </div>
+    </div>
+    </div>
+</div>
+            {/* <p><strong>Total Amount:</strong> ₱{billing.amount ? billing.amount.toFixed(2) : '0.00'}</p>
             <p><strong>Status:</strong> {billing.status}</p>
             <p><strong>Date:</strong> {new Date(billing.transactionDate || new Date()).toLocaleDateString('en-PH')}</p>
             <p><strong>Clinic:</strong> {billing.clinicName}</p>
           </div>
-        </div>
+        </div> */}
 
         {/* Medicines Used */}
         {medicines.length > 0 && (
@@ -410,35 +559,126 @@ const handleSimulateGCashPayment = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mb-4">
-  <label className="font-semibold mr-2">Payment Method:</label>
-  <select
-    value={paymentMethod}
-    onChange={(e) => setPaymentMethod(e.target.value)}
-    className="border rounded px-3 py-2"
-  >
-    <option value="cash">Cash</option>
-    <option value="gcash">GCash</option>
-  </select>
-</div>
+        {/* Payment Method Selection */}
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-lg font-semibold mb-3">Payment Method</h3>
+          <div className="flex gap-4 mb-4">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="cash"
+                checked={paymentMethod === 'cash'}
+                onChange={(e) => handlePaymentMethodChange(e.target.value)}
+                className="mr-2"
+              />
+              💵 Cash Payment
+            </label>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                value="gcash"
+                checked={paymentMethod === 'gcash'}
+                onChange={(e) => handlePaymentMethodChange(e.target.value)}
+                className="mr-2"
+              />
+              📱 GCash
+            </label>
+          </div>
 
+          {/* Cash Payment Calculator */}
+          {paymentMethod === 'cash' && (
+            <div className="mt-4 p-4 bg-white rounded-lg border">
+              <h4 className="font-semibold mb-3">💰 Cash Payment Calculator</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left side - Input and suggestions */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Cash Received (₱)
+                  </label>
+                  <input
+                    type="number"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    placeholder="Enter cash amount"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                    step="0.01"
+                  />
+                  
+                  {/* Quick amount buttons */}
+                  <div className="mt-3">
+                    <p className="text-sm font-medium mb-2">Quick amounts:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {generateSuggestedAmounts().map((amount, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleQuickAmount(amount)}
+                          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+                        >
+                          ₱{amount.toFixed(2)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right side - Calculation display */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Total Amount:</span>
+                      <span className="font-bold">₱{(billing.amount || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Cash Received:</span>
+                      <span className="font-bold text-green-600">
+                        ₱{cashReceived ? parseFloat(cashReceived).toFixed(2) : '0.00'}
+                      </span>
+                    </div>
+                    <hr className="border-gray-300" />
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Change:</span>
+                      <span className={`font-bold text-lg ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ₱{change.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    {paymentError && (
+                      <div className="text-red-600 text-sm font-medium mt-2">
+                        ⚠️ {paymentError}
+                      </div>
+                    )}
+                    
+                    {change > 0 && cashReceived && (
+                      <div className="text-green-600 text-sm mt-2">
+                        ✅ Payment sufficient. Change: ₱{change.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
         <div className="flex justify-end gap-3">
           <button 
             onClick={handleGenerateBIRReceipt} 
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+            disabled={paymentMethod === 'cash' && parseFloat(cashReceived || 0) < (billing.amount || 0)}
           >
             📄 Generate BIR Receipt
           </button>
           {paymentMethod === 'gcash' && (
-  <button
-    onClick={handleSimulateGCashPayment}
-    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
-  >
-    💳 Pay with GCash
-  </button>
-)}
-
+            <button
+              onClick={handleSimulateGCashPayment}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
+            >
+              💳 Pay with GCash
+            </button>
+          )}
           <button 
             onClick={onClose} 
             className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg"
@@ -450,5 +690,6 @@ const handleSimulateGCashPayment = () => {
     </div>
   );
 };
+
 
 export default ViewBill;

@@ -166,8 +166,7 @@ const InventoryTransaction = () => {
     <div className="w-full min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Inventory Transactions</h1>
+        <div className="mb-6">  
           <p className="text-gray-600 mt-2">View and track all inventory transaction history with real-time updates</p>
         </div>
 

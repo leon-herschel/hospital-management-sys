@@ -5,6 +5,8 @@ import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import { auth, database } from "../../../firebase/firebase";
 import UserAddRoleModal from "./userAddModal";
 import AddDepartmentModal from "../Departments/AddDepartmentModal";
+import DoctorsAgreementModal from "../Doctors/DoctorsAgreementModal";
+
 const AddUserModal = ({ showModal, setShowModal }) => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
@@ -41,6 +43,14 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [showAddDepartmentModal, setShowAddDepartmentModal] = useState(false);
   const [address, setAddress] = useState("");
   const [prcId, setPrcId] = useState("");
+  const [prcIdFile, setPrcIdFile] = useState(null);
+  const [prcIdFileUrl, setPrcIdFileUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  // Add state for BIR Number
+  const [birNumber, setBirNumber] = useState("");
+  const [prcExpiry, setPrcExpiry] = useState("");
+  const [showAgreement, setShowAgreement] = useState(false);
+  const [hasAgreed, setHasAgreed] = useState(false);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -101,7 +111,9 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     setEmergencyRelationship("");
     setEmergencyPhone("");
     setPrcId("");
+    setPrcExpiry("");
     setError("");
+    setBirNumber("");
     setEmailStatus("");
   };
 
@@ -119,9 +131,8 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     setIsEmailLoading(true);
     setEmailStatus("Sending welcome email...");
 
-    let response;
     try {
-      response = await fetch("http://localhost:5000/add-user", {
+      const response = await fetch("http://localhost:5000/add-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -148,18 +159,15 @@ const AddUserModal = ({ showModal, setShowModal }) => {
       }
     } catch (error) {
       console.error("Email sending error:", error);
-      // Check if it's a network error vs server error
+
+      // Handle different types of network errors
       if (error.name === "TypeError" && error.message.includes("fetch")) {
         setEmailStatus(
-          "Failed to connect to email service. Please check if the server is running."
-        );
-      } else if (response && !response.ok) {
-        setEmailStatus(
-          `Email service error: ${response.status} ${response.statusText}`
+          "Email service unavailable. Account created successfully without email notification."
         );
       } else {
         setEmailStatus(
-          "Failed to send welcome email. Please check your connection."
+          "Failed to send welcome email. Account was created successfully."
         );
       }
     } finally {
@@ -177,6 +185,12 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     setIsLoading(true);
     setEmailStatus("");
 
+    if (selectedRole === "doctor" && !hasAgreed) {
+      setShowAgreement(true);
+      setIsLoading(false);
+      return;
+    }
+
     if (!validatePassword(password)) {
       setError(
         "Password must be at least 6 characters long, contain an uppercase letter, a lowercase letter, and a number."
@@ -192,6 +206,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     }
 
     try {
+      // Create user account in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -199,12 +214,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
       );
       const userId = userCredential.user.uid;
 
+      // Create user record in database using the same UID
       const userRef = ref(database, `users/${userId}`);
       await set(userRef, {
-        department:
-          selectedRole === "patient" || selectedRole === "doctor"
-            ? null
-            : selectedDepartment,
+        department: selectedRole === "patient" ? null : selectedDepartment,
         clinicAffiliation: selectedRole === "patient" ? null : selectedClinic,
         firstName,
         lastName,
@@ -214,21 +227,28 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         createdAt: new Date().toISOString(),
       });
 
+      // If role is doctor, create doctor record using the SAME UID
       if (selectedRole === "doctor") {
-        const doctorRef = push(ref(database, "doctors"));
+        const doctorRef = ref(database, `doctors/${userId}`); // Using same UID here
         await set(doctorRef, {
           firstName,
           lastName,
-          fullName: `Dr. ${firstName} ${lastName}`,
+          fullName: `${firstName} ${lastName}`,
+          department: selectedDepartment,
           specialty: "Generalist",
+          isGeneralist: true,
           clinicAffiliations: [selectedClinic],
           contactNumber,
-          prcId
+          prcId,
+          prcExpiry,
+          birNumber,
+          createdAt: new Date().toISOString(),
         });
       }
 
+      // If role is patient, create patient record using the SAME UID
       if (selectedRole === "patient") {
-        const patientRef = push(ref(database, "patients"));
+        const patientRef = ref(database, `patients/${userId}`); // Using same UID here
         await set(patientRef, {
           firstName,
           lastName,
@@ -255,10 +275,8 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         });
       }
 
-      // Send welcome email after successful account creation (optional)
-      try {
-        await sendWelcomeEmail(email, password, selectedRole);
-      } catch (emailError) {
+      // Send welcome email after successful account creation (optional, non-blocking)
+      sendWelcomeEmail(email, password, selectedRole).catch((emailError) => {
         console.warn(
           "Email sending failed, but account was created successfully:",
           emailError
@@ -266,7 +284,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         setEmailStatus(
           "Account created successfully, but welcome email could not be sent."
         );
-      }
+      });
 
       setSuccess(true);
       resetForm();
@@ -291,6 +309,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
       console.error("Error adding role:", err);
     }
   };
+
   const handleAddDepartment = async (newDepartment) => {
     const deptKey = Object.keys(newDepartment)[0];
     const deptData = newDepartment[deptKey];
@@ -437,6 +456,42 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                     required
                     className="block w-full mb-4 p-2 border rounded-md"
                   />
+
+                  <label className="block mb-2">Upload PRC ID</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setPrcIdFile(e.target.files[0])}
+                    className="block w-full mb-4 p-2 border rounded-md"
+                  />
+
+                  {prcIdFileUrl && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-500 mb-1">Preview:</p>
+                      <img
+                        src={prcIdFileUrl}
+                        alt="PRC ID Preview"
+                        className="w-32 h-20 object-cover border rounded-md"
+                      />
+                    </div>
+                  )}
+                  <label className="block mb-2">PRC License Expiry</label>
+                  <input
+                    type="date"
+                    value={prcExpiry}
+                    onChange={(e) => setPrcExpiry(e.target.value)}
+                    required
+                    className="block w-full mb-4 p-2 border rounded-md"
+                  />
+
+                  <label className="block mb-2">BIR Number</label>
+                  <input
+                    type="text"
+                    value={birNumber}
+                    onChange={(e) => setBirNumber(e.target.value)}
+                    required
+                    className="block w-full mb-4 p-2 border rounded-md"
+                  />
                 </>
               )}
 
@@ -461,7 +516,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                 </>
               )}
 
-              {selectedRole !== "patient" && selectedRole !== "doctor" && (
+              {selectedRole !== "patient" && (
                 <>
                   <label className="block mb-2 flex justify-between items-center">
                     Select Department
@@ -476,6 +531,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                   <select
                     value={selectedDepartment}
                     onChange={(e) => setSelectedDepartment(e.target.value)}
+                    required={
+                      selectedRole === "doctor" ||
+                      (selectedRole !== "patient" && selectedRole !== "doctor")
+                    }
                     className="block w-full mb-4 p-2 border rounded-md"
                   >
                     <option value="" disabled>
@@ -627,7 +686,11 @@ const AddUserModal = ({ showModal, setShowModal }) => {
           </form>
         </div>
       </div>
-
+      <DoctorsAgreementModal
+        show={showAgreement}
+        onClose={() => setShowAgreement(false)}
+        onAgree={() => setHasAgreed(true)}
+      />
       {success && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-md p-6 w-full max-w-md text-center shadow-lg">

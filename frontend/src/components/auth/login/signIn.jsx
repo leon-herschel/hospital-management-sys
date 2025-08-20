@@ -39,94 +39,127 @@ const SignIn = () => {
   };
 
   return (
-    <div className="bg-slate-900 flex justify-center items-center h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-gray-900 flex">
       {userLoggedIn && <Navigate to={"/dashboard"} replace={true} />}
 
       {/* Left: Image */}
-      <div className="w-1/2 h-screen hidden lg:block">
+      <div className="relative w-1/2 h-screen hidden lg:block overflow-hidden">
         <img
           src={bgImage}
           alt="OddySys"
-          className="object-cover w-full h-full"
+          className="object-cover w-full h-full scale-105 transition-transform duration-700 hover:scale-100"
         />
+        
       </div>
 
       {/* Right: Login Form */}
-      <div className="lg:p-36 md:p-52 sm:p-20 p-8 w-full lg:w-1/2">
-        <h1 className="text-white text-3xl font-semibold mb-4">Login</h1>
-        <form onSubmit={onSubmit} className="space-y-5">
-          {/* Email Input */}
-          <div>
-            <label htmlFor="email" className="block text-white">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={email}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-400"
-              autoComplete="email"
-              required
-            />
+      <div className="flex items-center justify-center w-full lg:w-1/2 px-8 py-12">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-orange-200 to-white bg-clip-text text-transparent mb-3">
+              Login
+            </h1>
+            <p className="text-gray-400 text-lg">
+              Enter your credentials to access your account
+            </p>
           </div>
 
-          {/* Password Input */}
-          <div>
-            <label htmlFor="password" className="block text-white">
-              Password
-            </label>
-            <div className="relative w-full">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={password}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md py-2 px-3 pr-10 focus:outline-none focus:border-blue-400"
-                autoComplete="current-password"
-                required
-              />
+          {/* Form Card */}
+          <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 p-8 shadow-2xl shadow-orange-500/10">
+            <form onSubmit={onSubmit} className="space-y-6">
+              {/* Email Input */}
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-white font-medium text-sm tracking-wide">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={email}
+                  onChange={handleChange}
+                  className="w-full bg-white/5 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              {/* Password Input */}
+              <div className="space-y-2">
+                <label htmlFor="password" className="block text-white font-medium text-sm tracking-wide">
+                  Password
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    name="password"
+                    value={password}
+                    onChange={handleChange}
+                    className="w-full bg-white/5 border border-white/20 rounded-xl py-3 px-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors duration-200"
+                  >
+                    {showPassword ? (
+                      <EyeSlashIcon className="h-5 w-5" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-300 text-sm backdrop-blur-sm">
+                  {errorMessage}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSigningIn}
+                className={`w-full py-3 px-6 rounded-xl font-semibold text-white transition-all duration-300 transform ${
+                  isSigningIn
+                    ? "bg-slate-800/50 cursor-not-allowed scale-95"
+                    : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 hover:scale-105 hover:shadow-xl hover:shadow-orange-500/25 active:scale-95"
+                }`}
+              >
+                <span className="flex items-center justify-center">
+                  {isSigningIn && (
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                  {isSigningIn ? "Signing In..." : "Sign In"}
+                </span>
+              </button>
+
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+                onClick={() => (window.location.href = "/forgot-password")}
+                className="text-orange-300 hover:text-white text-sm font-medium transition-colors duration-200 hover:underline decoration-orange-300"
               >
-                {showPassword ? (
-                  <EyeSlashIcon className="h-5 w-5" />
-                ) : (
-                  <EyeIcon className="h-5 w-5" />
-                )}
+                Forgot Password?
               </button>
-            </div>
+            </form>
           </div>
 
-          {/* Error Message */}
-          {errorMessage && (
-            <div className="text-red-500 mb-4">{errorMessage}</div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSigningIn}
-            className={`w-full px-4 py-2 text-white font-medium rounded-lg ${
-              isSigningIn
-                ? "bg-blue-900 cursor-not-allowed"
-                : "bg-blue-800 hover:bg-blue-900 hover:shadow-xl transition duration-300"
-            }`}
-          >
-            {isSigningIn ? "Signing In..." : "Sign In"}
-          </button>
-          <button
-            type="button"
-            onClick={() => (window.location.href = "/forgot-password")}
-            className="text-blue-300 hover:underline text-sm"
-          >
-            Forgot Password?
-          </button>
-        </form>
+          {/* Footer */}
+          <div className="text-center mt-8">
+            <p className="text-gray-500 text-sm">
+              Secure login powered by Odyssey encryption
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

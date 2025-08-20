@@ -3,9 +3,11 @@ import { ref, onValue, remove, update, get } from "firebase/database";
 import { database } from "../../../firebase/firebase";
 import DeleteConfirmationModal from "./DeleteConfirmationModalBooking";
 import ViewBookingModal from "./ViewBookingModal";
+import ViewBookingModal from "./ViewBookingModal";
 import AddBooking from "./AddBooking";
 import { useNavigate } from "react-router-dom";
 import {
+  EyeIcon,
   EyeIcon,
   TrashIcon,
   ArrowLeftIcon,
@@ -23,6 +25,7 @@ import {
   FunnelIcon,
   Squares2X2Icon,
   ArrowPathIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 
 function AdminConsult() {
@@ -31,6 +34,7 @@ function AdminConsult() {
   const [consultationTypes, setConsultationTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("All");
   const [modal, setModal] = useState(false);
+  const [viewModal, setViewModal] = useState(false);
   const [viewModal, setViewModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentBooking, setCurrentBooking] = useState(null);
@@ -123,6 +127,7 @@ function AdminConsult() {
 
   const toggleModal = () => setModal(!modal);
   const toggleViewModal = () => setViewModal(!viewModal);
+  const toggleViewModal = () => setViewModal(!viewModal);
   const toggleDeleteModal = () => setDeleteModal(!deleteModal);
 
   const handleDeleteConfirmation = (booking) => {
@@ -133,12 +138,15 @@ function AdminConsult() {
   const handleDelete = async () => {
     if (currentBooking) {
       await remove(ref(database, `appointments/${currentBooking.id}`));
+      await remove(ref(database, `appointments/${currentBooking.id}`));
       toggleDeleteModal();
     }
   };
 
   const handleView = (booking) => {
+  const handleView = (booking) => {
     setCurrentBooking(booking);
+    toggleViewModal();
     toggleViewModal();
   };
 
@@ -263,6 +271,7 @@ function AdminConsult() {
             </div>
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Consultation Bookings
                 Consultation Bookings
               </h1>
               <p className="text-gray-600 text-sm mt-1">
@@ -501,6 +510,7 @@ function AdminConsult() {
                             <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
                               {(
                                 booking.patient?.firstName?.charAt(0) || "P"
+                                booking.patient?.firstName?.charAt(0) || "P"
                               ).toUpperCase()}
                             </div>
                             <div>
@@ -631,13 +641,41 @@ function AdminConsult() {
                               <ArrowPathIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 animate-spin" />
                             )}
                           </div>
+                          <div className="relative">
+                            <select
+                              value={booking.status || "Pending"}
+                              onChange={(e) =>
+                                handleStatusUpdate(booking.id, e.target.value)
+                              }
+                              disabled={updatingStatus[booking.id]}
+                              className={`inline-flex items-center gap-1 px-3 py-1 pr-8 rounded-full text-xs font-medium border appearance-none cursor-pointer ${
+                                statusConfig.class
+                              } ${
+                                updatingStatus[booking.id]
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : "hover:opacity-80"
+                              }`}
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                            {updatingStatus[booking.id] && (
+                              <ArrowPathIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 animate-spin" />
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleView(booking)}
                               className="inline-flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
+                              onClick={() => handleView(booking)}
+                              className="inline-flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
                             >
+                              <EyeIcon className="h-3 w-3" />
+                              View
                               <EyeIcon className="h-3 w-3" />
                               View
                             </button>
@@ -682,6 +720,9 @@ function AdminConsult() {
           toggleModal={toggleDeleteModal}
           onConfirm={handleDelete}
         />
+        <ViewBookingModal
+          isOpen={viewModal}
+          toggleModal={toggleViewModal}
         <ViewBookingModal
           isOpen={viewModal}
           toggleModal={toggleViewModal}

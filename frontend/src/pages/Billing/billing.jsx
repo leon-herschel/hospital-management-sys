@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { ref, onValue, remove, update, query, orderByChild, equalTo, get, push, set } from 'firebase/database';
-import { database } from '../../firebase/firebase';
-import ViewBill from './ViewBill';
-import DeleteConfirmationModal from './DeleteConfirmationModalBilling';
-import AddBill from './AddBill';
-import DateRangePicker from '../../components/DateRangePicker/DateRangePicker';
-import ReceiptModal from './ReceiptModal';
+import React, { useState, useEffect } from "react";
+import {
+  ref,
+  onValue,
+  remove,
+  update,
+  get,
+  push,
+} from "firebase/database";
+import { database } from "../../firebase/firebase";
+import ViewBill from "./ViewBill";
+import DeleteConfirmationModal from "./DeleteConfirmationModalBilling";
+import AddBill from "./AddBill";
+import DateRangePicker from "../../components/DateRangePicker/DateRangePicker";
+import ReceiptModal from "./ReceiptModal";
+import ServicePaymentModal from "./ServicePaymentModal";
+import PatientBillGenerationModal from "./PatientBillGenerationModal";
+import QRCode from "qrcode";
+import { Search, Plus, Eye, CreditCard, Trash2, Receipt, Users, Activity, Shield, TestTube } from "lucide-react";
 
 const Billing = () => {
+  // Main billing states
   const [billings, setBillings] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [viewBilling, setViewBilling] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -19,48 +31,122 @@ const Billing = () => {
   const [endDate, setEndDate] = useState(null);
   const [patientDetails, setPatientDetails] = useState(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
-  
-  // New states for patient billing generation
+
+  // Patient billing generation states
   const [isPatientBillModalOpen, setIsPatientBillModalOpen] = useState(false);
   const [patients, setPatients] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [patientItems, setPatientItems] = useState([]);
-  const [patientServices, setPatientServices] = useState([]);
-  const [doctorFees, setDoctorFees] = useState([]);
-  const [isGeneratingBill, setIsGeneratingBill] = useState(false);
-  const [billPreview, setBillPreview] = useState(null);
+  const [patientQRCodes, setPatientQRCodes] = useState({});
 
-  // Clinic info - you should replace these with actual clinic data
+  // Service payment states
+  const [isServicePaymentModalOpen, setIsServicePaymentModalOpen] = useState(false);
+
+  // Cache for already billed items
+  const [billedItemsCache, setBilledItemsCache] = useState({});
+
+  // Clinic info
   const CLINIC_ID = "clin_cebu_doctors_id";
   const CLINIC_NAME = "Cebu Doctors' University Hospital";
 
-  // Fetch billings from Firebase and listen for updates
+  // Fetch and cache all billed items from paid bills
   useEffect(() => {
-    const billingsRef = ref(database, 'clinicBilling');
+    const fetchBilledItems = async () => {
+      try {
+        const billingsRef = ref(database, "clinicBilling");
+        const snapshot = await get(billingsRef);
+        
+        if (snapshot.exists()) {
+          const allBillings = snapshot.val();
+          const billedItemsMap = {};
 
+          Object.values(allBillings).forEach(billing => {
+            if (billing.status === 'paid' && billing.billedItems && billing.patientId) {
+              billing.billedItems.forEach(item => {
+                const itemKey = `${billing.patientId}_${item.itemType}_${item.itemId}_${item.timestamp}`;
+                billedItemsMap[itemKey] = {
+                  ...item,
+                  patientId: billing.patientId,
+                  billedInTransaction: billing.id || 'unknown',
+                  paidDate: billing.paidDate
+                };
+              });
+            }
+          });
+
+          setBilledItemsCache(billedItemsMap);
+          console.log(`📋 Loaded ${Object.keys(billedItemsMap).length} billed items from existing bills`);
+        }
+      } catch (error) {
+        console.error('Error fetching billed items:', error);
+      }
+    };
+
+    fetchBilledItems();
+  }, []);
+
+  // Listen for billing updates
+  useEffect(() => {
+    const billingsRef = ref(database, "clinicBilling");
     const unsubscribe = onValue(billingsRef, (snapshot) => {
       const billingList = [];
+      const updatedBilledItemsMap = {};
+
       if (snapshot.exists()) {
         const billingsData = snapshot.val();
+        
         Object.keys(billingsData).forEach((billId) => {
           const billing = billingsData[billId];
-          // Filter by clinic and unpaid status
-          if (billing.clinicId === CLINIC_ID && billing.status === 'unpaid') {
+          
+          if (billing.clinicId === CLINIC_ID && billing.status === "unpaid") {
             billingList.push({ id: billId, ...billing });
           }
+          
+          if (billing.status === 'paid' && billing.billedItems && billing.patientId) {
+            billing.billedItems.forEach(item => {
+              const itemKey = `${billing.patientId}_${item.itemType}_${item.itemId}_${item.timestamp}`;
+              updatedBilledItemsMap[itemKey] = {
+                ...item,
+                patientId: billing.patientId,
+                billedInTransaction: billId,
+                paidDate: billing.paidDate
+              };
+            });
+          }
         });
+        
         setBillings(billingList);
+        setBilledItemsCache(updatedBilledItemsMap);
       } else {
         setBillings([]);
+        setBilledItemsCache({});
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Fetch all patients on component mount
+  // Generate QR codes for patients
   useEffect(() => {
-    const patientsRef = ref(database, 'patients');
+    if (patients.length > 0) {
+      const generateQRCodes = async () => {
+        const qrMap = {};
+        for (const patient of patients) {
+          try {
+            const qrDataUrl = await QRCode.toDataURL(patient.id, { width: 60 });
+            qrMap[patient.id] = qrDataUrl;
+          } catch (err) {
+            console.error(`Error generating QR for ${patient.id}`, err);
+          }
+        }
+        setPatientQRCodes(qrMap);
+      };
+
+      generateQRCodes();
+    }
+  }, [patients]);
+
+  // Fetch all patients
+  useEffect(() => {
+    const patientsRef = ref(database, "patients");
     const unsubscribe = onValue(patientsRef, (snapshot) => {
       const patientList = [];
       if (snapshot.exists()) {
@@ -74,232 +160,17 @@ const Billing = () => {
     return () => unsubscribe();
   }, []);
 
-  // Filter billings based on search term and date range
+  // Filter billings
   const filteredBillings = billings.filter((billing) => {
     const billingDate = new Date(billing.transactionDate);
     const withinDateRange =
       (!startDate || billingDate >= startDate) &&
       (!endDate || billingDate <= endDate);
-    const matchesSearchTerm = billing.patientFullName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearchTerm = billing.patientFullName
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
     return withinDateRange && matchesSearchTerm;
   });
-
-  // Fetch patient's used items and services
-  const fetchPatientBillingData = async (patientId) => {
-    setIsGeneratingBill(true);
-    try {
-      const items = [];
-      const services = [];
-      const doctors = [];
-
-      // Fetch inventory transactions for the patient
-      const inventoryRef = ref(database, 'inventoryTransactions');
-      const inventorySnapshot = await get(inventoryRef);
-      
-      if (inventorySnapshot.exists()) {
-        inventorySnapshot.forEach((childSnapshot) => {
-          const transaction = childSnapshot.val();
-          if (transaction.relatedPatientId === patientId && transaction.transactionType === 'usage') {
-            items.push({
-              id: transaction.itemId,
-              name: transaction.itemName,
-              quantity: Math.abs(transaction.quantityChanged),
-              timestamp: transaction.timestamp,
-              department: transaction.sourceDepartment,
-              type: 'inventory'
-            });
-          }
-        });
-      }
-
-      // Fetch medical services transactions for the patient
-      const servicesRef = ref(database, 'medicalServicesTransactions');
-      const servicesSnapshot = await get(servicesRef);
-      
-      if (servicesSnapshot.exists()) {
-        servicesSnapshot.forEach((childSnapshot) => {
-          const service = childSnapshot.val();
-          if (service.patientId === patientId) {
-            services.push({
-              id: service.serviceId,
-              name: service.serviceName || 'Medical Service',
-              category: service.serviceCategory,
-              timestamp: service.createdAt,
-              department: service.department,
-              type: 'service'
-            });
-          }
-        });
-      }
-
-      // Fetch doctor fees from appointments
-      const appointmentsRef = ref(database, 'appointments');
-      const appointmentsSnapshot = await get(appointmentsRef);
-      
-      if (appointmentsSnapshot.exists()) {
-        appointmentsSnapshot.forEach((childSnapshot) => {
-          const appointment = childSnapshot.val();
-          if (appointment.patientId === patientId && appointment.status === 'completed') {
-            doctors.push({
-              doctorId: appointment.doctorId,
-              doctorName: `${appointment.doctorFirstName} ${appointment.doctorLastName}`,
-              appointmentType: appointment.type,
-              timestamp: appointment.lastUpdated,
-              type: 'consultation'
-            });
-          }
-        });
-      }
-
-      setPatientItems(items);
-      setPatientServices(services);
-      setDoctorFees(doctors);
-      
-      // Generate bill preview
-      await generateBillPreview(patientId, items, services, doctors);
-      
-    } catch (error) {
-      console.error('Error fetching patient billing data:', error);
-      alert('Error fetching patient data: ' + error.message);
-    } finally {
-      setIsGeneratingBill(false);
-    }
-  };
-
-  // Generate bill preview with calculated amounts
-  const generateBillPreview = async (patientId, items, services, doctors) => {
-    try {
-      let totalAmount = 0;
-      const billedItems = [];
-
-      // Calculate inventory items costs
-      const inventoryItemsRef = ref(database, 'inventoryItems');
-      const inventoryItemsSnapshot = await get(inventoryItemsRef);
-      const inventoryItemsData = inventoryItemsSnapshot.val() || {};
-
-      for (const item of items) {
-        const itemData = inventoryItemsData[item.id];
-        const pricePerUnit = itemData?.defaultRetailPrice || 0;
-        const totalPrice = pricePerUnit * item.quantity;
-        totalAmount += totalPrice;
-
-        billedItems.push({
-          itemId: item.id,
-          itemName: item.name,
-          itemType: 'medicine',
-          pricePerUnit,
-          quantity: item.quantity,
-          totalPrice,
-          timestamp: item.timestamp
-        });
-      }
-
-      // Calculate medical services costs
-      const medicalServicesRef = ref(database, 'medicalServices');
-      const medicalServicesSnapshot = await get(medicalServicesRef);
-      const medicalServicesData = medicalServicesSnapshot.val() || {};
-
-      for (const service of services) {
-        let serviceFee = 0;
-        
-        // Find service fee based on category
-        if (service.category && medicalServicesData[service.category]) {
-          const serviceData = medicalServicesData[service.category][service.id];
-          serviceFee = parseFloat(serviceData?.serviceFee || 0);
-        }
-
-        totalAmount += serviceFee;
-
-        billedItems.push({
-          itemId: service.id,
-          itemName: service.name,
-          itemType: 'service',
-          pricePerUnit: serviceFee,
-          quantity: 1,
-          totalPrice: serviceFee,
-          timestamp: service.timestamp
-        });
-      }
-
-      // Calculate doctor consultation fees
-      const doctorsRef = ref(database, 'doctors');
-      const doctorsSnapshot = await get(doctorsRef);
-      const doctorsData = doctorsSnapshot.val() || {};
-
-      for (const doctor of doctors) {
-        const doctorData = doctorsData[doctor.doctorId];
-        const consultationFee = doctorData?.professionalFees?.consultationFee || 
-                               doctorData?.professionalFee || 500; // Default fee
-
-        totalAmount += consultationFee;
-
-        billedItems.push({
-          itemId: doctor.doctorId,
-          itemName: `${doctor.doctorName} - Consultation`,
-          itemType: 'consultation',
-          pricePerUnit: consultationFee,
-          quantity: 1,
-          totalPrice: consultationFee,
-          timestamp: doctor.timestamp
-        });
-      }
-
-      setBillPreview({
-        patientId,
-        billedItems,
-        totalAmount,
-        itemsCount: items.length,
-        servicesCount: services.length,
-        consultationsCount: doctors.length
-      });
-
-    } catch (error) {
-      console.error('Error generating bill preview:', error);
-      alert('Error calculating bill: ' + error.message);
-    }
-  };
-
-  // Save the generated bill to Firebase - FIXED VERSION
-  const saveBillToFirebase = async () => {
-    if (!billPreview || !selectedPatient) return;
-
-    try {
-      const patientFullName = `${selectedPatient.firstName} ${selectedPatient.lastName}`;
-      
-      const billData = {
-        patientId: selectedPatient.id,
-        patientFullName: patientFullName,
-        clinicId: CLINIC_ID,
-        clinicName: CLINIC_NAME,
-        amount: billPreview.totalAmount,
-        status: 'unpaid',
-        transactionDate: new Date().toISOString(),
-        billedItems: billPreview.billedItems,
-        createdAt: new Date().toISOString(),
-        processedBy: {
-          userId: 'current_user_id', // Replace with actual user ID
-          firstName: 'System',
-          lastName: 'Generated'
-        }
-      };
-
-      // Use push() to generate a unique key automatically
-      const billingsRef = ref(database, 'clinicBilling');
-      await push(billingsRef, billData);
-
-      alert('Bill generated successfully!');
-      setIsPatientBillModalOpen(false);
-      setBillPreview(null);
-      setSelectedPatient(null);
-      setPatientItems([]);
-      setPatientServices([]);
-      setDoctorFees([]);
-
-    } catch (error) {
-      console.error('Error saving bill:', error);
-      alert('Error saving bill: ' + error.message);
-    }
-  };
 
   // Handle deleting a billing
   const handleDeleteBilling = async () => {
@@ -311,7 +182,7 @@ const Billing = () => {
         setIsDeleteModalOpen(false);
         setBillingToDelete(null);
       } catch (error) {
-        alert('Error deleting billing: ' + error.message);
+        alert("Error deleting billing: " + error.message);
       }
     }
   };
@@ -322,22 +193,22 @@ const Billing = () => {
     setIsDeleteModalOpen(true);
   };
 
-  // Handle marking a billing as paid
+  // Mark as paid
   const handleMarkAsPaid = async (billing) => {
     try {
       const billingRef = ref(database, `clinicBilling/${billing.id}`);
-      await update(billingRef, { 
-        status: 'paid',
-        paidDate: new Date().toISOString()
+      await update(billingRef, {
+        status: "paid",
+        paidDate: new Date().toISOString(),
       });
-      setBillings(billings.filter((b) => b.id !== billing.id));
-    } catch (error) {
-      alert('Error updating billing status: ' + error.message);
-    }
-  };
 
-  const handleCloseAddBillModal = () => {
-    setIsAddModalOpen(false);
+      setBillings(billings.filter((b) => b.id !== billing.id));
+      alert("✅ Bill marked as paid! Items are now automatically excluded from future bills.");
+      
+    } catch (error) {
+      console.error("❌ Error updating billing status:", error);
+      alert("Error updating billing status: " + error.message);
+    }
   };
 
   // Fetch patient details for viewing
@@ -363,267 +234,236 @@ const Billing = () => {
     setViewBilling(null);
   };
 
-  return (
-    <div className="w-full">
-      <div className="flex justify-center">
-        <h1 className="text-3xl font-bold mb-4">Billing List</h1>
-      </div>
+  const handleCloseAddBillModal = () => {
+    setIsAddModalOpen(false);
+  };
 
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search by patient name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border px-4 py-2 rounded-lg w-full max-w-xs"
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={() => setIsPatientBillModalOpen(true)}
-            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
-            Generate Patient Bill
-          </button>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Modern Header Section */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                <Activity className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Billing Management</h1>
+                <p className="text-slate-600 mt-1">Manage patient bills and payments</p>
+              </div>
+            </div>
+            
+            {/* Anti-Double-Billing Status */}
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 min-w-64">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-5 w-5 text-emerald-600" />
+                  <div>
+                    <div className="text-sm font-semibold text-emerald-900">Anti-Double-Billing Active</div>
+                    <div className="text-xs text-emerald-700">{Object.keys(billedItemsCache).length} items tracked</div>
+                  </div>
+                </div>
+                <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Date Range Picker */}
-      <div className="flex justify-between items-center mb-4">
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-        />
-      </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Controls Section */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-8">
+          <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Left side - Search and Date Range */}
+            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+              {/* Search */}
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by patient name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                />
+              </div>
 
-      <table className="min-w-full border-collapse border border-gray-300 bg-white">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border-b px-4 py-2 text-left">Patient Name</th>
-            <th className="border-b px-4 py-2 text-left">Amount</th>
-            <th className="border-b px-4 py-2 text-left">Status</th>
-            <th className="border-b px-4 py-2 text-left">Transaction Date</th>
-            <th className="border-b px-4 py-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredBillings.length > 0 ? (
-            filteredBillings.map(billing => (
-              <tr key={billing.id} className="hover:bg-gray-100">
-                <td className="border-b px-4 py-2">
-                  {billing.patientFullName}
-                </td>
-                <td className="border-b px-4 py-2">
-                  ₱ {new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}
-                </td>
-                <td className="border-b px-4 py-2">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    billing.status === 'paid' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {billing.status}
-                  </span>
-                </td>
-                <td className="border-b px-4 py-2">
-                  {new Date(billing.transactionDate).toLocaleDateString('en-PH', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </td>
-                <td className="border-b px-4 py-2">
-                  <button 
-                    onClick={() => handleViewBilling(billing)} 
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1 rounded-md mr-2"
-                  >
-                    View
-                  </button>
-                  <button 
-                    onClick={() => handleMarkAsPaid(billing)} 
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-md mr-2"
-                  >
-                    Mark as Paid
-                  </button>
-                  <button 
-                    onClick={() => openDeleteModal(billing)} 
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md mr-2"
-                  >
-                    Delete
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setViewBilling(billing);
-                      setIsReceiptModalOpen(true);
-                    }} 
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-1 rounded-md"
-                  >
-                    Receipt
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="5" className="border-b px-4 py-2 text-center">No billings found.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* Patient Bill Generation Modal */}
-      {isPatientBillModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">Generate Patient Bill</h2>
-            
-            {!selectedPatient ? (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Select Patient:</h3>
-                <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
-                  {patients.map(patient => (
-                    <button
-                      key={patient.id}
-                      onClick={() => {
-                        setSelectedPatient(patient);
-                        fetchPatientBillingData(patient.id);
-                      }}
-                      className="text-left p-3 border rounded-lg hover:bg-gray-100"
-                    >
-                      <div className="font-semibold">{patient.firstName} {patient.lastName}</div>
-                      <div className="text-sm text-gray-600">ID: {patient.id}</div>
-                      {patient.dateOfBirth && (
-                        <div className="text-sm text-gray-600">DOB: {patient.dateOfBirth}</div>
-                      )}
-                    </button>
-                  ))}
+              {/* Date Range */}
+              <div className="flex items-center space-x-2 flex-shrink-0">
+                <div className="min-w-fit">
+                  <DateRangePicker
+                    startDate={startDate}
+                    endDate={endDate}
+                    onStartDateChange={setStartDate}
+                    onEndDateChange={setEndDate}
+                  />
                 </div>
               </div>
-            ) : (
-              <div>
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">
-                    Patient: {selectedPatient.firstName} {selectedPatient.lastName}
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setSelectedPatient(null);
-                      setBillPreview(null);
-                      setPatientItems([]);
-                      setPatientServices([]);
-                      setDoctorFees([]);
-                    }}
-                    className="text-blue-500 underline text-sm"
-                  >
-                    Choose different patient
-                  </button>
-                </div>
+            </div>
 
-                {isGeneratingBill ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="mt-4">Calculating bill...</p>
-                  </div>
-                ) : billPreview ? (
-                  <div>
-                    <h4 className="text-lg font-semibold mb-3">Bill Preview</h4>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                      <div className="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                          <div className="text-2xl font-bold text-blue-600">{billPreview.itemsCount}</div>
-                          <div className="text-sm text-gray-600">Items Used</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-green-600">{billPreview.servicesCount}</div>
-                          <div className="text-sm text-gray-600">Services</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-purple-600">{billPreview.consultationsCount}</div>
-                          <div className="text-sm text-gray-600">Consultations</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="max-h-64 overflow-y-auto mb-4">
-                      <table className="w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border px-3 py-2 text-left">Item/Service</th>
-                            <th className="border px-3 py-2 text-left">Type</th>
-                            <th className="border px-3 py-2 text-right">Qty</th>
-                            <th className="border px-3 py-2 text-right">Unit Price</th>
-                            <th className="border px-3 py-2 text-right">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {billPreview.billedItems.map((item, index) => (
-                            <tr key={index}>
-                              <td className="border px-3 py-2">{item.itemName}</td>
-                              <td className="border px-3 py-2 capitalize">{item.itemType}</td>
-                              <td className="border px-3 py-2 text-right">{item.quantity}</td>
-                              <td className="border px-3 py-2 text-right">₱{item.pricePerUnit.toFixed(2)}</td>
-                              <td className="border px-3 py-2 text-right">₱{item.totalPrice.toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold">
-                          Total Amount: ₱{billPreview.totalAmount.toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end gap-3 mt-6">
-                      <button
-                        onClick={saveBillToFirebase}
-                        className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
-                      >
-                        Generate Bill
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p>No billable items found for this patient.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex justify-end mt-6">
+            {/* Right side - Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => {
-                  setIsPatientBillModalOpen(false);
-                  setSelectedPatient(null);
-                  setBillPreview(null);
-                  setPatientItems([]);
-                  setPatientServices([]);
-                  setDoctorFees([]);
-                }}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                onClick={() => setIsServicePaymentModalOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2"
               >
-                Close
+                <TestTube className="h-5 w-5" />
+                <span>Pay for Service</span>
+              </button>
+              <button
+                onClick={() => setIsPatientBillModalOpen(true)}
+                className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Generate Patient Bill</span>
               </button>
             </div>
           </div>
         </div>
+
+        {/* Billing Table */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-slate-50 to-slate-100">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Patient</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Amount</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Date</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredBillings.length > 0 ? (
+                  filteredBillings.map((billing, index) => (
+                    <tr key={billing.id} className="hover:bg-slate-50 transition-colors duration-150">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                            <Users className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900">{billing.patientFullName}</div>
+                            <div className="text-sm text-slate-500">ID: {billing.patientId}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-lg font-bold text-slate-900">
+                          ₱{new Intl.NumberFormat("en-PH", {
+                            minimumFractionDigits: 2,
+                          }).format(billing.amount)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                            billing.status === "paid"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : "bg-red-100 text-red-800 border border-red-200"
+                          }`}
+                        >
+                          {billing.status === "paid" ? "Paid" : "Unpaid"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {new Date(billing.transactionDate).toLocaleDateString("en-PH", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center space-x-2">
+                          <button
+                            onClick={() => handleViewBilling(billing)}
+                            className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors duration-150"
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleMarkAsPaid(billing)}
+                            className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors duration-150"
+                            title="Mark as Paid"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(billing)}
+                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors duration-150"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setViewBilling(billing);
+                              setIsReceiptModalOpen(true);
+                            }}
+                            className="p-2 bg-amber-100 text-amber-600 rounded-lg hover:bg-amber-200 transition-colors duration-150"
+                            title="Print Receipt"
+                          >
+                            <Receipt className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center space-y-3">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                          <Activity className="h-8 w-8 text-slate-400" />
+                        </div>
+                        <div className="text-lg font-semibold text-slate-600">No billings found</div>
+                        <div className="text-sm text-slate-500">Try adjusting your search criteria</div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {isServicePaymentModalOpen && (
+        <ServicePaymentModal
+          isOpen={isServicePaymentModalOpen}
+          onClose={() => setIsServicePaymentModalOpen(false)}
+          patients={patients}
+          clinicId={CLINIC_ID}
+          clinicName={CLINIC_NAME}
+        />
       )}
 
-      {/* Existing Modals */}
+      {isPatientBillModalOpen && (
+        <PatientBillGenerationModal
+          isOpen={isPatientBillModalOpen}
+          onClose={() => setIsPatientBillModalOpen(false)}
+          patients={patients}
+          patientQRCodes={patientQRCodes}
+          billedItemsCache={billedItemsCache}
+          clinicId={CLINIC_ID}
+          clinicName={CLINIC_NAME}
+        />
+      )}
+
       {isViewModalOpen && viewBilling && (
         <ViewBill billing={viewBilling} onClose={handleCloseModal} />
       )}
 
       {isAddModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <AddBill onClose={handleCloseAddBillModal} />
           </div>
         </div>

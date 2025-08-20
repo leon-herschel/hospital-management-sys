@@ -18,6 +18,7 @@ import {
   Area,
   AreaChart
 } from "recharts";
+import CommonIllnessChart from "./CommonIllness"; // Import the new component
 
 const Analytics = () => {
   const [salesData, setSalesData] = useState({ daily: 0, monthly: 0 });
@@ -33,180 +34,183 @@ const Analytics = () => {
     []
   );
 
-  useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      setLoading(true);
-      try {
-        // Get current date info
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        const today = now.toISOString().split('T')[0];
+useEffect(() => {
+  const fetchAnalyticsData = async () => {
+    setLoading(true);
+    try {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const today = now.toISOString().split('T')[0];
 
-        // Fetch lab requests for sales data
-        const labRequestsRef = ref(database, "clinicLabRequests");
-        const labSnapshot = await get(labRequestsRef);
+      let dailySales = 0;
+      let monthlySales = 0;
+      const salesByService = {};
 
-        // Fetch inventory items for detailed item information
-        const inventoryItemsRef = ref(database, "inventoryItems");
-        const itemsSnapshot = await get(inventoryItemsRef);
+      // ======================
+      // 1. Fetch clinicBilling for sales totals
+      // ======================
+      const billingSnapshot = await get(ref(database, "clinicBilling"));
+      if (billingSnapshot.exists()) {
+        const billings = billingSnapshot.val();
+        Object.values(billings).forEach(billing => {
+          if (billing.status === "paid") {
+            const amount = parseFloat(billing.amount || 0);
+            const paidDate = billing.paidDate ? new Date(billing.paidDate) : null;
 
-        // Fetch inventory transactions
-        const inventoryTransactionsRef = ref(database, "inventoryTransactions");
-        const transactionsSnapshot = await get(inventoryTransactionsRef);
+            if (amount > 0 && paidDate) {
+              const paidDateStr = paidDate.toISOString().split("T")[0];
 
-        // Process lab requests for sales analytics
-        let dailySales = 0;
-        let monthlySales = 0;
-        const salesByService = {};
-
-        if (labSnapshot.exists()) {
-          const labRequests = labSnapshot.val();
-          
-          Object.values(labRequests).forEach((request) => {
-            const serviceFee = parseFloat(request.serviceFee || 0);
-            const requestDate = request.createdAt?.date || request.requestDate;
-            
-            if (serviceFee > 0) {
-              // Add to sales by service
-              const serviceName = request.labTestName || 'Unknown Service';
-              if (salesByService[serviceName]) {
-                salesByService[serviceName] += serviceFee;
-              } else {
-                salesByService[serviceName] = serviceFee;
+              if (paidDateStr === today) dailySales += amount;
+              if (paidDate.getMonth() === currentMonth && paidDate.getFullYear() === currentYear) {
+                monthlySales += amount;
               }
 
-              // Check if it's today's sale
-              if (requestDate === today) {
-                dailySales += serviceFee;
-              }
-
-              // Check if it's this month's sale
-              if (requestDate && new Date(requestDate).getMonth() === currentMonth && 
-                  new Date(requestDate).getFullYear() === currentYear) {
-                monthlySales += serviceFee;
+              // Track billed items in salesByService
+              if (Array.isArray(billing.billedItems)) {
+                billing.billedItems.forEach(item => {
+                  const name = item.itemName || "Unknown Item";
+                  salesByService[name] = (salesByService[name] || 0) + (item.totalPrice || 0);
+                });
               }
             }
-          });
-        }
+          }
+        });
+      }
 
-        // Process inventory transactions for medicine and supply usage
-        const medicineUsage = {};
-        const supplyUsage = {};
-        const transactionsByType = {};
-        
-        // Get inventory items details for categorization
-        const inventoryItems = itemsSnapshot.exists() ? itemsSnapshot.val() : {};
-        
-        if (transactionsSnapshot.exists()) {
-          const transactions = transactionsSnapshot.val();
-          
-          Object.values(transactions).forEach((transaction) => {
-            const type = transaction.transactionType || 'unknown';
-            const quantity = Math.abs(transaction.quantityChanged || 0);
-            const itemId = transaction.itemId;
-            const itemName = transaction.itemName || 'Unknown Item';
-            
-            // Track transaction types
-            if (transactionsByType[type]) {
-              transactionsByType[type] += quantity;
-            } else {
-              transactionsByType[type] = quantity;
+      // ======================
+      // 2. Fetch clinicLabRequests to still track service sales
+      // ======================
+      const labSnapshot = await get(ref(database, "clinicLabRequests"));
+      if (labSnapshot.exists()) {
+        const labRequests = labSnapshot.val();
+        Object.values(labRequests).forEach(request => {
+          const serviceFee = parseFloat(request.serviceFee || 0);
+          const requestDate = request.createdAt?.date || request.requestDate;
+
+          if (serviceFee > 0) {
+            const serviceName = request.labTestName || 'Unknown Service';
+            salesByService[serviceName] = (salesByService[serviceName] || 0) + serviceFee;
+
+            if (requestDate === today) dailySales += serviceFee;
+            if (requestDate &&
+              new Date(requestDate).getMonth() === currentMonth &&
+              new Date(requestDate).getFullYear() === currentYear) {
+              monthlySales += serviceFee;
             }
+          }
+        });
+      }
 
-            // Track medicine and supply usage specifically for "usage" transactions
-            if (type.toLowerCase() === 'usage') {
-              // Get item details from inventoryItems
-              const itemDetails = inventoryItems[itemId];
-              const itemCategory = itemDetails?.itemCategory || '';
-              const displayName = itemDetails?.itemName || itemName;
-              const genericName = itemDetails?.genericName;
-              
-              // Use generic name for medicines if available, otherwise use item name
-              const finalDisplayName = genericName && itemCategory.toLowerCase().includes('medicine') 
+      // ======================
+      // 3. Fetch inventory items for usage categorization
+      // ======================
+      const itemsSnapshot = await get(ref(database, "inventoryItems"));
+      const inventoryItems = itemsSnapshot.exists() ? itemsSnapshot.val() : {};
+
+      // ======================
+      // 4. Fetch inventoryTransactions for medicine/supply usage
+      // ======================
+      const transactionsSnapshot = await get(ref(database, "inventoryTransactions"));
+      const medicineUsage = {};
+      const supplyUsage = {};
+      const transactionsByType = {};
+
+      if (transactionsSnapshot.exists()) {
+        const transactions = transactionsSnapshot.val();
+        Object.values(transactions).forEach(transaction => {
+          const type = transaction.transactionType || 'unknown';
+          const quantity = Math.abs(transaction.quantityChanged || 0);
+          const itemId = transaction.itemId;
+          const itemName = transaction.itemName || 'Unknown Item';
+
+          transactionsByType[type] = (transactionsByType[type] || 0) + quantity;
+
+          if (type.toLowerCase() === 'usage') {
+            const itemDetails = inventoryItems[itemId];
+            const itemCategory = itemDetails?.itemCategory || '';
+            const displayName = itemDetails?.itemName || itemName;
+            const genericName = itemDetails?.genericName;
+            const finalDisplayName =
+              genericName && itemCategory.toLowerCase().includes('medicine')
                 ? `${genericName} (${itemDetails.brand || displayName})`
                 : displayName;
 
-              // Categorize based on itemGroup or itemCategory
-              const itemGroup = itemDetails?.itemGroup?.toLowerCase() || '';
-              
-              if (itemGroup === 'medicine' || itemCategory.toLowerCase().includes('medicine') || 
-                  itemCategory.toLowerCase().includes('tablet') || itemCategory.toLowerCase().includes('capsule')) {
-                // Track medicine usage
-                if (medicineUsage[finalDisplayName]) {
-                  medicineUsage[finalDisplayName] += quantity;
-                } else {
-                  medicineUsage[finalDisplayName] = quantity;
-                }
-              } else if (itemGroup === 'supply' || itemCategory.toLowerCase().includes('supply') ||
-                        itemCategory.toLowerCase().includes('equipment') || itemCategory.toLowerCase().includes('consumable')) {
-                // Track supply usage
-                if (supplyUsage[finalDisplayName]) {
-                  supplyUsage[finalDisplayName] += quantity;
-                } else {
-                  supplyUsage[finalDisplayName] = quantity;
-                }
+            const itemGroup = itemDetails?.itemGroup?.toLowerCase() || '';
+
+            if (
+              itemGroup === 'medicine' ||
+              itemCategory.toLowerCase().includes('medicine') ||
+              itemCategory.toLowerCase().includes('tablet') ||
+              itemCategory.toLowerCase().includes('capsule')
+            ) {
+              medicineUsage[finalDisplayName] = (medicineUsage[finalDisplayName] || 0) + quantity;
+            } else if (
+              itemGroup === 'supply' ||
+              itemCategory.toLowerCase().includes('supply') ||
+              itemCategory.toLowerCase().includes('equipment') ||
+              itemCategory.toLowerCase().includes('consumable')
+            ) {
+              supplyUsage[finalDisplayName] = (supplyUsage[finalDisplayName] || 0) + quantity;
+            } else {
+              if (
+                finalDisplayName.toLowerCase().includes('paracetamol') ||
+                finalDisplayName.toLowerCase().includes('medicine') ||
+                finalDisplayName.toLowerCase().includes('tablet') ||
+                finalDisplayName.toLowerCase().includes('capsule')
+              ) {
+                medicineUsage[finalDisplayName] = (medicineUsage[finalDisplayName] || 0) + quantity;
               } else {
-                // If category is unclear, try to determine from item name or default to supply
-                if (finalDisplayName.toLowerCase().includes('paracetamol') || 
-                    finalDisplayName.toLowerCase().includes('medicine') ||
-                    finalDisplayName.toLowerCase().includes('tablet') ||
-                    finalDisplayName.toLowerCase().includes('capsule')) {
-                  if (medicineUsage[finalDisplayName]) {
-                    medicineUsage[finalDisplayName] += quantity;
-                  } else {
-                    medicineUsage[finalDisplayName] = quantity;
-                  }
-                } else {
-                  if (supplyUsage[finalDisplayName]) {
-                    supplyUsage[finalDisplayName] += quantity;
-                  } else {
-                    supplyUsage[finalDisplayName] = quantity;
-                  }
-                }
+                supplyUsage[finalDisplayName] = (supplyUsage[finalDisplayName] || 0) + quantity;
               }
             }
-          });
-        }
-
-        // Convert to chart data
-        const sortedSalesItems = Object.entries(salesByService)
-          .map(([service, amount]) => ({ name: service, value: amount, sales: `₱${amount.toLocaleString()}` }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 10); // Top 10 services
-
-        const sortedMedicineUsage = Object.entries(medicineUsage)
-          .map(([medicine, quantity]) => ({ name: medicine, value: quantity, usage: `${quantity} units` }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 8); // Top 8 medicines
-
-        const sortedSupplyUsage = Object.entries(supplyUsage)
-          .map(([supply, quantity]) => ({ name: supply, value: quantity, usage: `${quantity} units` }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 8); // Top 8 supplies
-
-        const transactionsData = Object.entries(transactionsByType)
-          .map(([type, quantity]) => ({ 
-            name: type.replace(/_/g, ' ').toUpperCase(), 
-            value: quantity 
-          }));
-
-        // Set all data
-        setSalesData({ daily: dailySales, monthly: monthlySales });
-        setSalesItemsData(sortedSalesItems);
-        setMedicineUsageData(sortedMedicineUsage);
-        setSupplyUsageData(sortedSupplyUsage);
-        setInventoryTransactionsData(transactionsData);
-
-      } catch (error) {
-        console.error("Error fetching analytics data: ", error);
-      } finally {
-        setLoading(false);
+          }
+        });
       }
-    };
 
-    fetchAnalyticsData();
-  }, []);
+      // ======================
+      // 5. Convert to chart-friendly data
+      // ======================
+      const sortedSalesItems = Object.entries(salesByService)
+        .map(([name, amount]) => ({ name, value: amount, sales: `₱${amount.toLocaleString()}` }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+      const sortedMedicineUsage = Object.entries(medicineUsage)
+        .map(([name, qty]) => ({ name, value: qty, usage: `${qty} units` }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+      const sortedSupplyUsage = Object.entries(supplyUsage)
+        .map(([name, qty]) => ({ name, value: qty, usage: `${qty} units` }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+      const transactionsData = Object.entries(transactionsByType)
+        .map(([type, qty]) => ({
+          name: type.replace(/_/g, ' ').toUpperCase(),
+          value: qty
+        }));
+
+      // ======================
+      // 6. Set state
+      // ======================
+      setSalesData({ daily: dailySales, monthly: monthlySales });
+      setSalesItemsData(sortedSalesItems);
+      setMedicineUsageData(sortedMedicineUsage);
+      setSupplyUsageData(sortedSupplyUsage);
+      setInventoryTransactionsData(transactionsData);
+
+    } catch (error) {
+      console.error("Error fetching analytics data: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAnalyticsData();
+}, []);
+
 
   // Custom tooltip for sales items
   const SalesItemTooltip = ({ active, payload, label }) => {
@@ -305,6 +309,11 @@ const Analytics = () => {
             ₱{salesData.monthly.toLocaleString()}
           </p>
         </div>
+      </div>
+
+      {/* Common Illness Section */}
+      <div style={{ marginBottom: "40px" }}>
+        <CommonIllnessChart />
       </div>
 
       {/* Charts Grid */}

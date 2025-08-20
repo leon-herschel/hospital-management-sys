@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Select from "react-select"; // Import react-select
+import { ref, get, set, push, update, onValue } from "firebase/database";
+import { database } from "../../firebase/firebase";
+import { getAuth } from "firebase/auth";
 import { ref, get, set, push, update, onValue } from "firebase/database";
 import { database } from "../../firebase/firebase";
 import { getAuth } from "firebase/auth";
@@ -24,6 +28,7 @@ const Transfer = () => {
   const [formData, setFormData] = useState({
     name: "",
     department: "", // Default department
+    department: "", // Default department
     reason: "",
     timestamp: new Date().toLocaleString(),
   });
@@ -44,6 +49,7 @@ const Transfer = () => {
     const user = auth.currentUser;
     if (user) {
       const userRef = ref(database, `users/${user.uid}`);
+
 
       get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
@@ -161,10 +167,18 @@ const Transfer = () => {
     setSelectedItems(
       selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey)
     );
+    setSelectedItems(
+      selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey)
+    );
   };
 
   const handleQuantityChange = (item, value) => {
     const newQuantity = Math.max(parseInt(value, 0));
+    const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
+    const maxQuantity = mainInventoryItem?.quantity || 0;
+
+    if (newQuantity > maxQuantity) {
+      alert(`Quantity cannot exceed ${maxQuantity}`);
     const mainInventoryItem = items.find((i) => i.itemKey === item.itemKey);
     const maxQuantity = mainInventoryItem?.quantity || 0;
 
@@ -214,13 +228,21 @@ const Transfer = () => {
       for (const item of selectedItems) {
         // Record transaction in inventoryTransactions
         const historyPath = `inventoryTransactions`;
+        // Record transaction in inventoryTransactions
+        const historyPath = `inventoryTransactions`;
         const newHistoryRef = push(ref(database, historyPath));
 
         // Get current user details for the transaction
         const auth = getAuth();
         const currentUser = auth.currentUser;
 
+
+        // Get current user details for the transaction
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+
         await set(newHistoryRef, {
+          itemId: item.itemKey,
           itemId: item.itemKey,
           itemName: item.itemName,
           timestamp: formData.timestamp,
@@ -235,6 +257,10 @@ const Transfer = () => {
           transactionType: "transfer_stock",
         });
 
+        const mainInventoryRef = ref(
+          database,
+          `clinicInventoryStock/${item.refKey}/${item.itemKey}`
+        );
         const mainInventoryRef = ref(
           database,
           `clinicInventoryStock/${item.refKey}/${item.itemKey}`
@@ -269,6 +295,9 @@ const Transfer = () => {
             });
           }
         } else {
+          console.error(
+            `Item ${item.itemName} does not exist in CSR's inventory.`
+          );
           console.error(
             `Item ${item.itemName} does not exist in CSR's inventory.`
           );

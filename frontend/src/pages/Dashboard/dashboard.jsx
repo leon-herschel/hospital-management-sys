@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { ref, onValue } from 'firebase/database';
+import { database } from '../../firebase/firebase'; // Adjust path as needed
 import { 
   ShoppingCart, 
   Users, 
@@ -35,81 +37,8 @@ const Dashboard = () => {
     return "Good";
   };
 
-  // Mock Firebase-like database
-  const mockDatabase = {
-    users: {
-      'user1': { department: 'Admin' }
-    },
-    inventoryItems: {
-      'item1': { itemName: 'Bandages', quantity: 5, minQuantity: 20 },
-      'item2': { itemName: 'Syringes', quantity: 0, minQuantity: 50 },
-      'item3': { itemName: 'Aspirin', quantity: 15, minQuantity: 30 },
-      'item4': { itemName: 'Gloves', quantity: 2, minQuantity: 100 }
-    },
-    patients: {
-      'pat1': { 
-        name: 'John Doe', 
-        roomType: 'General',
-        dateTime: Date.now() - (2 * 60 * 60 * 1000),
-        services: [{ type: 'Laboratory', cost: 500 }]
-      },
-      'pat2': { 
-        name: 'Jane Smith', 
-        roomType: 'Laboratory',
-        dateTime: Date.now() - (1 * 60 * 60 * 1000),
-        totalBill: 1200
-      }
-    },
-    referrals: {
-      'ref1': { patientName: 'John Doe', status: 'pending', dateCreated: Date.now() - (2 * 24 * 60 * 60 * 1000) },
-      'ref2': { patientName: 'Jane Smith', status: 'pending', dateCreated: Date.now() - (5 * 24 * 60 * 60 * 1000) },
-      'ref3': { patientName: 'Bob Johnson', status: 'pending', dateCreated: Date.now() - (1 * 24 * 60 * 60 * 1000) }
-    },
-    schedules: {
-      'sched1': { 
-        patientName: 'Bob Johnson', 
-        department: 'Admin',
-        dateTime: Date.now() + (30 * 60 * 1000)
-      },
-      'sched2': { 
-        patientName: 'Alice Brown', 
-        department: 'Admin',
-        dateTime: Date.now() + (45 * 60 * 1000)
-      }
-    },
-    patientPrescription: {
-      'presc1': { 
-        patientName: 'Alice Brown', 
-        status: 'pending', 
-        dateCreated: Date.now() - (26 * 60 * 60 * 1000)
-      },
-      'presc2': { 
-        patientName: 'Charlie Wilson', 
-        status: 'pending', 
-        dateCreated: Date.now() - (10 * 60 * 60 * 1000)
-      }
-    },
-    feedback: {
-      'feed1': { 
-        rating: 1, 
-        message: 'Very poor service, long waiting times', 
-        reviewed: false, 
-        timestamp: Date.now() - (3 * 24 * 60 * 60 * 1000) 
-      },
-      'feed2': { 
-        rating: 2, 
-        message: 'Staff was rude and unprofessional', 
-        reviewed: false, 
-        timestamp: Date.now() - (1 * 24 * 60 * 60 * 1000) 
-      }
-    },
-    transactions: {
-      'trans1': { amount: 2500, dateTime: Date.now() - (1 * 60 * 60 * 1000) },
-      'trans2': { amount: 1800, dateTime: Date.now() - (3 * 60 * 60 * 1000) }
-    }
-  };
-
   useEffect(() => {
+    // Set user role - you can get this from your authentication context
     setUserRole('Admin');
   }, []);
 
@@ -142,176 +71,422 @@ const Dashboard = () => {
       setStats(newStats);
     };
 
-    const calculateInventoryData = async (notifications, newStats) => {
-      if (userRole === "Admin" || userRole === "CSR" || userRole === "Pharmacy") {
-        const inventoryData = mockDatabase.inventoryItems;
-        let lowStockCount = 0;
+    // Enhanced calculateInventoryData function with inventoryTransactions and clinicInventory support
 
-        if (inventoryData) {
-          Object.entries(inventoryData).forEach(([key, item]) => {
+const calculateInventoryData = async (notifications, newStats) => {
+  if (userRole === "Admin" || userRole === "CSR" || userRole === "Pharmacy") {
+    return new Promise((resolve) => {
+      let lowStockCount = 0;
+      const inventoryPromises = [];
+
+      // Get main inventory items
+      const inventoryItemsPromise = new Promise((inventoryResolve) => {
+        const inventoryRef = ref(database, 'inventoryItems');
+        onValue(inventoryRef, (snapshot) => {
+          const inventoryData = snapshot.val() || {};
+          inventoryResolve(inventoryData);
+        });
+      });
+
+      // Get clinic inventory
+      const clinicInventoryPromise = new Promise((clinicResolve) => {
+        const clinicInventoryRef = ref(database, 'clinicInventory');
+        onValue(clinicInventoryRef, (snapshot) => {
+          const clinicInventoryData = snapshot.val() || {};
+          clinicResolve(clinicInventoryData);
+        });
+      });
+
+      // Get recent inventory transactions for context
+      const transactionsPromise = new Promise((transactionResolve) => {
+        const transactionsRef = ref(database, 'inventoryTransactions');
+        onValue(transactionsRef, (snapshot) => {
+          const transactionsData = snapshot.val() || {};
+          transactionResolve(transactionsData);
+        });
+      });
+
+      Promise.all([inventoryItemsPromise, clinicInventoryPromise, transactionsPromise])
+        .then(([inventoryItems, clinicInventory, transactions]) => {
+          
+          // Process main inventory items
+          Object.entries(inventoryItems).forEach(([key, item]) => {
             const quantity = item.quantity || 0;
-            const minQuantity = item.minQuantity || 10;
+            const minQuantity = item.minQuantity || item.reorderLevel || 10;
             
             if (quantity <= minQuantity) {
               lowStockCount++;
+              
+              // Check recent transactions for this item to provide context
+              const recentTransactions = getRecentTransactionsForItem(transactions, item.itemName || item.name, 7); // Last 7 days
+              const lastRestock = getLastRestockDate(recentTransactions);
+              
+              let contextMessage = `${item.itemName || item.name}: ${quantity} remaining (min: ${minQuantity})`;
+              if (lastRestock) {
+                const daysSinceRestock = Math.floor((Date.now() - new Date(lastRestock)) / (1000 * 60 * 60 * 24));
+                contextMessage += ` - Last restocked ${daysSinceRestock} days ago`;
+              }
+              
               notifications.push({
                 id: `inventory-${key}`,
                 type: 'inventory',
                 priority: quantity === 0 ? 'high' : 'medium',
                 title: quantity === 0 ? 'Out of Stock' : 'Low Stock Alert',
-                message: `${item.itemName}: ${quantity} remaining (min: ${minQuantity})`,
+                message: contextMessage,
                 timestamp: new Date().toISOString(),
                 category: 'Inventory',
-                actionUrl: '/inventory'
+                actionUrl: '/inventory',
+                metadata: {
+                  itemId: key,
+                  currentStock: quantity,
+                  minStock: minQuantity,
+                  lastRestock: lastRestock,
+                  location: 'main'
+                }
               });
             }
           });
-        }
-        newStats.lowStockCount = lowStockCount;
-      }
-    };
 
-    const calculatePatientData = async (newStats) => {
-      const patientsData = mockDatabase.patients;
-      let newPatientCount = 0;
-      let laboratoryCount = 0;
-
-      if (patientsData) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        Object.entries(patientsData).forEach(([key, patient]) => {
-          const patientTimestamp = patient.dateTime;
-          const patientDate = new Date(patientTimestamp);
-          patientDate.setHours(0, 0, 0, 0);
-
-          if (patientDate.getTime() === today.getTime()) {
-            if (userRole === "Admin" || userRole === patient.roomType) {
-              newPatientCount++;
+          // Process clinic inventory items
+          Object.entries(clinicInventory).forEach(([key, item]) => {
+            const quantity = item.quantity || 0;
+            const minQuantity = item.minQuantity || item.reorderLevel || 5; // Typically lower threshold for clinic items
+            
+            if (quantity <= minQuantity) {
+              lowStockCount++;
               
-              if (patient.roomType === "Laboratory" || 
-                  (patient.services && patient.services.some(s => s.type === "Laboratory"))) {
-                laboratoryCount++;
-              }
+              notifications.push({
+                id: `clinic-inventory-${key}`,
+                type: 'inventory',
+                priority: quantity === 0 ? 'high' : 'medium',
+                title: quantity === 0 ? 'Clinic Out of Stock' : 'Clinic Low Stock',
+                message: `Clinic: ${item.itemName || item.name}: ${quantity} remaining (min: ${minQuantity})`,
+                timestamp: new Date().toISOString(),
+                category: 'Clinic Inventory',
+                actionUrl: '/clinic-inventory',
+                metadata: {
+                  itemId: key,
+                  currentStock: quantity,
+                  minStock: minQuantity,
+                  location: 'clinic'
+                }
+              });
             }
+          });
+
+          // Check for items with suspicious transaction patterns
+          checkForSuspiciousTransactionPatterns(transactions, notifications);
+
+          // Check for items that haven't been restocked in a long time
+          checkForOverdueRestocking(inventoryItems, transactions, notifications);
+
+          newStats.lowStockCount = lowStockCount;
+          resolve();
+        })
+        .catch((error) => {
+          console.error('Error calculating inventory data:', error);
+          newStats.lowStockCount = 0;
+          resolve();
+        });
+    });
+  }
+};
+
+// Helper function to get recent transactions for a specific item
+const getRecentTransactionsForItem = (transactions, itemName, days = 7) => {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  
+  return Object.entries(transactions)
+    .filter(([key, transaction]) => {
+      const transactionDate = new Date(transaction.dateTime || transaction.date);
+      const matchesItem = (transaction.itemName || transaction.item) === itemName;
+      return matchesItem && transactionDate >= cutoffDate;
+    })
+    .map(([key, transaction]) => ({ id: key, ...transaction }))
+    .sort((a, b) => new Date(b.dateTime || b.date) - new Date(a.dateTime || a.date));
+};
+
+// Helper function to get the last restock date for an item
+const getLastRestockDate = (transactions) => {
+  const restockTransaction = transactions.find(t => 
+    t.type === 'stock_in' || 
+    t.type === 'restock' || 
+    t.type === 'purchase' ||
+    (t.quantity && parseInt(t.quantity) > 0 && t.transactionType === 'in')
+  );
+  return restockTransaction ? (restockTransaction.dateTime || restockTransaction.date) : null;
+};
+
+// Helper function to check for suspicious transaction patterns
+const checkForSuspiciousTransactionPatterns = (transactions, notifications) => {
+  const now = new Date();
+  const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  
+  // Group transactions by item in the last 24 hours
+  const recentTransactionsByItem = {};
+  
+  Object.entries(transactions).forEach(([key, transaction]) => {
+    const transactionDate = new Date(transaction.dateTime || transaction.date);
+    if (transactionDate >= last24Hours) {
+      const itemName = transaction.itemName || transaction.item || 'Unknown Item';
+      if (!recentTransactionsByItem[itemName]) {
+        recentTransactionsByItem[itemName] = [];
+      }
+      recentTransactionsByItem[itemName].push({ id: key, ...transaction });
+    }
+  });
+
+  // Check for items with high outgoing transactions (possible high demand or issues)
+  Object.entries(recentTransactionsByItem).forEach(([itemName, itemTransactions]) => {
+    const outgoingTransactions = itemTransactions.filter(t => 
+      t.type === 'stock_out' || 
+      t.type === 'sale' || 
+      t.type === 'dispensed' ||
+      (t.quantity && parseInt(t.quantity) < 0) ||
+      t.transactionType === 'out'
+    );
+
+    if (outgoingTransactions.length >= 5) { // 5 or more outgoing transactions in 24 hours
+      const totalOutgoing = outgoingTransactions.reduce((sum, t) => 
+        sum + Math.abs(parseInt(t.quantity) || 1), 0
+      );
+
+      notifications.push({
+        id: `high-demand-${itemName.replace(/\s+/g, '-')}`,
+        type: 'inventory',
+        priority: 'medium',
+        title: 'High Demand Alert',
+        message: `${itemName}: ${outgoingTransactions.length} transactions (${totalOutgoing} units) in last 24h`,
+        timestamp: new Date().toISOString(),
+        category: 'Inventory Trends',
+        actionUrl: '/inventory-analytics',
+        metadata: {
+          itemName: itemName,
+          transactionCount: outgoingTransactions.length,
+          totalQuantity: totalOutgoing,
+          timeframe: '24h'
+        }
+      });
+    }
+  });
+};
+
+// Helper function to check for items that haven't been restocked in a long time
+const checkForOverdueRestocking = (inventoryItems, transactions, notifications) => {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  Object.entries(inventoryItems).forEach(([key, item]) => {
+    const itemName = item.itemName || item.name;
+    const quantity = item.quantity || 0;
+    const maxQuantity = item.maxQuantity || 100;
+    
+    // Only check items that are not currently well-stocked
+    if (quantity < maxQuantity * 0.8) { // Less than 80% of max capacity
+      const recentTransactions = getRecentTransactionsForItem(transactions, itemName, 30);
+      const lastRestock = getLastRestockDate(recentTransactions);
+      
+      if (!lastRestock || new Date(lastRestock) < thirtyDaysAgo) {
+        const daysSinceRestock = lastRestock ? 
+          Math.floor((now - new Date(lastRestock)) / (1000 * 60 * 60 * 24)) : 
+          'Never';
+
+        notifications.push({
+          id: `overdue-restock-${key}`,
+          type: 'inventory',
+          priority: 'medium',
+          title: 'Overdue Restock',
+          message: `${itemName}: No restock in ${daysSinceRestock === 'Never' ? 'over 30 days' : daysSinceRestock + ' days'}`,
+          timestamp: new Date().toISOString(),
+          category: 'Inventory Management',
+          actionUrl: '/inventory',
+          metadata: {
+            itemId: key,
+            itemName: itemName,
+            currentStock: quantity,
+            maxStock: maxQuantity,
+            lastRestock: lastRestock,
+            daysSinceRestock: daysSinceRestock
           }
         });
       }
+    }
+  });
+};
 
-      newStats.newPatientCount = newPatientCount;
-      newStats.laboratoryCount = laboratoryCount;
+    const calculatePatientData = async (newStats) => {
+      return new Promise((resolve) => {
+        const patientsRef = ref(database, 'patients');
+        onValue(patientsRef, (snapshot) => {
+          let newPatientCount = 0;
+          let laboratoryCount = 0;
+          const patientsData = snapshot.val();
+
+          if (patientsData) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            Object.entries(patientsData).forEach(([key, patient]) => {
+              const patientTimestamp = patient.dateTime;
+              const patientDate = new Date(patientTimestamp);
+              patientDate.setHours(0, 0, 0, 0);
+
+              if (patientDate.getTime() === today.getTime()) {
+                if (userRole === "Admin" || userRole === patient.roomType) {
+                  newPatientCount++;
+                  
+                  if (patient.roomType === "Laboratory" || 
+                      (patient.services && patient.services.some(s => s.type === "Laboratory"))) {
+                    laboratoryCount++;
+                  }
+                }
+              }
+            });
+          }
+
+          newStats.newPatientCount = newPatientCount;
+          newStats.laboratoryCount = laboratoryCount;
+          resolve();
+        });
+      });
     };
 
     const calculateReferralData = async (notifications, newStats) => {
       if (userRole === "Admin" || userRole === "Doctor") {
-        const referralsData = mockDatabase.referrals;
-        let pendingCount = 0;
+        return new Promise((resolve) => {
+          const referralsRef = ref(database, 'referrals');
+          onValue(referralsRef, (snapshot) => {
+            let pendingCount = 0;
+            const referralsData = snapshot.val();
 
-        if (referralsData) {
-          Object.entries(referralsData).forEach(([key, referral]) => {
-            if (referral.status === 'pending') {
-              pendingCount++;
-              const daysSince = Math.floor((Date.now() - referral.dateCreated) / (1000 * 60 * 60 * 24));
-              
-              notifications.push({
-                id: `referral-${key}`,
-                type: 'referral',
-                priority: daysSince > 3 ? 'high' : 'medium',
-                title: 'Pending Referral',
-                message: `${referral.patientName} - ${daysSince} days pending`,
-                timestamp: referral.dateCreated,
-                category: 'Referrals',
-                actionUrl: '/referrals'
+            if (referralsData) {
+              Object.entries(referralsData).forEach(([key, referral]) => {
+                if (referral.status === 'pending') {
+                  pendingCount++;
+                  const daysSince = Math.floor((Date.now() - referral.dateCreated) / (1000 * 60 * 60 * 24));
+                  
+                  notifications.push({
+                    id: `referral-${key}`,
+                    type: 'referral',
+                    priority: daysSince > 3 ? 'high' : 'medium',
+                    title: 'Pending Referral',
+                    message: `${referral.patientName} - ${daysSince} days pending`,
+                    timestamp: referral.dateCreated,
+                    category: 'Referrals',
+                    actionUrl: '/referrals'
+                  });
+                }
               });
             }
+            newStats.pendingReferrals = pendingCount;
+            resolve();
           });
-        }
-        newStats.pendingReferrals = pendingCount;
+        });
       }
     };
 
     const calculateScheduleData = async (notifications, newStats) => {
-      const schedulesData = mockDatabase.schedules;
-      let upcomingCount = 0;
+      return new Promise((resolve) => {
+        const schedulesRef = ref(database, 'schedules');
+        onValue(schedulesRef, (snapshot) => {
+          let upcomingCount = 0;
+          const schedulesData = snapshot.val();
 
-      if (schedulesData) {
-        const now = new Date();
-        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+          if (schedulesData) {
+            const now = new Date();
+            const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
-        Object.entries(schedulesData).forEach(([key, schedule]) => {
-          const scheduleTime = new Date(schedule.dateTime);
-          
-          if (scheduleTime > now && scheduleTime <= oneHourFromNow) {
-            if (userRole === "Admin" || userRole === schedule.department) {
-              upcomingCount++;
-              notifications.push({
-                id: `schedule-${key}`,
-                type: 'schedule',
-                priority: 'high',
-                title: 'Upcoming Appointment',
-                message: `${schedule.patientName} at ${scheduleTime.toLocaleTimeString()}`,
-                timestamp: schedule.dateTime,
-                category: 'Schedules',
-                actionUrl: '/schedules'
-              });
-            }
+            Object.entries(schedulesData).forEach(([key, schedule]) => {
+              const scheduleTime = new Date(schedule.dateTime);
+              
+              if (scheduleTime > now && scheduleTime <= oneHourFromNow) {
+                if (userRole === "Admin" || userRole === schedule.department) {
+                  upcomingCount++;
+                  notifications.push({
+                    id: `schedule-${key}`,
+                    type: 'schedule',
+                    priority: 'high',
+                    title: 'Upcoming Appointment',
+                    message: `${schedule.patientName} at ${scheduleTime.toLocaleTimeString()}`,
+                    timestamp: schedule.dateTime,
+                    category: 'Schedules',
+                    actionUrl: '/schedules'
+                  });
+                }
+              }
+            });
           }
+          newStats.upcomingAppointments = upcomingCount;
+          resolve();
         });
-      }
-      newStats.upcomingAppointments = upcomingCount;
+      });
     };
 
     const calculatePrescriptionData = async (notifications, newStats) => {
       if (userRole === "Admin" || userRole === "Pharmacy" || userRole === "Doctor") {
-        const prescriptionsData = mockDatabase.patientPrescription;
-        let pendingCount = 0;
+        return new Promise((resolve) => {
+          const prescriptionsRef = ref(database, 'patientPrescription');
+          onValue(prescriptionsRef, (snapshot) => {
+            let pendingCount = 0;
+            const prescriptionsData = snapshot.val();
 
-        if (prescriptionsData) {
-          Object.entries(prescriptionsData).forEach(([key, prescription]) => {
-            if (prescription.status === 'pending') {
-              pendingCount++;
-              const hoursSince = Math.floor((Date.now() - prescription.dateCreated) / (1000 * 60 * 60));
-              
-              notifications.push({
-                id: `prescription-${key}`,
-                type: 'prescription',
-                priority: hoursSince > 24 ? 'high' : 'medium',
-                title: 'Pending Prescription',
-                message: `${prescription.patientName} - ${hoursSince}h ago`,
-                timestamp: prescription.dateCreated,
-                category: 'Prescriptions',
-                actionUrl: '/prescriptions'
+            if (prescriptionsData) {
+              Object.entries(prescriptionsData).forEach(([key, prescription]) => {
+                if (prescription.status === 'pending') {
+                  pendingCount++;
+                  const hoursSince = Math.floor((Date.now() - prescription.dateCreated) / (1000 * 60 * 60));
+                  
+                  notifications.push({
+                    id: `prescription-${key}`,
+                    type: 'prescription',
+                    priority: hoursSince > 24 ? 'high' : 'medium',
+                    title: 'Pending Prescription',
+                    message: `${prescription.patientName} - ${hoursSince}h ago`,
+                    timestamp: prescription.dateCreated,
+                    category: 'Prescriptions',
+                    actionUrl: '/prescriptions'
+                  });
+                }
               });
             }
+            newStats.pendingPrescriptions = pendingCount;
+            resolve();
           });
-        }
-        newStats.pendingPrescriptions = pendingCount;
+        });
       }
     };
 
     const calculateFeedbackData = async (notifications, newStats) => {
       if (userRole === "Admin") {
-        const feedbackData = mockDatabase.feedback;
-        let unreadCount = 0;
+        return new Promise((resolve) => {
+          const feedbackRef = ref(database, 'feedback');
+          onValue(feedbackRef, (snapshot) => {
+            let unreadCount = 0;
+            const feedbackData = snapshot.val();
 
-        if (feedbackData) {
-          Object.entries(feedbackData).forEach(([key, feedback]) => {
-            if (!feedback.reviewed) {
-              unreadCount++;
-              notifications.push({
-                id: `feedback-${key}`,
-                type: 'feedback',
-                priority: feedback.rating <= 2 ? 'high' : 'low',
-                title: 'New Feedback',
-                message: `${feedback.rating}⭐ - ${feedback.message?.substring(0, 50)}...`,
-                timestamp: feedback.timestamp,
-                category: 'Feedback',
-                actionUrl: '/feedback'
+            if (feedbackData) {
+              Object.entries(feedbackData).forEach(([key, feedback]) => {
+                // Check if status is not "reviewed" (unreviewed feedback)
+                if (feedback.status !== "reviewed") {
+                  unreadCount++;
+                  notifications.push({
+                    id: `feedback-${key}`,
+                    type: 'feedback',
+                    priority: feedback.rating <= 2 ? 'high' : 'low',
+                    title: 'New Feedback',
+                    message: `${feedback.rating}⭐ - ${feedback.patientName} - ${feedback.comment?.substring(0, 50)}...`,
+                    timestamp: feedback.createdAt || feedback.updatedAt,
+                    category: 'Feedback',
+                    actionUrl: '/feedback'
+                  });
+                }
               });
             }
+            newStats.unreadFeedback = unreadCount;
+            resolve();
           });
-        }
-        newStats.unreadFeedback = unreadCount;
+        });
       }
     };
 
@@ -320,40 +495,87 @@ const Dashboard = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // From transactions
-      const transactionsData = mockDatabase.transactions;
-      if (transactionsData) {
-        Object.entries(transactionsData).forEach(([key, transaction]) => {
-          const transactionDate = new Date(transaction.dateTime);
-          transactionDate.setHours(0, 0, 0, 0);
+      // Create promises for all sales data sources
+      const clinicBillingPromise = new Promise((resolve) => {
+        const clinicBillingRef = ref(database, 'clinicBilling');
+        onValue(clinicBillingRef, (snapshot) => {
+          let clinicSales = 0;
+          const billingData = snapshot.val();
           
-          if (transactionDate.getTime() === today.getTime()) {
-            totalSales += parseFloat(transaction.amount || 0);
+          if (billingData) {
+            Object.entries(billingData).forEach(([key, billing]) => {
+              if (billing.status === 'paid' && billing.dateTime) {
+                const billingDate = new Date(billing.dateTime);
+                billingDate.setHours(0, 0, 0, 0);
+                
+                if (billingDate.getTime() === today.getTime()) {
+                  clinicSales += parseFloat(billing.totalAmount || billing.amount || 0);
+                }
+              }
+            });
           }
+          resolve(clinicSales);
         });
-      }
+      });
 
-      // From patient bills
-      const patientsData = mockDatabase.patients;
-      if (patientsData) {
-        Object.entries(patientsData).forEach(([key, patient]) => {
-          const patientDate = new Date(patient.dateTime);
-          patientDate.setHours(0, 0, 0, 0);
+      const inventoryTransactionsPromise = new Promise((resolve) => {
+        const inventoryTransactionsRef = ref(database, 'inventoryTransactions');
+        onValue(inventoryTransactionsRef, (snapshot) => {
+          let inventorySales = 0;
+          const transactionsData = snapshot.val();
           
-          if (patientDate.getTime() === today.getTime()) {
-            if (patient.services) {
-              patient.services.forEach(service => {
-                totalSales += parseFloat(service.cost || 0);
-              });
-            }
-            if (patient.totalBill) {
-              totalSales += parseFloat(patient.totalBill || 0);
-            }
+          if (transactionsData) {
+            Object.entries(transactionsData).forEach(([key, transaction]) => {
+              if (transaction.dateTime) {
+                const transactionDate = new Date(transaction.dateTime);
+                transactionDate.setHours(0, 0, 0, 0);
+                
+                if (transactionDate.getTime() === today.getTime()) {
+                  inventorySales += parseFloat(transaction.totalAmount || transaction.amount || 0);
+                }
+              }
+            });
           }
+          resolve(inventorySales);
         });
-      }
+      });
 
-      newStats.salesToday = totalSales;
+      const medicalServicesTransactionsPromise = new Promise((resolve) => {
+        const medicalServicesRef = ref(database, 'medicalServicesTransactions');
+        onValue(medicalServicesRef, (snapshot) => {
+          let servicesSales = 0;
+          const servicesData = snapshot.val();
+          
+          if (servicesData) {
+            Object.entries(servicesData).forEach(([key, service]) => {
+              if (service.dateTime) {
+                const serviceDate = new Date(service.dateTime);
+                serviceDate.setHours(0, 0, 0, 0);
+                
+                if (serviceDate.getTime() === today.getTime()) {
+                  servicesSales += parseFloat(service.totalAmount || service.amount || 0);
+                }
+              }
+            });
+          }
+          resolve(servicesSales);
+        });
+      });
+
+      // Wait for all promises to resolve and sum up the sales
+      try {
+        const [clinicSales, inventorySales, servicesSales] = await Promise.all([
+          clinicBillingPromise,
+          inventoryTransactionsPromise,
+          medicalServicesTransactionsPromise
+        ]);
+
+        totalSales = clinicSales + inventorySales + servicesSales;
+        newStats.salesToday = totalSales;
+      } catch (error) {
+        console.error('Error calculating sales data:', error);
+        newStats.salesToday = 0;
+      }
     };
 
     fetchDashboardData();
