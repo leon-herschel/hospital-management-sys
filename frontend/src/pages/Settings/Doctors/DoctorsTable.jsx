@@ -6,6 +6,7 @@ import AddDoctorsModal from "./AddDoctorsModal";
 import ProfessionalFeeModal from "./ProfessionalFeeModal";
 import AvailabilityModal from "./AvailabilityModal";
 import DoctorFeedbacks from "./DoctorFeedBacks";
+import EditDoctorsAgreement from "./EditDoctorsAgreement";
 
 const DoctorsTable = () => {
   const [doctors, setDoctors] = useState([]);
@@ -18,6 +19,7 @@ const DoctorsTable = () => {
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [clinicsMap, setClinicsMap] = useState({});
   const [activeTab, setActiveTab] = useState('doctors'); // 'doctors' or 'feedbacks'
+const [showAgreementModal, setShowAgreementModal] = useState(false);
 
   useEffect(() => {
     const doctorsRef = ref(database, "doctors");
@@ -166,6 +168,14 @@ const DoctorsTable = () => {
               </h2>
               <p className="text-gray-600 mt-1">Manage doctor profiles, fees, and availability</p>
             </div>
+              
+    <button
+      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md flex items-center space-x-2 transition-colors"
+      onClick={() => setShowAgreementModal(true)}
+    >
+      <Users size={20} />
+      <span>Edit Doctor's Agreement</span>
+    </button>
             <button
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md flex items-center space-x-2 transition-colors"
               onClick={() => setShowAddDoctorModal(true)}
@@ -380,7 +390,22 @@ const DoctorsTable = () => {
           onClose={() => setShowAvailabilityModal(false)}
         />
       )}
-
+{showAgreementModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-auto p-4">
+    <div className="bg-white rounded-lg p-6 w-full max-w-3xl shadow-xl">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Edit Doctor's Agreement</h2>
+        <button
+          onClick={() => setShowAgreementModal(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+      </div>
+      <EditDoctorsAgreement />
+    </div>
+  </div>
+)}
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -414,6 +439,7 @@ const DoctorsTable = () => {
         </div>
       )}
     </div>
+      
   );
 };
 

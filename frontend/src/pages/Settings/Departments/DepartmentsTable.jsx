@@ -15,6 +15,11 @@ const DepartmentsTable = () => {
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Helper function to check if department is system-locked
+  const isSystemDepartment = (departmentId) => {
+    return departmentId === 'Admin' || departmentId === 'SuperAdmin';
+  };
+
   useEffect(() => {
     const fetchDepartments = async () => {
       const departmentsRef = ref(database, 'departments');
@@ -132,12 +137,12 @@ const DepartmentsTable = () => {
 
   const getPermissionStats = () => {
     const totalDepts = departments.length;
-    const adminDepts = departments.filter(dept => dept.id === 'Admin').length;
-    const customDepts = totalDepts - adminDepts;
+    const systemDepts = departments.filter(dept => isSystemDepartment(dept.id)).length;
+    const customDepts = totalDepts - systemDepts;
     
     return {
       total: totalDepts,
-      admin: adminDepts,
+      system: systemDepts,
       custom: customDepts
     };
   };
@@ -172,9 +177,9 @@ const DepartmentsTable = () => {
             <p className="text-xs text-blue-600">Active departments</p>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400">
-            <h3 className="text-sm font-semibold text-purple-800">Admin Departments</h3>
-            <p className="text-2xl font-bold text-purple-900">{stats.admin}</p>
-            <p className="text-xs text-purple-600">System administrators</p>
+            <h3 className="text-sm font-semibold text-purple-800">System Departments</h3>
+            <p className="text-2xl font-bold text-purple-900">{stats.system}</p>
+            <p className="text-xs text-purple-600">Protected system departments</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
             <h3 className="text-sm font-semibold text-green-800">Custom Departments</h3>
@@ -221,23 +226,32 @@ const DepartmentsTable = () => {
                   <td className="px-4 py-3 text-left">
                     <div className="flex items-center space-x-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        department.id === 'Admin' ? 'bg-purple-100' : 'bg-blue-100'
+                        isSystemDepartment(department.id) ? 'bg-purple-100' : 'bg-blue-100'
                       }`}>
                         <Building2 size={20} className={
-                          department.id === 'Admin' ? 'text-purple-600' : 'text-blue-600'
+                          isSystemDepartment(department.id) ? 'text-purple-600' : 'text-blue-600'
                         } />
                       </div>
                       <div>
                         <div className="font-medium text-gray-900 flex items-center space-x-2">
                           <span>{department.id}</span>
-                          {department.id === 'Admin' && (
-                            <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded">
-                              SYSTEM
+                          {isSystemDepartment(department.id) && (
+                            <span className={`text-xs font-medium px-2 py-1 rounded ${
+                              department.id === 'SuperAdmin' 
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {department.id === 'SuperAdmin' ? 'SUPER ADMIN' : 'SYSTEM'}
                             </span>
                           )}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {department.id === 'Admin' ? 'System Administrator' : 'Custom Department'}
+                          {department.id === 'SuperAdmin' 
+                            ? 'Super Administrator' 
+                            : department.id === 'Admin' 
+                              ? 'System Administrator' 
+                              : 'Custom Department'
+                          }
                         </div>
                       </div>
                     </div>
@@ -316,11 +330,11 @@ const DepartmentsTable = () => {
                     <div className="flex flex-col space-y-1">
                       <button
                         className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          department.id === 'Admin' 
+                          isSystemDepartment(department.id)
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                             : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
-                        disabled={department.id === 'Admin'}
+                        disabled={isSystemDepartment(department.id)}
                         onClick={() => {
                           setSelectedDepartment(department);
                           setShowEditDepartmentModal(true);
@@ -330,12 +344,12 @@ const DepartmentsTable = () => {
                       </button>
                       <button
                         className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          department.id === 'Admin'
+                          isSystemDepartment(department.id)
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-red-600 hover:bg-red-700 text-white'
                         }`}
                         onClick={() => confirmDeleteDepartment(department)}
-                        disabled={department.id === 'Admin'}
+                        disabled={isSystemDepartment(department.id)}
                       >
                         Delete
                       </button>
@@ -345,7 +359,7 @@ const DepartmentsTable = () => {
               ))}
               {filteredDepartments.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="px-6 py-8 text-gray-500">
+                  <td colSpan="9" className="px-6 py-8 text-gray-500">
                     <div className="flex flex-col items-center space-y-2">
                       <Building2 size={32} className="text-gray-300" />
                       <span>No departments found.</span>

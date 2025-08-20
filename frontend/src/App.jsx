@@ -1,7 +1,6 @@
 import SignIn from "./components/auth/login/signIn";
 import Dashboard from "./pages/Dashboard/dashboard";
 import Patients from "./pages/Patients/patients";
-import Inventory from "./pages/Inventory/inventory";
 import Analytics from "./pages/Analytics/analytics";
 import Billing from "./pages/Billing/billing";
 import InventoryHistory from "./pages/History/InventoryHistory";
@@ -39,6 +38,9 @@ import ChangePasswordPage from "./components/navigation/ChangePassword";
 import RequestLabTest from "./pages/AdminAppointments/Laboratory/RequestLabTest";
 import SpecialistAppointments from "./pages/AdminAppointments/Consultation/SpecialistAppointments";
 import LabTestReport from "./pages/AdminAppointments/Laboratory/LabTestReport";
+import DoctorProfile from "./pages/Settings/Doctors/DoctorProfile";
+import Inventory from "./pages/Inventory/InventoryItems";
+import GenerateMedicalCertificate from "./pages/Settings/Doctors/GenerateMedicalCertificate"
 import { element } from "prop-types";
 import path from "path";
 
@@ -60,7 +62,7 @@ function App() {
         { path: "dashboard", element: <Dashboard /> },
         { path: "patients", element: <Patients /> },
         { path: "patients/:id", element: <ViewPatient /> },
-        { path: "inventory", element: <Inventory /> },
+       {path: "inventory", element: <Inventory /> },
         { path: "analytics", element: <Analytics /> },
         { path: "settings", element: <Settings /> },
         { path: "users", element: <UsersTable /> },
@@ -99,6 +101,8 @@ function App() {
         { path: "RequestLabTest", element: <RequestLabTest /> },
         { path: "LabTestReport", element: <LabTestReport /> },
         { path: "SpecialistAppointments", element: <SpecialistAppointments /> },
+        {path: "doctor-profile", element: <DoctorProfile />},
+        { path: "generate-medical-certificate", element: <GenerateMedicalCertificate /> }
       ],
     },
     {
