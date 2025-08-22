@@ -1,7 +1,24 @@
 import { useState, useEffect } from 'react';
 import { ref, get, set, remove } from 'firebase/database';
 import { database } from '../../../firebase/firebase';
-import { Building2, Search, Shield, Eye, History, Users, CreditCard, Settings } from 'lucide-react';
+import { 
+  Building2, 
+  Search, 
+  Shield, 
+  Eye, 
+  History, 
+  Users, 
+  CreditCard, 
+  Settings, 
+  Stethoscope,
+  FlaskConical,
+  UserCog,
+  BarChart3,
+  FileText,
+  ArrowRightLeft,
+  UserCheck,
+  UserPlus
+} from 'lucide-react';
 import AddDepartmentModal from './AddDepartmentModal';
 import EditDepartmentModal from './EditDepartmentModal';
 
@@ -130,7 +147,16 @@ const DepartmentsTable = () => {
       accessPatients: <Users size={14} />,
       accessBilling: <CreditCard size={14} />,
       accessSettings: <Settings size={14} />,
-      accessLaboratory: <Settings size={14} />
+      accessLaboratory: <FlaskConical size={14} />,
+      accessAnalytics: <BarChart3 size={14} />,
+      accessMedicalCertificate: <FileText size={14} />,
+      accessInventoryTransactions: <ArrowRightLeft size={14} />,
+      // Mobile Features icons
+      accessDoctorScreen: <Stethoscope size={14} />,
+      accessLabScreen: <FlaskConical size={14} />,
+      accessAdminScreen: <UserCog size={14} />,
+      accessClinicStaffScreen: <UserCheck size={14} />,
+      accessNurseScreen: <UserPlus size={14} />
     };
     return icons[permissionType] || <Shield size={14} />;
   };
@@ -216,7 +242,15 @@ const DepartmentsTable = () => {
                 <th className="px-4 py-3">Patients</th>
                 <th className="px-4 py-3">Billing</th>
                 <th className="px-4 py-3">Laboratory</th>
+                <th className="px-4 py-3">Analytics</th>
+                <th className="px-4 py-3">Medical Certificate</th>
+                <th className="px-4 py-3">Inventory Transactions</th>
                 <th className="px-4 py-3">Settings</th>
+                <th className="px-4 py-3 bg-blue-50">Doctor Screen</th>
+                <th className="px-4 py-3 bg-blue-50">Lab Screen</th>
+                <th className="px-4 py-3 bg-blue-50">Admin Screen</th>
+                <th className="px-4 py-3 bg-blue-50">Clinic Staff Screen</th>
+                <th className="px-4 py-3 bg-blue-50">Nurse Screen</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
@@ -318,11 +352,91 @@ const DepartmentsTable = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessAnalytics')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessAnalytics ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessAnalytics ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessMedicalCertificate')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessMedicalCertificate ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessMedicalCertificate ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessInventoryTransactions')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessInventoryTransactions ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessInventoryTransactions ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center space-x-1">
                       {getPermissionIcon('accessSettings')}
                       <span className={`text-sm font-medium ${
                         department.permissions?.accessSettings ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {department.permissions?.accessSettings ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 bg-blue-50">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessDoctorScreen')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessDoctorScreen ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessDoctorScreen ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 bg-blue-50">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessLabScreen')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessLabScreen ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessLabScreen ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 bg-blue-50">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessAdminScreen')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessAdminScreen ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessAdminScreen ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 bg-blue-50">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessClinicStaffScreen')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessClinicStaffScreen ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessClinicStaffScreen ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 bg-blue-50">
+                    <div className="flex items-center justify-center space-x-1">
+                      {getPermissionIcon('accessNurseScreen')}
+                      <span className={`text-sm font-medium ${
+                        department.permissions?.accessNurseScreen ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {department.permissions?.accessNurseScreen ? 'Yes' : 'No'}
                       </span>
                     </div>
                   </td>
@@ -359,7 +473,7 @@ const DepartmentsTable = () => {
               ))}
               {filteredDepartments.length === 0 && (
                 <tr>
-                  <td colSpan="9" className="px-6 py-8 text-gray-500">
+                  <td colSpan="17" className="px-6 py-8 text-gray-500">
                     <div className="flex flex-col items-center space-y-2">
                       <Building2 size={32} className="text-gray-300" />
                       <span>No departments found.</span>

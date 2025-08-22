@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ref, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import { useAuth } from "../../context/authContext/authContext"; // Assuming you have an auth context
 import { 
   PieChart, 
   Pie, 
@@ -14,28 +15,152 @@ import {
   ResponsiveContainer
 } from "recharts";
 
-const CommonIllnessChart = () => {
+const CommonIllnessChart = ({ selectedClinic = null, userRole = null, userClinicAffiliation = null, clinicsData = null }) => {
+  const { currentUser } = useAuth();
   const [illnessData, setIllnessData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalConsultations, setTotalConsultations] = useState(0);
+  const [currentUserRole, setCurrentUserRole] = useState(userRole);
+  const [currentUserClinic, setCurrentUserClinic] = useState(userClinicAffiliation);
+  const [clinics, setClinics] = useState(clinicsData || {});
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#00ff00", "#ff69b4"];
 
+  // Fetch user data if not provided as props
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (userRole && userClinicAffiliation) {
+        setCurrentUserRole(userRole);
+        setCurrentUserClinic(userClinicAffiliation);
+        if (clinicsData) {
+          setClinics(clinicsData);
+        }
+        return;
+      }
+
+      if (!currentUser?.uid) return;
+      
+      try {
+        const userSnapshot = await get(ref(database, `users/${currentUser.uid}`));
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.val();
+          setCurrentUserRole(userData.role);
+          setCurrentUserClinic(userData.clinicAffiliation);
+        }
+
+        // Fetch clinics data if not provided and user is superadmin
+        if (!clinicsData && userData?.role === 'superadmin') {
+          const clinicsSnapshot = await get(ref(database, "clinics"));
+          if (clinicsSnapshot.exists()) {
+            setClinics(clinicsSnapshot.val());
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data: ", error);
+      }
+    };
+
+    fetchUserData();
+  }, [currentUser, userRole, userClinicAffiliation, clinicsData]);
+
+  // Filter medical history data by clinic affiliation
+  const filterMedicalHistoryByClinic = async (medicalHistoryData) => {
+    try {
+      // First, get patient data to check clinicsVisited
+      const patientsSnapshot = await get(ref(database, "patients"));
+      const patientsData = patientsSnapshot.exists() ? patientsSnapshot.val() : {};
+
+      if (currentUserRole === 'superadmin') {
+        if (selectedClinic === 'all' || !selectedClinic) {
+          return medicalHistoryData;
+        }
+        // Filter by selected clinic
+        return Object.fromEntries(
+          Object.entries(medicalHistoryData).filter(([patientId, patientData]) => {
+            // Check if patient has visited the selected clinic
+            const patient = patientsData[patientId];
+            const hasVisitedClinic = patient?.clinicsVisited?.[selectedClinic];
+            
+            if (!hasVisitedClinic) return false;
+            
+            // Also check if any entry in the patient's history belongs to the selected clinic
+            if (patientData.entries) {
+              return Object.values(patientData.entries).some(entry => 
+                entry.clinicId === selectedClinic
+              );
+            }
+            return false;
+          })
+        );
+      } else {
+        // For admin and other roles, filter by their clinic affiliation
+        return Object.fromEntries(
+          Object.entries(medicalHistoryData).filter(([patientId, patientData]) => {
+            // Check if patient has visited the user's clinic
+            const patient = patientsData[patientId];
+            const hasVisitedClinic = patient?.clinicsVisited?.[currentUserClinic];
+            
+            if (!hasVisitedClinic) return false;
+            
+            if (patientData.entries) {
+              return Object.values(patientData.entries).some(entry => 
+                entry.clinicId === currentUserClinic
+              );
+            }
+            return false;
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Error filtering medical history by clinic:", error);
+      return medicalHistoryData; // Return unfiltered data on error
+    }
+  };
+
+  // Additional filtering for entries within selected patients
+  const filterEntriesByClinic = (entries) => {
+    if (currentUserRole === 'superadmin') {
+      if (selectedClinic === 'all' || !selectedClinic) {
+        return entries;
+      }
+      return Object.fromEntries(
+        Object.entries(entries).filter(([entryId, entry]) => 
+          entry.clinicId === selectedClinic
+        )
+      );
+    } else {
+      return Object.fromEntries(
+        Object.entries(entries).filter(([entryId, entry]) => 
+          entry.clinicId === currentUserClinic
+        )
+      );
+    }
+  };
+
   useEffect(() => {
     const fetchIllnessData = async () => {
+      if (!currentUserRole) return;
+      
       setLoading(true);
       try {
         const medicalHistorySnapshot = await get(ref(database, "patientMedicalHistory"));
         
         if (medicalHistorySnapshot.exists()) {
           const medicalHistoryData = medicalHistorySnapshot.val();
+          
+          // Filter medical history data by clinic (now async)
+          const filteredMedicalHistory = await filterMedicalHistoryByClinic(medicalHistoryData);
+          
           const diagnosisCount = {};
           let totalDiagnoses = 0;
 
           // Process each patient's medical history - focus only on diagnosis
-          Object.values(medicalHistoryData).forEach(patient => {
+          Object.values(filteredMedicalHistory).forEach(patient => {
             if (patient.entries) {
-              Object.values(patient.entries).forEach(entry => {
+              // Further filter entries by clinic
+              const filteredEntries = filterEntriesByClinic(patient.entries);
+              
+              Object.values(filteredEntries).forEach(entry => {
                 // Only process diagnosis field
                 if (Array.isArray(entry.diagnosis)) {
                   entry.diagnosis.forEach(diagnosis => {
@@ -87,7 +212,7 @@ const CommonIllnessChart = () => {
     };
 
     fetchIllnessData();
-  }, []);
+  }, [currentUserRole, currentUserClinic, selectedClinic]);
 
   // Custom tooltip for pie chart
   const IllnessPieTooltip = ({ active, payload }) => {
@@ -194,6 +319,16 @@ const CommonIllnessChart = () => {
         <p style={{ margin: "5px 0 0 0", color: "#666", fontSize: "14px" }}>
           Unique illness types: {illnessData.length}
         </p>
+        {currentUserRole === 'superadmin' && selectedClinic && selectedClinic !== 'all' && (
+          <p style={{ margin: "5px 0 0 0", color: "#888", fontSize: "12px", fontStyle: 'italic' }}>
+            Filtered by selected clinic
+          </p>
+        )}
+        {currentUserRole !== 'superadmin' && currentUserClinic && (
+          <p style={{ margin: "5px 0 0 0", color: "#888", fontSize: "12px", fontStyle: 'italic' }}>
+            Showing data for: {clinics[currentUserClinic]?.name || 'your clinic'}
+          </p>
+        )}
       </div>
 
       {/* Charts Grid */}

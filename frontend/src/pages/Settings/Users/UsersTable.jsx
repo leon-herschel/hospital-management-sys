@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ref, onValue, remove } from 'firebase/database';
 import { database } from '../../../firebase/firebase';
-import { Users, Search, Plus, Edit, Trash2, UserCheck, Building, Mail } from 'lucide-react';
+import { Users, Search, Plus, Edit, Trash2, UserCheck, Building, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import EditUserModal from './EditUserModal';
 import AddUserModal from './AddUserModal';
 
@@ -15,6 +15,10 @@ const UsersTable = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 15;
 
   useEffect(() => {
     const usersRef = ref(database, 'users');
@@ -25,6 +29,8 @@ const UsersTable = () => {
       });
       setUsers(usersList);
       setFilteredUsers(usersList);
+      // Reset to first page when users data changes
+      setCurrentPage(1);
     });
 
     return () => unsubscribe();
@@ -61,6 +67,8 @@ const UsersTable = () => {
       );
     });
     setFilteredUsers(filtered);
+    // Reset to first page when search results change
+    setCurrentPage(1);
   }, [searchTerm, users]);
 
   const handleDeleteUser = async () => {
@@ -110,6 +118,64 @@ const UsersTable = () => {
       'Operations': <Building size={20} />
     };
     return icons[department] || <Users size={20} />;
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const endIndex = startIndex + usersPerPage;
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
   };
 
   const stats = getUserStats();
@@ -169,6 +235,18 @@ const UsersTable = () => {
           </div>
         </div>
 
+        {/* Pagination Info */}
+        {filteredUsers.length > 0 && (
+          <div className="mb-4 flex justify-between items-center text-sm text-gray-600">
+            <div>
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} users
+            </div>
+            <div>
+              Page {currentPage} of {totalPages}
+            </div>
+          </div>
+        )}
+
         {/* Users Table */}
         <div className="relative overflow-x-auto rounded-md shadow-sm">
           <table className="w-full text-sm text-gray-900 text-center border border-gray-200">
@@ -182,7 +260,7 @@ const UsersTable = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
+              {currentUsers.map((user) => (
                 <tr key={user.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-left">
                     <div className="flex items-center space-x-3">
@@ -252,7 +330,7 @@ const UsersTable = () => {
                   </td>
                 </tr>
               ))}
-              {filteredUsers.length === 0 && (
+              {currentUsers.length === 0 && (
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-gray-500">
                     <div className="flex flex-col items-center space-y-2">
@@ -265,6 +343,60 @@ const UsersTable = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {filteredUsers.length > usersPerPage && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  currentPage === 1
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <ChevronLeft size={16} className="mr-1" />
+                Previous
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-1">
+              {getPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  onClick={() => typeof page === 'number' && handlePageChange(page)}
+                  disabled={page === '...'}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    page === currentPage
+                      ? 'bg-blue-600 text-white'
+                      : page === '...'
+                      ? 'text-gray-400 cursor-default'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  currentPage === totalPages
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Next
+                <ChevronRight size={16} className="ml-1" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Edit User Modal */}
