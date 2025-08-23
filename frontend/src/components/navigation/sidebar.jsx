@@ -86,7 +86,7 @@ const Sidebar = () => {
     "/med": "Pharmacy Department",
     "/ViewMedReq": "View Medicine Request",
     "/ViewRequest": "View Supply Request",
-    "/Transfer": "Transfer Supply",
+    "/Transfer": "Transfer Items",
     "/transferMed": "Transfer Medicine",
     "/requestS": "Request Stock",
     "/PharmacyTransferHistory": "Transfer History",
@@ -219,20 +219,6 @@ const Sidebar = () => {
                     Clinic Inventory
                   </Link>
                 )}
-
-                {permissions?.accessOverallInventory && (
-                  <Link
-                    to="/OverAllInventory"
-                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-                      isActive("/OverAllInventory")
-                        ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-                    }`}
-                  >
-                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
-                    Overall Inventory
-                  </Link>
-                )}
               </div>
             </div>
           )}
@@ -329,25 +315,7 @@ const Sidebar = () => {
           )}
 
           {/* Transfer Medicine */}
-          {(department === "Pharmacy" || department === "Admin") && (
-            <Link
-              to="transferMed"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/transferMed")
-                  ? "bg-gradient-to-r from-teal-600/20 to-cyan-600/20 text-white border border-teal-500/30 shadow-lg shadow-teal-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <BeakerIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/transferMed")
-                    ? "text-teal-400"
-                    : "text-slate-400 group-hover:text-teal-400"
-                }`}
-              />
-              <span>Transfer Medicine</span>
-            </Link>
-          )}
+    
 
           {/* Pending Supply Request */}
           {(department === "CSR" || department === "Admin") && (
@@ -370,26 +338,7 @@ const Sidebar = () => {
             </Link>
           )}
 
-          {/* Pending Medicine Request */}
-          {(department === "Pharmacy" || department === "Admin") && (
-            <Link
-              to="ViewMedReq"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/ViewMedReq")
-                  ? "bg-gradient-to-r from-pink-600/20 to-rose-600/20 text-white border border-pink-500/30 shadow-lg shadow-pink-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <ClockIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/ViewMedReq")
-                    ? "text-pink-400"
-                    : "text-slate-400 group-hover:text-pink-400"
-                }`}
-              />
-              <span>Pending Medicine Requests</span>
-            </Link>
-          )}
+        
 
           {/* Request Stock */}
           <Link
@@ -494,32 +443,50 @@ const Sidebar = () => {
               <span>Billing Paid Section</span>
             </Link>
           )}
-          <Link
-            to="/generate-medical-certificate"
-            className="flex items-center px-4 py-3 text-gray-700 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md group"
-          >
-            <ClipboardDocumentCheckIcon className="w-5 h-5 mr-3 text-blue-600 group-hover:text-blue-700" />
-            <span className="font-medium">Medical Certificate</span>
-          </Link>
+     {permissions?.accessMedicalCertificate && (
+  <Link
+    to="/generate-medical-certificate"
+    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+      isActive("/generate-medical-certificate")
+        ? "bg-gradient-to-r from-teal-600/20 to-cyan-600/20 text-white border border-teal-500/30 shadow-lg shadow-teal-500/20"
+        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+    }`}
+  >
+    <ClipboardDocumentCheckIcon
+      className={`w-5 h-5 mr-3 transition-colors ${
+        isActive("/generate-medical-certificate")
+          ? "text-teal-400"
+          : "text-slate-400 group-hover:text-teal-400"
+      }`}
+    />
+    <span>Medical Certificate</span>
+    {isActive("/generate-medical-certificate") && (
+      <div className="ml-auto w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
+    )}
+  </Link>
+)}
 
           {/* Analytics */}
-          <Link
-            to="/analytics"
-            className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-              isActive("/analytics")
-                ? "bg-gradient-to-r from-cyan-600/20 to-blue-600/20 text-white border border-cyan-500/30 shadow-lg shadow-cyan-500/20"
-                : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-            }`}
-          >
-            <ChartBarIcon
-              className={`w-5 h-5 mr-3 transition-colors ${
-                isActive("/analytics")
-                  ? "text-cyan-400"
-                  : "text-slate-400 group-hover:text-cyan-400"
-              }`}
-            />
-            <span>Analytics</span>
-          </Link>
+         {permissions?.accessAnalytics && (
+  <Link
+    to="/analytics"
+    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+      isActive("/analytics")
+        ? "bg-gradient-to-r from-cyan-600/20 to-blue-600/20 text-white border border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+    }`}
+  >
+    <ChartBarIcon
+      className={`w-5 h-5 mr-3 transition-colors ${
+        isActive("/analytics")
+          ? "text-cyan-400"
+          : "text-slate-400 group-hover:text-cyan-400"
+      }`}
+    />
+    <span>Analytics</span>
+  </Link>
+)}
+
 
           {/* Settings */}
           {permissions?.accessSettings && (

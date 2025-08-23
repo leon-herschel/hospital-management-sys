@@ -16,6 +16,7 @@ import LabResultsModal from "./labResultModal";
 import { usePatientData } from "./UsePatientData";
 import { formatTimestamp, getStatusBadge, getTestName, getUserName } from "./PatientUtils";
 import { generatePatientHistoryPDF } from "./generatePatientHistoryPDF";
+import PatientQRGenerator from './PatientQrGenerator';
 
 // Icons
 import {
@@ -224,22 +225,26 @@ function ViewPatient() {
                 {patient.firstName} {patient.lastName}
               </h1>
             </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setShowLabModal(true)}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Lab Result</span>
-              </button>
-              <button
-                onClick={() => generatePatientHistoryPDF(patient, inventoryItems, labTests, users, medicalServices)}
-                className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Generate Report</span>
-              </button>
-            </div>
+<div className="flex items-center space-x-3">
+  {/* Add QR Code Generator Button */}
+  <PatientQRGenerator patient={patient} patientId={id} />
+  
+  <button
+    onClick={() => setShowLabModal(true)}
+    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+  >
+    <Plus className="w-4 h-4" />
+    <span>Add Lab Result</span>
+  </button>
+  
+  <button
+    onClick={() => generatePatientHistoryPDF(patient, inventoryItems, labTests, users, medicalServices)}
+    className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+  >
+    <Download className="w-4 h-4" />
+    <span>Generate Report</span>
+  </button>
+</div>
           </div>
         </div>
       </div>

@@ -8,9 +8,18 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
   const [accessInventoryHistory, setAccessInventoryHistory] = useState(false);
   const [accessPatients, setAccessPatients] = useState(false);
   const [accessSettings, setAccessSettings] = useState(false);
-  const [accessBilling, setAccessBilling] = useState(false); // Fixed naming here
-  const [accessLaboratory, setAccessLaboratory] = useState(false); // New state for Laboratory access
-
+  const [accessBilling, setAccessBilling] = useState(false);
+  const [accessLaboratory, setAccessLaboratory] = useState(false);
+  const [accessAnalytics, setAccessAnalytics] = useState(false);
+  const [accessMedicalCertificate, setAccessMedicalCertificate] = useState(false);
+  const [accessInventoryTransactions, setAccessInventoryTransactions] = useState(false);
+  
+  // Mobile Features permissions
+  const [accessDoctorScreen, setAccessDoctorScreen] = useState(false);
+  const [accessLabScreen, setAccessLabScreen] = useState(false);
+  const [accessAdminScreen, setAccessAdminScreen] = useState(false);
+  const [accessClinicStaffScreen, setAccessClinicStaffScreen] = useState(false);
+  const [accessNurseScreen, setAccessNurseScreen] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -24,13 +33,40 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
           accessPatients,
           accessSettings,
           accessBilling,
-          accessLaboratory, // This now matches the state variable
+          accessLaboratory,
+          accessAnalytics,
+          accessMedicalCertificate,
+          accessInventoryTransactions,
+          // Mobile Features permissions
+          accessDoctorScreen,
+          accessLabScreen,
+          accessAdminScreen,
+          accessClinicStaffScreen,
+          accessNurseScreen,
         },
       },
     };
 
     onAddDepartment(newDepartment);
     setShowModal(false);
+    
+    // Reset form
+    setDepartmentName("");
+    setAccessInventory(false);
+    setAccessOverallInventory(false);
+    setAccessInventoryHistory(false);
+    setAccessPatients(false);
+    setAccessSettings(false);
+    setAccessBilling(false);
+    setAccessLaboratory(false);
+    setAccessAnalytics(false);
+    setAccessMedicalCertificate(false);
+    setAccessInventoryTransactions(false);
+    setAccessDoctorScreen(false);
+    setAccessLabScreen(false);
+    setAccessAdminScreen(false);
+    setAccessClinicStaffScreen(false);
+    setAccessNurseScreen(false);
   };
 
   if (!showModal) return null;
@@ -60,8 +96,9 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
             />
           </div>
 
+          {/* Web Application Permissions */}
           <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold mb-4">Access Permissions</h3>
+            <h3 className="text-lg font-semibold mb-4">Web Application Permissions</h3>
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
@@ -75,27 +112,19 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               <input
                 type="checkbox"
                 checked={accessOverallInventory}
-                onChange={() =>
-                  setAccessOverallInventory(!accessOverallInventory)
-                }
+                onChange={() => setAccessOverallInventory(!accessOverallInventory)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">
-                Access Overall Inventory
-              </span>
+              <span className="ml-2 text-gray-700">Access Overall Inventory</span>
             </label>
             <label className="flex items-center mb-2">
               <input
                 type="checkbox"
                 checked={accessInventoryHistory}
-                onChange={() =>
-                  setAccessInventoryHistory(!accessInventoryHistory)
-                }
+                onChange={() => setAccessInventoryHistory(!accessInventoryHistory)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">
-                Access Inventory History
-              </span>
+              <span className="ml-2 text-gray-700">Access Inventory History</span>
             </label>
             <label className="flex items-center mb-2">
               <input
@@ -110,10 +139,46 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               <input
                 type="checkbox"
                 checked={accessBilling}
-                onChange={() => setAccessBilling(!accessBilling)} // Fixed setter here
+                onChange={() => setAccessBilling(!accessBilling)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">Access Billing</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessLaboratory}
+                onChange={() => setAccessLaboratory(!accessLaboratory)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Laboratory</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessAnalytics}
+                onChange={() => setAccessAnalytics(!accessAnalytics)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Analytics</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessMedicalCertificate}
+                onChange={() => setAccessMedicalCertificate(!accessMedicalCertificate)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Medical Certificate</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessInventoryTransactions}
+                onChange={() => setAccessInventoryTransactions(!accessInventoryTransactions)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Inventory Transactions</span>
             </label>
             <label className="flex items-center mb-2">
               <input
@@ -124,16 +189,58 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment }) => {
               />
               <span className="ml-2 text-gray-700">Access Settings</span>
             </label>
-             <label className="flex items-center mb-2">
+          </div>
+
+          {/* Mobile Features Permissions */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg shadow-md border-l-4 border-blue-400">
+            <h3 className="text-lg font-semibold mb-4 text-blue-800">Mobile Features Permissions</h3>
+            <label className="flex items-center mb-2">
               <input
                 type="checkbox"
-                checked={accessLaboratory}
-                onChange={() => setAccessLaboratory(!accessLaboratory)}
+                checked={accessDoctorScreen}
+                onChange={() => setAccessDoctorScreen(!accessDoctorScreen)}
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="ml-2 text-gray-700">Access Laboratory</span>
+              <span className="ml-2 text-gray-700">Access Doctor Screen</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessLabScreen}
+                onChange={() => setAccessLabScreen(!accessLabScreen)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Lab Screen</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessAdminScreen}
+                onChange={() => setAccessAdminScreen(!accessAdminScreen)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Admin Screen</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessClinicStaffScreen}
+                onChange={() => setAccessClinicStaffScreen(!accessClinicStaffScreen)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Clinic Staff Screen</span>
+            </label>
+            <label className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={accessNurseScreen}
+                onChange={() => setAccessNurseScreen(!accessNurseScreen)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="ml-2 text-gray-700">Access Nurse Screen</span>
             </label>
           </div>
+
           <div className="flex justify-center">
             <button
               type="submit"
