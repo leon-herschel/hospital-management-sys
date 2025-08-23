@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { ref, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
+import { useAuth } from "../../context/authContext/authContext"; // Assuming you have an auth context
 import { 
   PieChart, 
   Pie, 
@@ -18,9 +19,14 @@ import {
   Area,
   AreaChart
 } from "recharts";
-import CommonIllnessChart from "./CommonIllness"; // Import the new component
+import CommonIllnessChart from "./CommonIllness";
 
 const Analytics = () => {
+  const { currentUser } = useAuth(); // Get current user from auth context
+  const [userRole, setUserRole] = useState(null);
+  const [userClinicAffiliation, setUserClinicAffiliation] = useState(null);
+  const [clinicsData, setClinicsData] = useState({});
+  const [selectedClinic, setSelectedClinic] = useState('all');
   const [salesData, setSalesData] = useState({ daily: 0, monthly: 0 });
   const [salesItemsData, setSalesItemsData] = useState([]);
   const [medicineUsageData, setMedicineUsageData] = useState([]);
@@ -34,183 +40,301 @@ const Analytics = () => {
     []
   );
 
-useEffect(() => {
-  const fetchAnalyticsData = async () => {
-    setLoading(true);
+  // Fetch user role and clinic affiliation
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!currentUser?.uid) return;
+      
+      try {
+        const userSnapshot = await get(ref(database, `users/${currentUser.uid}`));
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.val();
+          setUserRole(userData.role);
+          setUserClinicAffiliation(userData.clinicAffiliation);
+        }
+      } catch (error) {
+        console.error("Error fetching user data: ", error);
+      }
+    };
+
+    fetchUserData();
+  }, [currentUser]);
+
+  // Fetch clinics data for superadmin
+  useEffect(() => {
+    const fetchClinics = async () => {
+      if (userRole !== 'superadmin') return;
+      
+      try {
+        const clinicsSnapshot = await get(ref(database, "clinics"));
+        if (clinicsSnapshot.exists()) {
+          setClinicsData(clinicsSnapshot.val());
+        }
+      } catch (error) {
+        console.error("Error fetching clinics: ", error);
+      }
+    };
+
+    if (userRole) {
+      fetchClinics();
+    }
+  }, [userRole]);
+
+  // Filter data by clinic affiliation with patient clinic visits consideration
+  const filterDataByClinic = async (data, clinicField = 'clinicId', checkPatients = false) => {
     try {
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      const today = now.toISOString().split('T')[0];
-
-      let dailySales = 0;
-      let monthlySales = 0;
-      const salesByService = {};
-
-      // ======================
-      // 1. Fetch clinicBilling for sales totals
-      // ======================
-      const billingSnapshot = await get(ref(database, "clinicBilling"));
-      if (billingSnapshot.exists()) {
-        const billings = billingSnapshot.val();
-        Object.values(billings).forEach(billing => {
-          if (billing.status === "paid") {
-            const amount = parseFloat(billing.amount || 0);
-            const paidDate = billing.paidDate ? new Date(billing.paidDate) : null;
-
-            if (amount > 0 && paidDate) {
-              const paidDateStr = paidDate.toISOString().split("T")[0];
-
-              if (paidDateStr === today) dailySales += amount;
-              if (paidDate.getMonth() === currentMonth && paidDate.getFullYear() === currentYear) {
-                monthlySales += amount;
-              }
-
-              // Track billed items in salesByService
-              if (Array.isArray(billing.billedItems)) {
-                billing.billedItems.forEach(item => {
-                  const name = item.itemName || "Unknown Item";
-                  salesByService[name] = (salesByService[name] || 0) + (item.totalPrice || 0);
-                });
-              }
-            }
-          }
-        });
+      let patientsData = {};
+      
+      // Fetch patients data if we need to check clinic visits
+      if (checkPatients) {
+        const patientsSnapshot = await get(ref(database, "patients"));
+        patientsData = patientsSnapshot.exists() ? patientsSnapshot.val() : {};
       }
 
-      // ======================
-      // 2. Fetch clinicLabRequests to still track service sales
-      // ======================
-      const labSnapshot = await get(ref(database, "clinicLabRequests"));
-      if (labSnapshot.exists()) {
-        const labRequests = labSnapshot.val();
-        Object.values(labRequests).forEach(request => {
-          const serviceFee = parseFloat(request.serviceFee || 0);
-          const requestDate = request.createdAt?.date || request.requestDate;
-
-          if (serviceFee > 0) {
-            const serviceName = request.labTestName || 'Unknown Service';
-            salesByService[serviceName] = (salesByService[serviceName] || 0) + serviceFee;
-
-            if (requestDate === today) dailySales += serviceFee;
-            if (requestDate &&
-              new Date(requestDate).getMonth() === currentMonth &&
-              new Date(requestDate).getFullYear() === currentYear) {
-              monthlySales += serviceFee;
+      if (userRole === 'superadmin') {
+        if (selectedClinic === 'all') {
+          return data;
+        }
+        
+        const filtered = Object.fromEntries(
+          Object.entries(data).filter(([key, value]) => {
+            // Primary filter by clinicId
+            const matchesClinic = value[clinicField] === selectedClinic;
+            
+            // Secondary filter by patient clinic visits if needed
+            if (checkPatients && value.patientId) {
+              const patient = patientsData[value.patientId];
+              const hasVisitedClinic = patient?.clinicsVisited?.[selectedClinic];
+              return matchesClinic && hasVisitedClinic;
             }
-          }
-        });
-      }
-
-      // ======================
-      // 3. Fetch inventory items for usage categorization
-      // ======================
-      const itemsSnapshot = await get(ref(database, "inventoryItems"));
-      const inventoryItems = itemsSnapshot.exists() ? itemsSnapshot.val() : {};
-
-      // ======================
-      // 4. Fetch inventoryTransactions for medicine/supply usage
-      // ======================
-      const transactionsSnapshot = await get(ref(database, "inventoryTransactions"));
-      const medicineUsage = {};
-      const supplyUsage = {};
-      const transactionsByType = {};
-
-      if (transactionsSnapshot.exists()) {
-        const transactions = transactionsSnapshot.val();
-        Object.values(transactions).forEach(transaction => {
-          const type = transaction.transactionType || 'unknown';
-          const quantity = Math.abs(transaction.quantityChanged || 0);
-          const itemId = transaction.itemId;
-          const itemName = transaction.itemName || 'Unknown Item';
-
-          transactionsByType[type] = (transactionsByType[type] || 0) + quantity;
-
-          if (type.toLowerCase() === 'usage') {
-            const itemDetails = inventoryItems[itemId];
-            const itemCategory = itemDetails?.itemCategory || '';
-            const displayName = itemDetails?.itemName || itemName;
-            const genericName = itemDetails?.genericName;
-            const finalDisplayName =
-              genericName && itemCategory.toLowerCase().includes('medicine')
-                ? `${genericName} (${itemDetails.brand || displayName})`
-                : displayName;
-
-            const itemGroup = itemDetails?.itemGroup?.toLowerCase() || '';
-
-            if (
-              itemGroup === 'medicine' ||
-              itemCategory.toLowerCase().includes('medicine') ||
-              itemCategory.toLowerCase().includes('tablet') ||
-              itemCategory.toLowerCase().includes('capsule')
-            ) {
-              medicineUsage[finalDisplayName] = (medicineUsage[finalDisplayName] || 0) + quantity;
-            } else if (
-              itemGroup === 'supply' ||
-              itemCategory.toLowerCase().includes('supply') ||
-              itemCategory.toLowerCase().includes('equipment') ||
-              itemCategory.toLowerCase().includes('consumable')
-            ) {
-              supplyUsage[finalDisplayName] = (supplyUsage[finalDisplayName] || 0) + quantity;
-            } else {
-              if (
-                finalDisplayName.toLowerCase().includes('paracetamol') ||
-                finalDisplayName.toLowerCase().includes('medicine') ||
-                finalDisplayName.toLowerCase().includes('tablet') ||
-                finalDisplayName.toLowerCase().includes('capsule')
-              ) {
-                medicineUsage[finalDisplayName] = (medicineUsage[finalDisplayName] || 0) + quantity;
-              } else {
-                supplyUsage[finalDisplayName] = (supplyUsage[finalDisplayName] || 0) + quantity;
-              }
+            
+            return matchesClinic;
+          })
+        );
+        
+        return filtered;
+      } else {
+        // For admin and other roles, filter by their clinic affiliation
+        const filtered = Object.fromEntries(
+          Object.entries(data).filter(([key, value]) => {
+            // Primary filter by clinicId
+            const matchesClinic = value[clinicField] === userClinicAffiliation;
+            
+            // Secondary filter by patient clinic visits if needed
+            if (checkPatients && value.patientId) {
+              const patient = patientsData[value.patientId];
+              const hasVisitedClinic = patient?.clinicsVisited?.[userClinicAffiliation];
+              return matchesClinic && hasVisitedClinic;
             }
-          }
-        });
+            
+            return matchesClinic;
+          })
+        );
+        
+        return filtered;
       }
-
-      // ======================
-      // 5. Convert to chart-friendly data
-      // ======================
-      const sortedSalesItems = Object.entries(salesByService)
-        .map(([name, amount]) => ({ name, value: amount, sales: `₱${amount.toLocaleString()}` }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
-
-      const sortedMedicineUsage = Object.entries(medicineUsage)
-        .map(([name, qty]) => ({ name, value: qty, usage: `${qty} units` }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 8);
-
-      const sortedSupplyUsage = Object.entries(supplyUsage)
-        .map(([name, qty]) => ({ name, value: qty, usage: `${qty} units` }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 8);
-
-      const transactionsData = Object.entries(transactionsByType)
-        .map(([type, qty]) => ({
-          name: type.replace(/_/g, ' ').toUpperCase(),
-          value: qty
-        }));
-
-      // ======================
-      // 6. Set state
-      // ======================
-      setSalesData({ daily: dailySales, monthly: monthlySales });
-      setSalesItemsData(sortedSalesItems);
-      setMedicineUsageData(sortedMedicineUsage);
-      setSupplyUsageData(sortedSupplyUsage);
-      setInventoryTransactionsData(transactionsData);
-
     } catch (error) {
-      console.error("Error fetching analytics data: ", error);
-    } finally {
-      setLoading(false);
+      console.error("Error filtering data by clinic:", error);
+      return data; // Return unfiltered data on error
     }
   };
 
-  fetchAnalyticsData();
-}, []);
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      if (!userRole) return;
+      
+      setLoading(true);
+      try {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const today = now.toISOString().split('T')[0];
 
+        let dailySales = 0;
+        let monthlySales = 0;
+        const salesByService = {};
+
+        // ======================
+        // 1. Fetch clinicBilling for sales totals
+        // ======================
+        const billingSnapshot = await get(ref(database, "clinicBilling"));
+        let billingData = {};
+        if (billingSnapshot.exists()) {
+          billingData = billingSnapshot.val();
+          // Filter billing data by clinic (with patient clinic visits check if needed)
+          const filteredBilling = await filterDataByClinic(billingData, 'clinicId', true);
+          
+          Object.values(filteredBilling).forEach(billing => {
+            if (billing.status === "paid") {
+              const amount = parseFloat(billing.amount || 0);
+              const paidDate = billing.paidDate ? new Date(billing.paidDate) : null;
+
+              if (amount > 0 && paidDate) {
+                const paidDateStr = paidDate.toISOString().split("T")[0];
+
+                if (paidDateStr === today) dailySales += amount;
+                if (paidDate.getMonth() === currentMonth && paidDate.getFullYear() === currentYear) {
+                  monthlySales += amount;
+                }
+
+                // Track billed items in salesByService
+                if (Array.isArray(billing.billedItems)) {
+                  billing.billedItems.forEach(item => {
+                    const name = item.itemName || "Unknown Item";
+                    salesByService[name] = (salesByService[name] || 0) + (item.totalPrice || 0);
+                  });
+                }
+              }
+            }
+          });
+        }
+
+        // ======================
+        // 2. Fetch clinicLabRequests to still track service sales
+        // ======================
+        const labSnapshot = await get(ref(database, "clinicLabRequests"));
+        if (labSnapshot.exists()) {
+          const labRequestsData = labSnapshot.val();
+          const filteredLabRequests = await filterDataByClinic(labRequestsData, 'clinicId', true);
+          
+          Object.values(filteredLabRequests).forEach(request => {
+            const serviceFee = parseFloat(request.serviceFee || 0);
+            const requestDate = request.createdAt?.date || request.requestDate;
+
+            if (serviceFee > 0) {
+              const serviceName = request.labTestName || 'Unknown Service';
+              salesByService[serviceName] = (salesByService[serviceName] || 0) + serviceFee;
+
+              if (requestDate === today) dailySales += serviceFee;
+              if (requestDate &&
+                new Date(requestDate).getMonth() === currentMonth &&
+                new Date(requestDate).getFullYear() === currentYear) {
+                monthlySales += serviceFee;
+              }
+            }
+          });
+        }
+
+        // ======================
+        // 3. Fetch inventory items for usage categorization
+        // ======================
+        const itemsSnapshot = await get(ref(database, "inventoryItems"));
+        let inventoryItems = {};
+        if (itemsSnapshot.exists()) {
+          inventoryItems = itemsSnapshot.val();
+          // Filter inventory items by clinic
+          inventoryItems = await filterDataByClinic(inventoryItems, 'clinicId');
+        }
+
+        // ======================
+        // 4. Fetch inventoryTransactions for medicine/supply usage
+        // ======================
+        const transactionsSnapshot = await get(ref(database, "inventoryTransactions"));
+        const medicineUsage = {};
+        const supplyUsage = {};
+        const transactionsByType = {};
+
+        if (transactionsSnapshot.exists()) {
+          const transactionsData = transactionsSnapshot.val();
+          const filteredTransactions = await filterDataByClinic(transactionsData, 'clinicId');
+          
+          Object.values(filteredTransactions).forEach(transaction => {
+            const type = transaction.transactionType || 'unknown';
+            const quantity = Math.abs(transaction.quantityChanged || 0);
+            const itemId = transaction.itemId;
+            const itemName = transaction.itemName || 'Unknown Item';
+
+            transactionsByType[type] = (transactionsByType[type] || 0) + quantity;
+
+            if (type.toLowerCase() === 'usage') {
+              const itemDetails = inventoryItems[itemId];
+              const itemCategory = itemDetails?.itemCategory || '';
+              const displayName = itemDetails?.itemName || itemName;
+              const genericName = itemDetails?.genericName;
+              const finalDisplayName =
+                genericName && itemCategory.toLowerCase().includes('medicine')
+                  ? `${genericName} (${itemDetails.brand || displayName})`
+                  : displayName;
+
+              const itemGroup = itemDetails?.itemGroup?.toLowerCase() || '';
+
+              if (
+                itemGroup === 'medicine' ||
+                itemCategory.toLowerCase().includes('medicine') ||
+                itemCategory.toLowerCase().includes('tablet') ||
+                itemCategory.toLowerCase().includes('capsule')
+              ) {
+                medicineUsage[finalDisplayName] = (medicineUsage[finalDisplayName] || 0) + quantity;
+              } else if (
+                itemGroup === 'supply' ||
+                itemCategory.toLowerCase().includes('supply') ||
+                itemCategory.toLowerCase().includes('equipment') ||
+                itemCategory.toLowerCase().includes('consumable')
+              ) {
+                supplyUsage[finalDisplayName] = (supplyUsage[finalDisplayName] || 0) + quantity;
+              } else {
+                if (
+                  finalDisplayName.toLowerCase().includes('paracetamol') ||
+                  finalDisplayName.toLowerCase().includes('medicine') ||
+                  finalDisplayName.toLowerCase().includes('tablet') ||
+                  finalDisplayName.toLowerCase().includes('capsule')
+                ) {
+                  medicineUsage[finalDisplayName] = (medicineUsage[finalDisplayName] || 0) + quantity;
+                } else {
+                  supplyUsage[finalDisplayName] = (supplyUsage[finalDisplayName] || 0) + quantity;
+                }
+              }
+            }
+          });
+        }
+
+        // ======================
+        // 5. Convert to chart-friendly data
+        // ======================
+        const sortedSalesItems = Object.entries(salesByService)
+          .map(([name, amount]) => ({ name, value: amount, sales: `₱${amount.toLocaleString()}` }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10);
+
+        const sortedMedicineUsage = Object.entries(medicineUsage)
+          .map(([name, qty]) => ({ name, value: qty, usage: `${qty} units` }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8);
+
+        const sortedSupplyUsage = Object.entries(supplyUsage)
+          .map(([name, qty]) => ({ name, value: qty, usage: `${qty} units` }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 8);
+
+        const transactionsData = Object.entries(transactionsByType)
+          .map(([type, qty]) => ({
+            name: type.replace(/_/g, ' ').toUpperCase(),
+            value: qty
+          }));
+
+        // ======================
+        // 6. Set state
+        // ======================
+        setSalesData({ daily: dailySales, monthly: monthlySales });
+        setSalesItemsData(sortedSalesItems);
+        setMedicineUsageData(sortedMedicineUsage);
+        setSupplyUsageData(sortedSupplyUsage);
+        setInventoryTransactionsData(transactionsData);
+
+      } catch (error) {
+        console.error("Error fetching analytics data: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, [userRole, userClinicAffiliation, selectedClinic]);
+
+  // Get clinic name by ID
+  const getClinicName = (clinicId) => {
+    return clinicsData[clinicId]?.name || clinicId;
+  };
 
   // Custom tooltip for sales items
   const SalesItemTooltip = ({ active, payload, label }) => {
@@ -273,7 +397,49 @@ useEffect(() => {
     <div style={{ padding: "20px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <h1 style={{ textAlign: "center", marginBottom: "30px", color: "#333" }}>
         Healthcare Analytics Dashboard
+        {userRole !== 'superadmin' && userClinicAffiliation && (
+          <div style={{ fontSize: "16px", color: "#666", marginTop: "10px" }}>
+            {getClinicName(userClinicAffiliation)}
+          </div>
+        )}
       </h1>
+
+      {/* Clinic Selector for Superadmin */}
+      {userRole === 'superadmin' && Object.keys(clinicsData).length > 0 && (
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          marginBottom: "30px" 
+        }}>
+          <div style={{
+            backgroundColor: "white",
+            padding: "15px",
+            borderRadius: "10px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+          }}>
+            <label style={{ marginRight: "10px", fontWeight: "bold" }}>
+              Select Clinic:
+            </label>
+            <select 
+              value={selectedClinic} 
+              onChange={(e) => setSelectedClinic(e.target.value)}
+              style={{
+                padding: "8px 15px",
+                borderRadius: "5px",
+                border: "1px solid #ddd",
+                fontSize: "14px"
+              }}
+            >
+              <option value="all">All Clinics</option>
+              {Object.entries(clinicsData).map(([clinicId, clinic]) => (
+                <option key={clinicId} value={clinicId}>
+                  {clinic.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Sales Overview Cards */}
       <div style={{ 
@@ -313,7 +479,12 @@ useEffect(() => {
 
       {/* Common Illness Section */}
       <div style={{ marginBottom: "40px" }}>
-        <CommonIllnessChart />
+        <CommonIllnessChart 
+          selectedClinic={selectedClinic}
+          userRole={userRole}
+          userClinicAffiliation={userClinicAffiliation}
+          clinicsData={clinicsData}
+        />
       </div>
 
       {/* Charts Grid */}

@@ -9,6 +9,17 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
     accessInventoryHistory: false,
     accessPatients: false,
     accessSettings: false,
+    accessBilling: false,
+    accessLaboratory: false,
+    accessAnalytics: false,
+    accessMedicalCertificate: false,
+    accessInventoryTransactions: false,
+    // Mobile Features permissions
+    accessDoctorScreen: false,
+    accessLabScreen: false,
+    accessAdminScreen: false,
+    accessClinicStaffScreen: false,
+    accessNurseScreen: false,
   });
   const [isLoading, setIsLoading] = useState(false); 
 
@@ -16,10 +27,22 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
     if (department) {
       setDepartmentName(department.id || '');
       setPermissions({
-        accessInventory: department.permissions.accessInventory || false,
-        accessOverallInventory: department.permissions.accessOverallInventory || false,
-        accessInventoryHistory: department.permissions.accessInventoryHistory || false,
-        accessPatients: department.permissions.accessPatients || false,
+        accessInventory: department.permissions?.accessInventory || false,
+        accessOverallInventory: department.permissions?.accessOverallInventory || false,
+        accessInventoryHistory: department.permissions?.accessInventoryHistory || false,
+        accessPatients: department.permissions?.accessPatients || false,
+        accessSettings: department.permissions?.accessSettings || false,
+        accessBilling: department.permissions?.accessBilling || false,
+        accessLaboratory: department.permissions?.accessLaboratory || false,
+        accessAnalytics: department.permissions?.accessAnalytics || false,
+        accessMedicalCertificate: department.permissions?.accessMedicalCertificate || false,
+        accessInventoryTransactions: department.permissions?.accessInventoryTransactions || false,
+        // Mobile Features permissions
+        accessDoctorScreen: department.permissions?.accessDoctorScreen || false,
+        accessLabScreen: department.permissions?.accessLabScreen || false,
+        accessAdminScreen: department.permissions?.accessAdminScreen || false,
+        accessClinicStaffScreen: department.permissions?.accessClinicStaffScreen || false,
+        accessNurseScreen: department.permissions?.accessNurseScreen || false,
       });
     }
   }, [department]);
@@ -47,6 +70,37 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
     }
   };
 
+  // Helper function to format permission labels
+  const formatPermissionLabel = (permission) => {
+    return permission
+      .replace(/access/g, '')
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/screen/gi, 'Screen')
+      .trim();
+  };
+
+  // Separate permissions into web and mobile categories
+  const webPermissions = [
+    'accessInventory',
+    'accessOverallInventory', 
+    'accessInventoryHistory',
+    'accessPatients',
+    'accessBilling',
+    'accessLaboratory',
+    'accessAnalytics',
+    'accessMedicalCertificate',
+    'accessInventoryTransactions',
+    'accessSettings'
+  ];
+
+  const mobilePermissions = [
+    'accessDoctorScreen',
+    'accessLabScreen',
+    'accessAdminScreen',
+    'accessClinicStaffScreen',
+    'accessNurseScreen'
+  ];
+
   if (!showModal) return null;
 
   return (
@@ -66,27 +120,45 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
             <label className="block text-gray-700">Department Name</label>
             <input
               type="text"
-              value={department.id}
+              value={department?.id || ''}
               disabled
-              className="block w-full mt-2 p-2 border border-gray-300 rounded-md"
+              className="block w-full mt-2 p-2 border border-gray-300 rounded-md bg-gray-100"
             />
           </div>
 
-          {/* Permissions Card */}
+          {/* Web Application Permissions */}
           <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold mb-4">Access Permissions</h3>
-            {Object.keys(permissions).map((permission) => (
+            <h3 className="text-lg font-semibold mb-4">Web Application Permissions</h3>
+            {webPermissions.map((permission) => (
               <label key={permission} className="flex items-center mb-2">
                 <input
                   type="checkbox"
                   name={permission}
                   checked={permissions[permission]}
                   onChange={handleChange}
-                  
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <span className="ml-2 text-gray-700 capitalize">
-                  {permission.replace(/access/g, '').replace(/([A-Z])/g, ' $1')}
+                <span className="ml-2 text-gray-700">
+                  Access {formatPermissionLabel(permission)}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          {/* Mobile Features Permissions */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg shadow-md border-l-4 border-blue-400">
+            <h3 className="text-lg font-semibold mb-4 text-blue-800">Mobile Features Permissions</h3>
+            {mobilePermissions.map((permission) => (
+              <label key={permission} className="flex items-center mb-2">
+                <input
+                  type="checkbox"
+                  name={permission}
+                  checked={permissions[permission]}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-gray-700">
+                  Access {formatPermissionLabel(permission)}
                 </span>
               </label>
             ))}
@@ -100,7 +172,7 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
               }`} 
               disabled={isLoading} 
             >
-              {isLoading ? 'Updating Department...' : 'Update Department'} {/* Show loading text */}
+              {isLoading ? 'Updating Department...' : 'Update Department'}
             </button>
           </div>
         </form>

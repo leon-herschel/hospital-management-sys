@@ -25,6 +25,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState(""); // Add current user role state
 
   // Email sending states
   const [emailStatus, setEmailStatus] = useState("");
@@ -52,6 +53,32 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [showAgreement, setShowAgreement] = useState(false);
   const [hasAgreed, setHasAgreed] = useState(false);
 
+  // Filter roles based on current user's role
+  const getFilteredRoles = () => {
+    let filteredRoles = roles.filter((role) => role !== "superadmin"); // Always exclude superadmin
+
+    if (currentUserRole === "admin") {
+      filteredRoles = filteredRoles.filter((role) => role !== "admin"); // Exclude admin if current user is admin
+    }
+
+    return filteredRoles;
+  };
+
+  // Filter departments based on current user's role
+  const getFilteredDepartments = () => {
+    let filteredDepartments = departments.filter(
+      (dept) => dept !== "SuperAdmin"
+    ); // Always exclude superadmin
+
+    if (currentUserRole === "admin") {
+      filteredDepartments = filteredDepartments.filter(
+        (dept) => dept !== "admin"
+      ); // Exclude admin if current user is admin
+    }
+
+    return filteredDepartments;
+  };
+
   useEffect(() => {
     const fetchInitialData = async () => {
       const currentUser = auth.currentUser;
@@ -63,6 +90,11 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
         if (userData?.clinicAffiliation) {
           setSelectedClinic(userData.clinicAffiliation); // auto-fill clinic ID
+        }
+
+        // Set current user role for filtering
+        if (userData?.role) {
+          setCurrentUserRole(userData.role);
         }
       }
 
@@ -440,7 +472,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                 <option value="" disabled>
                   Select a role
                 </option>
-                {roles.map((role) => (
+                {getFilteredRoles().map((role) => (
                   <option key={role} value={role}>
                     {role}
                   </option>
@@ -540,7 +572,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                     <option value="" disabled>
                       Select a department
                     </option>
-                    {departments.map((dept) => (
+                    {getFilteredDepartments().map((dept) => (
                       <option key={dept} value={dept}>
                         {dept}
                       </option>

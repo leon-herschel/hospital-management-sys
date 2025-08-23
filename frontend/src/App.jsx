@@ -20,10 +20,7 @@ import RequestStock from "./pages/ICU POV/requestStock";
 import RequestS from "./pages/ICU POV/requestS";
 import InventoryStock from "./pages/ICU POV/inventoryStock";
 import IcuLocalInventory from "./pages/ICU POV/IcuLocalInventory";
-import TransferMed from "./pages/PharmacyPOV/TransferMed";
-import ViewMedReq from "./pages/PharmacyPOV/ViewMedReq";
 import ICUViewPatient from "./pages/ICU POV/ICUiewPatients";
-import OverallInventory from "./pages/Inventory/OverAllInventory";
 import ViewRequest from "./pages/CSR POV/ViewRequest";
 import ConfirmRequest from "./pages/CSR POV/ConfirmRequest";
 import PharmacyTransferHistory from "./pages/PharmacyPOV/PharmacyTransferHistory";
@@ -78,11 +75,8 @@ function App() {
         { path: "inventoryStock", element: <InventoryStock /> },
         { path: "requestStock", element: <RequestStock /> },
         { path: "icuLocalInventory", element: <IcuLocalInventory /> },
-        { path: "TransferMed", element: <TransferMed /> },
         { path: "ViewRequest", element: <ViewRequest /> },
-        { path: "ViewMedReq", element: <ViewMedReq /> },
         { path: "ICUViewPatient", element: <ICUViewPatient /> },
-        { path: "OverallInventory", element: <OverallInventory /> },
         { path: "ConfirmRequest", element: <ConfirmRequest /> },
         {
           path: "PharmacyTransferHistory",
