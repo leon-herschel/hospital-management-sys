@@ -105,6 +105,11 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         if (userData?.role) {
           setCurrentUserRole(userData.role);
         }
+
+        // Set current user role for filtering
+        if (userData?.role) {
+          setCurrentUserRole(userData.role);
+        }
       }
 
       // Load all clinics

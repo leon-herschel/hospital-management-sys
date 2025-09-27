@@ -116,6 +116,24 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment, existing
   const handleClose = () => {
     resetForm();
     setShowModal(false);
+    
+    // Reset form
+    setDepartmentName("");
+    setAccessInventory(false);
+    setAccessOverallInventory(false);
+    setAccessInventoryHistory(false);
+    setAccessPatients(false);
+    setAccessSettings(false);
+    setAccessBilling(false);
+    setAccessLaboratory(false);
+    setAccessAnalytics(false);
+    setAccessMedicalCertificate(false);
+    setAccessInventoryTransactions(false);
+    setAccessDoctorScreen(false);
+    setAccessLabScreen(false);
+    setAccessAdminScreen(false);
+    setAccessClinicStaffScreen(false);
+    setAccessNurseScreen(false);
   };
 
   if (!showModal) return null;
