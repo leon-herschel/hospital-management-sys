@@ -233,13 +233,10 @@ Signed Date: ${cert.isSigned ? formatDateTime(cert.signedDate) : 'N/A'}
                     <FileText className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3 mb-2">
+                    <div className="mb-2">
                       <h3 className="text-lg font-semibold text-gray-900">
                         Medical Certificate
                       </h3>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getStatusBadge(cert.status)}`}>
-                        {cert.status ? cert.status.charAt(0).toUpperCase() + cert.status.slice(1) : 'Unknown'}
-                      </span>
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
@@ -446,4 +443,4 @@ Signed Date: ${cert.isSigned ? formatDateTime(cert.signedDate) : 'N/A'}
   );
 };
 
-export default PatientMedicalCertTab;   
+export default PatientMedicalCertTab;
