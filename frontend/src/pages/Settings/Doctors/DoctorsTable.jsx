@@ -176,13 +176,13 @@ const [showAgreementModal, setShowAgreementModal] = useState(false);
       <Users size={20} />
       <span>Edit Doctor's Agreement</span>
     </button>
-            <button
+            {/* <button
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md flex items-center space-x-2 transition-colors"
               onClick={() => setShowAddDoctorModal(true)}
             >
               <Users size={20} />
               <span>Add Doctor</span>
-            </button>
+            </button> */}
           </div>
 
           {/* Summary Cards */}

@@ -11,6 +11,7 @@ import PatientLabTestsTab from "./PatientLabTestTab";
 import PatientMedicalConditionsTab from "./PatientMedicalConditionsTab";
 import DeleteConfirmationModal from "./DeleteConfirmationModalPrescription";
 import LabResultsModal from "./labResultModal";
+import PatientMedicalCertTab from "./PatientMedicalCertTab";
 
 // Hooks and utilities
 import { usePatientData } from "./UsePatientData";
@@ -204,6 +205,7 @@ function ViewPatient() {
     { id: "itemUsage", name: "Item Usage", icon: Package },
     { id: "labTests", name: "Lab Tests", icon: TestTube },
     { id: "medicalConditions", name: "Medical History", icon: FileText },
+    { id: "medicalCertificates", name: "Medical Certificates", icon: FileText },
   ];
 
   return (
@@ -345,6 +347,12 @@ function ViewPatient() {
                     formatMedicalConditions={formatMedicalConditions}
                   />
                 )}
+
+                   {activeTab === "medicalCertificates" && (
+  <PatientMedicalCertTab
+    patientId={id}
+  />
+)}
               </div>
             </div>
           </div>
@@ -357,6 +365,8 @@ function ViewPatient() {
         onClose={() => setShowLabModal(false)}
         onSave={handleSaveLabResult}
       />
+
+   
 
       <DeleteConfirmationModal
         isOpen={removeModalOpen}

@@ -6,6 +6,7 @@ import { Search, Users, Shield, X } from "lucide-react";
 const PatientBillGenerationModal = ({ 
   isOpen, 
   onClose, 
+  onBillGenerated, // New prop for success callback
   patients, 
   patientQRCodes, 
   billedItemsCache, 
@@ -109,8 +110,9 @@ const PatientBillGenerationModal = ({
               continue;
             }
 
-            if (!isItemAlreadyBilled(service.serviceId, "service", patientId, service.createdAt)) {
-              if (service.serviceCategory === "consultationTypes") {
+            if (service.serviceCategory === "consultationTypes") {
+              // FIXED: Use "consultation" as itemType for consistency
+              if (!isItemAlreadyBilled(service.serviceId, "consultation", patientId, service.createdAt)) {
                 const consultationFee = getSafeNumber(service.professionalFee);
 
                 let displayName = service.serviceName;
@@ -127,12 +129,18 @@ const PatientBillGenerationModal = ({
                   timestamp: service.createdAt,
                   department: service.department,
                   price: consultationFee,
-                  type: "consultation",
+                  type: "consultation", // This matches the itemType used in checking
                   unitPrice: consultationFee,
                   consultationType: service.consultationType || service.serviceName,
                   requestedByName: service.requestedByName,
                 });
               } else {
+                skippedCount++;
+                console.log(`⏭️ Skipping already billed consultation: ${service.serviceName}`);
+              }
+            } else {
+              // FIXED: Use "service" as itemType for non-consultation medical services
+              if (!isItemAlreadyBilled(service.serviceId, "service", patientId, service.createdAt)) {
                 const serviceDetailsRef = ref(
                   database,
                   `medicalServices/${service.serviceCategory}/${service.serviceId}`
@@ -153,12 +161,13 @@ const PatientBillGenerationModal = ({
                   timestamp: service.createdAt,
                   department: service.department,
                   price: servicePrice,
-                  type: "service",
+                  type: "service", // This matches the itemType used in checking
                   unitPrice: servicePrice,
                 });
+              } else {
+                skippedCount++;
+                console.log(`⏭️ Skipping already billed service: ${service.serviceName}`);
               }
-            } else {
-              skippedCount++;
             }
           }
         }
@@ -309,7 +318,11 @@ const PatientBillGenerationModal = ({
       const billingsRef = ref(database, "clinicBilling");
       await push(billingsRef, billData);
 
-      alert("Bill generated successfully!");
+      // Call the success callback instead of showing alert
+      if (onBillGenerated) {
+        onBillGenerated(patientFullName, billPreview.totalAmount);
+      }
+
       handleClose();
     } catch (error) {
       console.error("Error saving bill:", error);

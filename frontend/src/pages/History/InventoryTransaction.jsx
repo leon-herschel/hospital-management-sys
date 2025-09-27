@@ -14,6 +14,9 @@ const InventoryTransaction = () => {
   const [endDate, setEndDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [activeFilters, setActiveFilters] = useState([]); 
+  const [totalItems, setTotalItems] = useState(0);
+  // New state for active transaction type filters
 
   const auth = getAuth();
 
@@ -81,6 +84,24 @@ const InventoryTransaction = () => {
     return () => unsubscribe();
   }, [user, role, department, clinicId]);
 
+  // Handle transaction type filter toggle
+  const handleFilterToggle = (transactionType) => {
+    setActiveFilters(prev => {
+      if (prev.includes(transactionType)) {
+        // Remove filter if it's already active
+        return prev.filter(filter => filter !== transactionType);
+      } else {
+        // Add filter if it's not active
+        return [...prev, transactionType];
+      }
+    });
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setActiveFilters([]);
+  };
+
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "N/A";
     try {
@@ -113,7 +134,10 @@ const InventoryTransaction = () => {
       transaction.sourceDepartment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.destinationDepartment?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return isInRange && matchesSearchTerm;
+    // Apply transaction type filters
+    const matchesTransactionTypeFilter = activeFilters.length === 0 || activeFilters.includes(transaction.transactionType);
+
+    return isInRange && matchesSearchTerm && matchesTransactionTypeFilter;
   });
 
   // Get transaction type display text with styling
@@ -122,6 +146,7 @@ const InventoryTransaction = () => {
       stock_in: "bg-green-100 text-green-800",
       usage: "bg-red-100 text-red-800",
       transfer_out: "bg-blue-100 text-blue-800",
+      transfer_stock: "bg-purple-100 text-purple-800",
       transfer_in: "bg-purple-100 text-purple-800",
       adjustment: "bg-yellow-100 text-yellow-800"
     };
@@ -162,6 +187,35 @@ const InventoryTransaction = () => {
     </div>
   );
 
+  // Transaction stats card component with click functionality
+  const TransactionStatCard = ({ type, label, color, bgColor, icon, count, isActive, onClick }) => (
+    <div 
+      className={`bg-white p-6 rounded-lg shadow-sm border cursor-pointer transition-all duration-200 hover:shadow-md transform hover:scale-105 ${
+        isActive ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+      }`}
+      onClick={onClick}
+    >
+      <div className="flex items-center">
+        <div className="flex-shrink-0">
+          <div className={`w-8 h-8 ${bgColor} rounded-full flex items-center justify-center`}>
+            {icon}
+          </div>
+        </div>
+        <div className="ml-4">
+          <h3 className="text-sm font-medium text-gray-500">{label}</h3>
+          <p className={`text-2xl font-bold ${color} ${isActive ? 'text-blue-700' : ''}`}>
+            {count}
+          </p>
+        </div>
+      </div>
+      {isActive && (
+        <div className="mt-2 text-xs text-blue-600 font-medium">
+          ✓ Filter Active
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -179,106 +233,130 @@ const InventoryTransaction = () => {
               onStartDateChange={setStartDate}
               onEndDateChange={setEndDate}
             />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search transactions..."
-              className="border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-80"
-            />
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search transactions..."
+                className="border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-80"
+              />
+              {activeFilters.length > 0 && (
+                <button
+                  onClick={clearAllFilters}
+                  className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Clear Filters ({activeFilters.length})
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Transaction Stats - Updated in real-time */}
+        {/* Transaction Stats - Now clickable filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Total Transactions</h3>
-                <p className="text-2xl font-bold text-gray-900">{filteredTransactionList.length}</p>
-              </div>
-            </div>
-          </div>
+          <TransactionStatCard
+            type="all"
+            label="Total Transactions"
+            color="text-gray-900"
+            bgColor="bg-gray-100"
+            icon={
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            }
+            count={filteredTransactionList.length}
+            isActive={activeFilters.length === 0}
+            onClick={clearAllFilters}
+          />
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Stock In</h3>
-                <p className="text-2xl font-bold text-green-600">
-                  {filteredTransactionList.filter(t => t.transactionType === 'stock_in').length}
-                </p>
-              </div>
-            </div>
-          </div>
+          <TransactionStatCard
+            type="stock_in"
+            label="Stock In"
+            color="text-green-600"
+            bgColor="bg-green-100"
+            icon={
+              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+            }
+            count={filteredTransactionList.filter(t => t.transactionType === 'stock_in').length}
+            isActive={activeFilters.includes('stock_in')}
+            onClick={() => handleFilterToggle('stock_in')}
+          />
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Usage</h3>
-                <p className="text-2xl font-bold text-red-600">
-                  {filteredTransactionList.filter(t => t.transactionType === 'usage').length}
-                </p>
-              </div>
-            </div>
-          </div>
+          <TransactionStatCard
+            type="usage"
+            label="Usage"
+            color="text-red-600"
+            bgColor="bg-red-100"
+            icon={
+              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
+              </svg>
+            }
+            count={filteredTransactionList.filter(t => t.transactionType === 'usage').length}
+            isActive={activeFilters.includes('usage')}
+            onClick={() => handleFilterToggle('usage')}
+          />
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Transfers</h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  {filteredTransactionList.filter(t => t.transactionType === 'transfer_out' || t.transactionType === 'transfer_in').length}
-                </p>
-              </div>
-            </div>
-          </div>
+          <TransactionStatCard
+            type="transfers"
+            label="Transfers"
+            color="text-blue-600"
+            bgColor="bg-blue-100"
+            icon={
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+              </svg>
+            }
+            count={filteredTransactionList.filter(t => t.transactionType === 'transfer_stock' || t.transactionType === 'transfer_in').length}
+            isActive={activeFilters.includes('transfer_stock') || activeFilters.includes('transfer_in')}
+            onClick={() => {
+              // Toggle both transfer types together
+              if (activeFilters.includes('transfer_stock') || activeFilters.includes('transfer_in')) {
+                setActiveFilters(prev => prev.filter(filter => filter !== 'transfer_stock' && filter !== 'transfer_in'));
+              } else {
+                setActiveFilters(prev => [...prev.filter(filter => filter !== 'transfer_stock' && filter !== 'transfer_in'), 'transfer_stock', 'transfer_in']);
+              }
+            }}
+          />
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Adjustments</h3>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {filteredTransactionList.filter(t => t.transactionType === 'adjustment').length}
-                </p>
-              </div>
-            </div>
-          </div>
+          <TransactionStatCard
+            type="adjustment"
+            label="Adjustments"
+            color="text-yellow-600"
+            bgColor="bg-yellow-100"
+            icon={
+              <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            }
+            count={filteredTransactionList.filter(t => t.transactionType === 'adjustment').length}
+            isActive={activeFilters.includes('adjustment')}
+            onClick={() => handleFilterToggle('adjustment')}
+          />
         </div>
+
+        {/* Active Filters Display */}
+        {activeFilters.length > 0 && (
+          <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-gray-600 font-medium">Active Filters:</span>
+              {activeFilters.map(filter => (
+                <span key={filter} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {filter.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  <button
+                    onClick={() => handleFilterToggle(filter)}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -385,7 +463,7 @@ const InventoryTransaction = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                           </svg>
                           <p className="text-lg font-medium text-gray-900 mb-1">No transactions found</p>
-                          <p className="text-gray-500">Try adjusting your search criteria or date range</p>
+                          <p className="text-gray-500">Try adjusting your search criteria, date range, or filters</p>
                         </div>
                       </td>
                     </tr>
@@ -397,11 +475,12 @@ const InventoryTransaction = () => {
         )}
 
         {/* Footer with transaction count */}
-        {!loading && filteredTransactionList.length > 0 && (
+        {!loading && totalItems > 0 && (
           <div className="mt-6 text-sm text-gray-500 text-center bg-white p-4 rounded-lg">
             <div className="flex items-center justify-center">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              Showing {filteredTransactionList.length} transaction{filteredTransactionList.length !== 1 ? 's' : ''} • Live updates enabled
+              Total {totalItems} transaction{totalItems !== 1 ? 's' : ''} found
+              {activeFilters.length > 0 && ` (filtered by ${activeFilters.length} type${activeFilters.length !== 1 ? 's' : ''})`} • Live updates enabled
             </div>
           </div>
         )}
@@ -409,4 +488,5 @@ const InventoryTransaction = () => {
     </div>
   );
 };
+
 export default InventoryTransaction;

@@ -11,6 +11,7 @@ import AddPatient from "./AddPatient";
 import EditPatientModal from "./EditPatientModal";
 import ViewPatient from "./ViewPatient";
 import DeleteConfirmationModal from "./DeleteConfirmationModalPatient";
+import UserAddPatient from "./UserAddPatient";
 
 function PatientVisualDashboard() {
   const [patientList, setPatientList] = useState([]);
@@ -29,6 +30,7 @@ function PatientVisualDashboard() {
   const [selectedClinicFilter, setSelectedClinicFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [ageRangeFilter, setAgeRangeFilter] = useState("all");
+  const [showUserAddPatient, setShowUserAddPatient] = useState(false);
 
   const permissions = useAccessControl();
   const navigate = useNavigate();
@@ -279,6 +281,13 @@ function PatientVisualDashboard() {
         
         <div className="flex gap-2 flex-wrap">
           <button
+      onClick={() => setShowUserAddPatient(true)}
+      className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium shadow-lg"
+    >
+      <Plus className="w-4 h-4" />
+      Add Patient
+    </button>
+          <button
             onClick={() => setViewType('cards')}
             className={`px-4 py-2 rounded-lg transition-colors ${
               viewType === 'cards' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'
@@ -348,60 +357,34 @@ function PatientVisualDashboard() {
       </div>
 
       {/* Enhanced Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Patients</p>
-              <p className="text-2xl font-bold text-gray-900">{totalPatients}</p>
-            </div>
-            <Users className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
-        
-        {isAdminUser() && (
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Visited Clinics</p>
-                <p className="text-2xl font-bold text-gray-900">{uniqueClinics}</p>
-              </div>
-              <Building className="w-8 h-8 text-green-500" />
-            </div>
-          </div>
-        )}
-
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Male Patients</p>
-              <p className="text-2xl font-bold text-gray-900">{genderDistribution.Male || 0}</p>
-            </div>
-            <UserCheck className="w-8 h-8 text-purple-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Female Patients</p>
-              <p className="text-2xl font-bold text-gray-900">{genderDistribution.Female || 0}</p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-pink-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Visits</p>
-              <p className="text-2xl font-bold text-gray-900">{totalVisits}</p>
-            </div>
-            <Clock className="w-8 h-8 text-orange-500" />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+  <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+    <div className="flex items-center justify-between mb-4">
+      <div>
+        <p className="text-sm font-medium text-gray-600">Total Patients</p>
+        <p className="text-2xl font-bold text-gray-900">{totalPatients}</p>
       </div>
-
+      <Users className="w-8 h-8 text-blue-500" />
+    </div>
+    
+    {/* Gender breakdown */}
+    <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+      <div className="flex items-center space-x-2">
+        <UserCheck className="w-4 h-4 text-purple-500" />
+        <span className="text-sm text-gray-600">Male:</span>
+        <span className="text-sm font-semibold text-gray-900">{genderDistribution.Male || 0}</span>
+      </div>
+      <div className="flex items-center space-x-2">
+        <TrendingUp className="w-4 h-4 text-pink-500" />
+        <span className="text-sm text-gray-600">Female:</span>
+        <span className="text-sm font-semibold text-gray-900">{genderDistribution.Female || 0}</span>
+      </div>
+    </div>
+  </div>
+  
+  {/* You can add other cards here if needed */}
+  
+</div>
       {/* Main Content */}
       {viewType === 'cards' ? (
         <div className="space-y-6">
@@ -614,7 +597,12 @@ function PatientVisualDashboard() {
         </div>
       )}
 
-      {/* Modals */}
+      {/* Modals */}<UserAddPatient 
+  showModal={showUserAddPatient}
+  setShowModal={setShowUserAddPatient}
+  userClinicId={isAdminUser() ? null : getUserClinicId()}
+  isAdminUser={isAdminUser()}
+/>
       {modal && (
         <AddPatient 
           isOpen={modal} 
