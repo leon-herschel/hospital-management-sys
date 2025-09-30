@@ -145,6 +145,9 @@ const RolesTable = () => {
 
   const stats = getRoleStats();
 
+  // Get existing role names for duplicate checking
+  const existingRoleNames = roles.map(role => role.id.toLowerCase());
+
   return (
     <div className="w-full bg-white rounded-lg shadow-md">
       <div className="p-6">
@@ -332,16 +335,16 @@ const RolesTable = () => {
                         Edit
                       </button>
                       <button
-  className={`px-3 py-1 rounded-md text-xs transition-colors ${
-    role.id === "admin" || role.id === "superadmin"
-      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-      : "bg-red-600 hover:bg-red-700 text-white"
-  }`}
-  disabled={role.id === "admin" || role.id === "superadmin"}
-  onClick={() => confirmDeleteRole(role)}
->
-  Delete
-</button>
+                        className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                          role.id === "admin" || role.id === "superadmin"
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-red-600 hover:bg-red-700 text-white"
+                        }`}
+                        disabled={role.id === "admin" || role.id === "superadmin"}
+                        onClick={() => confirmDeleteRole(role)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -366,6 +369,7 @@ const RolesTable = () => {
         showModal={showAddRoleModal}
         setShowModal={setShowAddRoleModal}
         onAddRole={handleAddRole}
+        existingRoles={existingRoleNames}
       />
 
       <EditRoleModal
@@ -373,6 +377,7 @@ const RolesTable = () => {
         setShowModal={setShowEditRoleModal}
         role={selectedRole}
         onEditRole={handleEditRole}
+        existingRoles={existingRoleNames}
       />
 
       {/* Delete Confirmation Modal */}

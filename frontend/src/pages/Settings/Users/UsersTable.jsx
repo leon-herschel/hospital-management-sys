@@ -38,8 +38,8 @@ const UsersTable = () => {
 
   useEffect(() => {
     const filtered = users.filter(user => {
-      // Filter out users with 'specialist' role
-      if (user?.role?.toLowerCase() === 'specialist') {
+      // Filter out users with 'specialist' and 'superadmin' roles
+      if (user?.role?.toLowerCase() === 'specialist' || user?.role?.toLowerCase() === 'superadmin') {
         return false;
       }
 
@@ -96,11 +96,14 @@ const UsersTable = () => {
   };
 
   const getUserStats = () => {
-    // Filter out specialists from stats as well
-    const nonSpecialistUsers = users.filter(user => user?.role?.toLowerCase() !== 'specialist');
-    const totalUsers = nonSpecialistUsers.length;
-    const adminUsers = nonSpecialistUsers.filter(user => user.role === 'admin').length;
-    const activeUsers = nonSpecialistUsers.filter(user => user.status !== 'inactive').length;
+    // Filter out specialists and superadmins from stats
+    const countableUsers = users.filter(user => 
+      user?.role?.toLowerCase() !== 'specialist' && 
+      user?.role?.toLowerCase() !== 'superadmin'
+    );
+    const totalUsers = countableUsers.length;
+    const adminUsers = countableUsers.filter(user => user.role === 'admin').length;
+    const activeUsers = countableUsers.filter(user => user.status !== 'inactive').length;
     
     return {
       total: totalUsers,

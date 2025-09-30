@@ -7,11 +7,15 @@ import {
   UserIcon,
   ClipboardDocumentCheckIcon,
   XMarkIcon,
-  CheckIcon
+  CheckIcon,
+  PencilIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../../context/authContext/authContext';
 import { ref, onValue } from 'firebase/database';
-import { database } from '../../../firebase/firebase'; // Adjust import path as needed
+import { database } from '../../../firebase/firebase';
+import { saveMedicalCertificate } from './MedicalCertificateService';
+import CertificateSuccessModal from './CertificateSuccessModal';
 
 const GenerateMedicalCertificate = () => {
   const { currentUser } = useAuth();
@@ -19,9 +23,10 @@ const GenerateMedicalCertificate = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
   const [currentDoctor, setCurrentDoctor] = useState(null);
+  const [doctorSignature, setDoctorSignature] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [certificateData, setCertificateData] = useState({
     diagnosis: '',
     recommendations: '',
@@ -33,6 +38,11 @@ const GenerateMedicalCertificate = () => {
     restrictions: ''
   });
   const [showPreview, setShowPreview] = useState(false);
+  const [isSigned, setIsSigned] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [savedCertificateId, setSavedCertificateId] = useState(null);
   const certificateRef = useRef();
 
   // Fetch current doctor from Firebase
@@ -44,7 +54,6 @@ const GenerateMedicalCertificate = () => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           
-          // Find the doctor that matches the current user
           const doctorEntry = Object.entries(data).find(([key, doctor]) => {
             return doctor.email === currentUser.email || 
                    doctor.userId === currentUser.uid ||
@@ -77,6 +86,25 @@ const GenerateMedicalCertificate = () => {
     }
   }, [currentUser]);
 
+  // Fetch doctor's active signature
+  useEffect(() => {
+    if (currentDoctor?.id) {
+      const signatureRef = ref(database, `doctorSignatures/${currentDoctor.id}`);
+      
+      const unsubscribe = onValue(signatureRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const signatures = snapshot.val();
+          const activeSignature = Object.values(signatures).find(sig => sig.isActive);
+          setDoctorSignature(activeSignature || null);
+        } else {
+          setDoctorSignature(null);
+        }
+      });
+
+      return () => unsubscribe();
+    }
+  }, [currentDoctor]);
+
   // Helper function to calculate age from dateOfBirth
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'N/A';
@@ -98,7 +126,6 @@ const GenerateMedicalCertificate = () => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         const patientsArray = Object.entries(data).map(([key, value]) => {
-          // Construct full name
           const fullName = [value.firstName, value.middleName, value.lastName]
             .filter(name => name && name.trim())
             .join(' ');
@@ -122,14 +149,7 @@ const GenerateMedicalCertificate = () => {
             medicalConditions: value.medicalConditions || []
           };
         });
-        
-        const activePatients = patientsArray.filter(patient => 
-          patient.status === 'Active' && patient.name.trim()
-        );
-        
-        setPatients(activePatients);
-      } else {
-        setPatients([]);
+        setPatients(patientsArray);
       }
     });
 
@@ -164,8 +184,63 @@ const GenerateMedicalCertificate = () => {
     setShowPreview(true);
   };
 
+  const handleSignCertificate = async () => {
+    if (!doctorSignature) {
+      setShowSignatureModal(true);
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // Save the certificate to database first
+      const certificateId = await saveMedicalCertificate(
+        certificateData,
+        selectedPatient,
+        currentDoctor,
+        doctorSignature.base64Data
+      );
+      
+      setSavedCertificateId(certificateId);
+      setIsSigned(true);
+      setIsSaved(true);
+      
+      // Show success modal instead of alert
+      setShowSuccessModal(true);
+      
+    } catch (error) {
+      console.error('Error saving certificate:', error);
+      alert('Error saving certificate: ' + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+  };
+
+  const handleGenerateAnother = () => {
+    setShowSuccessModal(false);
+    setShowPreview(false);
+    setIsSigned(false);
+    setIsSaved(false);
+    setSavedCertificateId(null);
+    setSelectedPatient(null);
+    setCertificateData({
+      diagnosis: '',
+      recommendations: '',
+      restDays: '',
+      dateFrom: '',
+      dateTo: '',
+      remarks: '',
+      followUpDate: '',
+      restrictions: ''
+    });
+  };
+
   const handleDownloadPDF = async () => {
-    if (!selectedPatient) return;
+    if (!selectedPatient || !isSigned) return;
 
     setIsDownloading(true);
     
@@ -178,7 +253,7 @@ const GenerateMedicalCertificate = () => {
       
       // Configure html2canvas options for better quality
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher scale for better quality
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -201,22 +276,18 @@ const GenerateMedicalCertificate = () => {
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       
-      // Calculate the ratio to fit the image in the PDF
       const ratio = Math.min(pdfWidth / (imgWidth * 0.264583), pdfHeight / (imgHeight * 0.264583));
       const finalWidth = imgWidth * ratio * 0.264583;
       const finalHeight = imgHeight * ratio * 0.264583;
       
-      // Center the image
       const x = (pdfWidth - finalWidth) / 2;
-      const y = 10; // Small margin from top
+      const y = 10;
 
       pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
 
-      // Generate filename with patient name and date
       const currentDate = new Date().toISOString().split('T')[0];
       const fileName = `Medical_Certificate_${selectedPatient.name.replace(/\s+/g, '_')}_${currentDate}.pdf`;
 
-      // Download the PDF
       pdf.save(fileName);
 
     } catch (error) {
@@ -409,42 +480,88 @@ const GenerateMedicalCertificate = () => {
                 </div>
               </div>
 
-              {/* Right Column - Instructions */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">Instructions</h3>
-                <div className="space-y-4 text-sm text-gray-600">
-                  <div className="flex items-start space-x-3">
-                    <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <p>Select the patient from the database for whom you want to generate the medical certificate.</p>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <p>Fill in the diagnosis or medical condition accurately. This is a required field.</p>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <p>Specify the rest period in days if medical leave is required.</p>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <p>Add any work restrictions or activity limitations as needed.</p>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <p>Include follow-up dates and additional recommendations for comprehensive care.</p>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <p>Review the preview before downloading to ensure all information is accurate.</p>
-                  </div>
+              {/* Right Column - Instructions & Signature Status */}
+              <div className="space-y-6">
+                {/* Signature Status */}
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center">
+                    <PencilIcon className="w-5 h-5 mr-2 text-blue-600" />
+                    Digital Signature Status
+                  </h3>
+                  
+                  {doctorSignature ? (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <CheckIcon className="w-5 h-5 text-green-600 mr-2" />
+                        <span className="text-green-800 font-medium">Signature Available</span>
+                      </div>
+                      <div className="bg-white rounded p-3 mb-3">
+                        <img
+                          src={doctorSignature.base64Data}
+                          alt="Doctor signature"
+                          className="max-h-16 mx-auto"
+                        />
+                      </div>
+                      <p className="text-sm text-green-700">
+                        Your signature is ready to be applied to certificates.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 mr-2" />
+                        <span className="text-yellow-800 font-medium">No Signature Found</span>
+                      </div>
+                      <p className="text-sm text-yellow-700 mb-3">
+                        You need to set up your digital signature before issuing certificates.
+                      </p>
+                      <button
+                        onClick={() => window.open('/import-signature', '_blank')}
+                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm"
+                      >
+                        Set Up Signature
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-medium text-blue-900 mb-2">Important Note</h4>
-                  <p className="text-sm text-blue-700">
-                    Medical certificates are legal documents. Ensure all information is accurate and complete before issuing. 
-                    The certificate will be digitally signed with your credentials and downloaded as a PDF.
-                  </p>
+                {/* Instructions */}
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Instructions</h3>
+                  <div className="space-y-4 text-sm text-gray-600">
+                    <div className="flex items-start space-x-3">
+                      <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p>Select the patient from the database for whom you want to generate the medical certificate.</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p>Fill in the diagnosis or medical condition accurately. This is a required field.</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p>Specify the rest period in days if medical leave is required.</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p>Add any work restrictions or activity limitations as needed.</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p>Include follow-up dates and additional recommendations for comprehensive care.</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <CheckIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p>Review the preview, sign the certificate (which saves it to database), then download the PDF.</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="font-medium text-blue-900 mb-2">Important Note</h4>
+                    <p className="text-sm text-blue-700">
+                      Medical certificates are legal documents. Ensure all information is accurate and complete before signing and issuing. 
+                      The certificate will be digitally signed and automatically saved to the patient's medical records.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -455,21 +572,57 @@ const GenerateMedicalCertificate = () => {
                 <h3 className="text-lg font-semibold">Certificate Preview</h3>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => setShowPreview(false)}
+                    onClick={() => {
+                      setShowPreview(false);
+                      setIsSigned(false);
+                      setIsSaved(false);
+                      setSavedCertificateId(null);
+                    }}
                     className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Edit
                   </button>
-                  <button
-                    onClick={handleDownloadPDF}
-                    disabled={isDownloading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
-                  >
-                    <ArrowDownTrayIcon className="w-4 h-4" />
-                    <span>{isDownloading ? 'Generating PDF...' : 'Download PDF'}</span>
-                  </button>
+                  {!isSigned ? (
+                    <button
+                      onClick={handleSignCertificate}
+                      disabled={isSaving}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:bg-green-400 disabled:cursor-not-allowed"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      <span>{isSaving ? 'Signing & Saving...' : 'Sign & Save Certificate'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleDownloadPDF}
+                      disabled={isDownloading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                    >
+                      <ArrowDownTrayIcon className="w-4 h-4" />
+                      <span>{isDownloading ? 'Generating PDF...' : 'Download PDF'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
+
+              {/* Signing Status */}
+              {isSigned && !showSuccessModal && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <CheckIcon className="w-5 h-5 text-green-600 mr-2" />
+                      <span className="text-green-800 font-medium">Certificate Signed & Saved Successfully</span>
+                    </div>
+                    {savedCertificateId && (
+                      <span className="text-sm text-green-600 font-mono bg-green-100 px-2 py-1 rounded">
+                        ID: {savedCertificateId}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-green-700 mt-2">
+                    ✓ Saved to patient's medical records • ✓ Ready for download
+                  </p>
+                </div>
+              )}
 
               {/* Certificate Template */}
               <div ref={certificateRef} className="bg-white border border-gray-300 rounded-lg p-8 max-w-4xl mx-auto" style={{ fontFamily: 'Times New Roman, serif' }}>
@@ -571,9 +724,21 @@ const GenerateMedicalCertificate = () => {
                   </div>
                 </div>
 
+                {/* Signature Section */}
                 <div className="mt-12 text-center">
                   <div className="inline-block">
-                    <div className="border-b border-black w-80 mb-2"></div>
+                    {isSigned && doctorSignature ? (
+                      <div className="mb-4">
+                        <img
+                          src={doctorSignature.base64Data}
+                          alt="Doctor signature"
+                          className="max-h-16 mx-auto"
+                          style={{ filter: 'none' }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="border-b border-black w-80 mb-2"></div>
+                    )}
                     <div>
                       <p className="font-bold">
                         Dr. {currentDoctor?.fullName || currentUser?.displayName || 'Doctor Name'}
@@ -582,14 +747,19 @@ const GenerateMedicalCertificate = () => {
                       <p className="text-sm">
                         License No: {currentDoctor?.prcId || 'PRC-123456'}
                       </p>
+                      {isSigned && (
+                        <p className="text-xs text-green-600 mt-2">
+                          ✓ Digitally Signed on {getCurrentDate()}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Footer */}
                 <div className="mt-8 pt-4 border-t border-gray-300 text-center text-xs text-gray-500">
-                  <p>This is a computer-generated medical certificate. Valid without signature if digitally verified.</p>
-                  <p>Certificate ID: MC-{Date.now()}</p>
+                  <p>This is a computer-generated medical certificate. {isSigned ? 'Digitally signed and verified.' : 'Requires digital signature.'}</p>
+                  <p>Certificate ID: {savedCertificateId || `MC-${Date.now()}`}</p>
                 </div>
               </div>
             </div>
@@ -685,6 +855,55 @@ const GenerateMedicalCertificate = () => {
           </div>
         </div>
       )}
+
+      {/* Signature Setup Modal */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <ExclamationTriangleIcon className="w-8 h-8 text-yellow-500 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">Signature Required</h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                You need to set up your digital signature before you can sign certificates. 
+                This ensures the authenticity and legal validity of your medical certificates.
+              </p>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setShowSignatureModal(false)}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSignatureModal(false);
+                    window.open('/import-signature', '_blank');
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Set Up Signature
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Certificate Success Modal */}
+      <CertificateSuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        certificateData={certificateData}
+        patientData={selectedPatient}
+        doctorData={currentDoctor}
+        certificateId={savedCertificateId}
+        onDownloadPdf={() => {
+          handleDownloadPDF();
+          setShowSuccessModal(false);
+        }}
+      />
     </div>
   );
 };

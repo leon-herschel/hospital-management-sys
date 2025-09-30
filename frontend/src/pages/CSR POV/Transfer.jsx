@@ -327,9 +327,6 @@ const Transfer = () => {
     }
   };
 
-  if (department !== "CSR" && department !== "Admin") {
-    return <AccessDenied />;
-  }
 
   const selectOptions = items
     .filter(

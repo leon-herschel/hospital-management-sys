@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
-const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepartment }) => {
+const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepartment, existingDepartments = [] }) => {
   const [departmentName, setDepartmentName] = useState('');
+  const [error, setError] = useState('');
   const [permissions, setPermissions] = useState({
     accessInventory: false,
     accessOverallInventory: false,
@@ -14,6 +15,8 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
     accessAnalytics: false,
     accessMedicalCertificate: false,
     accessInventoryTransactions: false,
+    accessTransferStocks: false,
+    accessClinicManagement: false,
     // Mobile Features permissions
     accessDoctorScreen: false,
     accessLabScreen: false,
@@ -37,6 +40,8 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
         accessAnalytics: department.permissions?.accessAnalytics || false,
         accessMedicalCertificate: department.permissions?.accessMedicalCertificate || false,
         accessInventoryTransactions: department.permissions?.accessInventoryTransactions || false,
+        accessTransferStocks: department.permissions?.accessTransferStocks || false,
+        accessClinicManagement: department.permissions?.accessClinicManagement || false,
         // Mobile Features permissions
         accessDoctorScreen: department.permissions?.accessDoctorScreen || false,
         accessLabScreen: department.permissions?.accessLabScreen || false,
@@ -44,11 +49,29 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
         accessClinicStaffScreen: department.permissions?.accessClinicStaffScreen || false,
         accessNurseScreen: department.permissions?.accessNurseScreen || false,
       });
+      setError(''); // Reset error when department changes
     }
   }, [department]);
 
+  const handleDepartmentNameChange = (e) => {
+    const value = e.target.value.toLowerCase();
+    setDepartmentName(value);
+    
+    // Check for duplicates only if the name is different from the original department name
+    if (value && value !== department.id.toLowerCase() && existingDepartments.includes(value)) {
+      setError('A department with this name already exists');
+    } else {
+      setError('');
+    }
+  };
+
   const handleChange = (e) => {
     const { name, type, checked } = e.target;
+
+    // Prevent non-SuperAdmin departments from accessing SuperAdmin exclusive permissions
+    if (name === 'accessClinicManagement' && department.id !== 'SuperAdmin') {
+      return; // Don't allow change
+    }
 
     setPermissions((prevPermissions) => ({
       ...prevPermissions,
@@ -58,6 +81,20 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Final validation before saving
+    if (!departmentName.trim()) {
+      setError('Department name is required');
+      return;
+    }
+
+    // Check for duplicates one more time
+    if (departmentName.toLowerCase() !== department.id.toLowerCase() && 
+        existingDepartments.includes(departmentName.toLowerCase())) {
+      setError('A department with this name already exists');
+      return;
+    }
+
     setIsLoading(true); 
 
     try {
@@ -65,9 +102,15 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
       setShowModal(false); 
     } catch (error) {
       console.error("Failed to update department:", error);
+      setError('Failed to update department. Please try again.');
     } finally {
       setIsLoading(false); 
     }
+  };
+
+  const handleClose = () => {
+    setError('');
+    setShowModal(false);
   };
 
   // Helper function to format permission labels
@@ -90,6 +133,7 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
     'accessAnalytics',
     'accessMedicalCertificate',
     'accessInventoryTransactions',
+    'accessTransferStocks',
     'accessSettings'
   ];
 
@@ -101,13 +145,22 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
     'accessNurseScreen'
   ];
 
+  // SuperAdmin exclusive permissions
+  const superAdminPermissions = [
+    'accessClinicManagement'
+  ];
+
   if (!showModal) return null;
+
+  const isFormValid = departmentName.trim() && !error;
+  const isSystemDepartment = department?.id === 'Admin' || department?.id === 'SuperAdmin';
+  const isSuperAdmin = department?.id === 'SuperAdmin';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-md p-6 w-full max-w-lg shadow-lg relative">
         <button
-          onClick={() => setShowModal(false)}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
         >
           <XMarkIcon className="h-6 w-6" />
@@ -115,15 +168,39 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
 
         <h2 className="text-2xl font-bold mb-6">Edit Department</h2>
 
+        {isSystemDepartment && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-800">
+              <strong>Note:</strong> This is a system department. Department name cannot be modified, but permissions can be updated.
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="max-h-[500px] overflow-y-auto">
           <div className="mb-4">
             <label className="block text-gray-700">Department Name</label>
             <input
               type="text"
-              value={department?.id || ''}
-              disabled
-              className="block w-full mt-2 p-2 border border-gray-300 rounded-md bg-gray-100"
+              placeholder="Department Name (will be converted to lowercase)"
+              value={departmentName}
+              onChange={handleDepartmentNameChange}
+              className={`block w-full mt-2 p-2 border rounded-md ${
+                isSystemDepartment 
+                  ? 'bg-gray-100 cursor-not-allowed' 
+                  : error 
+                    ? 'border-red-500 bg-red-50' 
+                    : 'border-gray-300'
+              }`}
+              disabled={isSystemDepartment}
             />
+            {error && (
+              <p className="mt-1 text-sm text-red-600">{error}</p>
+            )}
+            {departmentName && !error && departmentName !== department?.id && !isSystemDepartment && (
+              <p className="mt-1 text-sm text-gray-500">
+                Department will be updated to: "{departmentName}"
+              </p>
+            )}
           </div>
 
           {/* Web Application Permissions */}
@@ -164,13 +241,41 @@ const EditDepartmentModal = ({ showModal, setShowModal, department, onEditDepart
             ))}
           </div>
 
+          {/* SuperAdmin Exclusive Permissions */}
+          {isSuperAdmin && (
+            <div className="mb-6 p-4 bg-red-50 rounded-lg shadow-md border-l-4 border-red-400">
+              <h3 className="text-lg font-semibold mb-4 text-red-800">SuperAdmin Exclusive Permissions</h3>
+              <div className="mb-3 p-2 bg-red-100 border border-red-300 rounded">
+                <p className="text-xs text-red-700">
+                  <strong>Note:</strong> These permissions are exclusive to SuperAdmin and cannot be granted to other departments.
+                </p>
+              </div>
+              {superAdminPermissions.map((permission) => (
+                <label key={permission} className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    name={permission}
+                    checked={permissions[permission]}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  />
+                  <span className="ml-2 text-gray-700">
+                    Access {formatPermissionLabel(permission)}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+
           <div className="flex justify-center">
             <button
               type="submit"
-              className={`bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : ''
+              className={`px-4 py-2 rounded-md text-white ${
+                isFormValid && !isLoading
+                  ? 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-gray-400 cursor-not-allowed'
               }`} 
-              disabled={isLoading} 
+              disabled={!isFormValid || isLoading}
             >
               {isLoading ? 'Updating Department...' : 'Update Department'}
             </button>

@@ -27,6 +27,9 @@ import {
   InboxStackIcon,
   ClockIcon,
   BuildingOffice2Icon,
+  UsersIcon,
+  VideoCameraIcon,
+  TruckIcon, // Added for Teleconsultation
 } from "@heroicons/react/24/outline";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -45,6 +48,7 @@ const Sidebar = () => {
   const location = useLocation();
   const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [billingDropdownOpen, setBillingDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     setIsLogoutModalOpen(true);
@@ -103,6 +107,12 @@ const Sidebar = () => {
     "/generate-medical-certificate": "Medical Certificate",
     "/change-password": "Change Password",
     "/doctor-profile": "Doctor Profile",
+    "/user-profile": "User Profile",
+    "/employee-attendance": "Employee Attendance & Salary",
+    "/teleconsultation": "Teleconsultation", // Added title for teleconsultation
+    "/user-management": "Users",
+    "/supplier-management": "Suppliers",
+    "/import-signature": "Create Doctor Signature",
   };
 
   let currentTitle = "Overview";
@@ -165,6 +175,29 @@ const Sidebar = () => {
             )}
           </Link>
 
+          {/* {(department === 'Doctor' || department === 'Admin' || permissions?.accessPatients) && (
+            <Link
+              to="/teleconsultation"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/teleconsultation")
+                  ? "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-white border border-purple-500/30 shadow-lg shadow-purple-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <VideoCameraIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/teleconsultation")
+                    ? "text-purple-400"
+                    : "text-slate-400 group-hover:text-purple-400"
+                }`}
+              />
+              <span>Teleconsultation</span>
+              {isActive("/teleconsultation") && (
+                <div className="ml-auto w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
+              )}
+            </Link>
+          )}   */}
+
           {/* Inventory Dropdown */}
           {permissions?.accessInventory && (
             <div className="space-y-1">
@@ -203,7 +236,7 @@ const Sidebar = () => {
                   }`}
                 >
                   <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
-                  Inventory Items
+                  Referrence Items
                 </Link>
 
                 {permissions?.accessInventory && (
@@ -219,12 +252,113 @@ const Sidebar = () => {
                     Clinic Inventory
                   </Link>
                 )}
+
+                {permissions?.accessInventoryHistory && (
+                  <Link
+                    to="/InventoryTransaction"
+                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                      isActive("/InventoryTransaction")
+                        ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                    Inventory Transactions
+                  </Link>
+                )}
               </div>
             </div>
           )}
 
           {/* Appointment Scheduling Dropdown */}
-          {permissions?.accessLaboratory && ( // ✅ Only show if user has lab access
+          {/* Transfer Supply */}
+          {permissions?.accessTransferStocks && (
+            <Link
+              to="/Transfer"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/Transfer")
+                  ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ArrowsRightLeftIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/Transfer")
+                    ? "text-orange-400"
+                    : "text-slate-400 group-hover:text-orange-400"
+                }`}
+              />
+              <span>Transfer Supply</span>
+            </Link>
+          )}
+
+          {/* Pending Supply Request */}
+          {(department === "CSR" || department === "Admin") && (
+            <Link
+              to="ViewRequest"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/ViewRequest")
+                  ? "bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-white border border-amber-500/30 shadow-lg shadow-amber-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ClockIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/ViewRequest")
+                    ? "text-amber-400"
+                    : "text-slate-400 group-hover:text-amber-400"
+                }`}
+              />
+              <span>Pending Supply Requests</span>
+            </Link>
+          )}
+
+          {/* Employee Attendance & Salary System */}
+          {/* {(department === "Admin" || department === "HR" || permissions?.accessSettings) && (
+            <Link
+              to="/employee-attendance"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/employee-attendance")
+                  ? "bg-gradient-to-r from-indigo-600/20 to-blue-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <UsersIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/employee-attendance")
+                    ? "text-indigo-400"
+                    : "text-slate-400 group-hover:text-indigo-400"
+                }`}
+              />
+              <span>Employee Attendance</span>
+              {isActive("/employee-attendance") && (
+                <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
+              )}
+            </Link>
+          )} */}
+
+          {/* Patients */}
+          {permissions?.accessPatients && (
+            <Link
+              to="/patients"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/patients")
+                  ? "bg-gradient-to-r from-violet-600/20 to-purple-600/20 text-white border border-violet-500/30 shadow-lg shadow-violet-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <UserGroupIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/patients")
+                    ? "text-violet-400"
+                    : "text-slate-400 group-hover:text-violet-400"
+                }`}
+              />
+              <span>Patient Management</span>
+            </Link>
+          )}
+
+          {permissions?.accessLaboratory && (
             <div className="space-y-1">
               <div
                 className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl cursor-pointer transition-all duration-200 ${

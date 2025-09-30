@@ -17,16 +17,20 @@ import {
   FileText,
   ArrowRightLeft,
   UserCheck,
-  UserPlus
+  UserPlus,
+  Package,
+  EyeIcon
 } from 'lucide-react';
 import AddDepartmentModal from './AddDepartmentModal';
 import EditDepartmentModal from './EditDepartmentModal';
+import ViewDepartmentPermissionsModal from './ViewDepartmentPermissionsModal';
 
 const DepartmentsTable = () => {
   const [departments, setDepartments] = useState([]);
   const [filteredDepartments, setFilteredDepartments] = useState([]);
   const [showAddDepartmentModal, setShowAddDepartmentModal] = useState(false);
   const [showEditDepartmentModal, setShowEditDepartmentModal] = useState(false);
+  const [showViewPermissionsModal, setShowViewPermissionsModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
@@ -139,26 +143,9 @@ const DepartmentsTable = () => {
     setShowDeleteConfirm(true);
   };
 
-  const getPermissionIcon = (permissionType) => {
-    const icons = {
-      accessInventory: <Shield size={14} />,
-      accessOverallInventory: <Eye size={14} />,
-      accessInventoryHistory: <History size={14} />,
-      accessPatients: <Users size={14} />,
-      accessBilling: <CreditCard size={14} />,
-      accessSettings: <Settings size={14} />,
-      accessLaboratory: <FlaskConical size={14} />,
-      accessAnalytics: <BarChart3 size={14} />,
-      accessMedicalCertificate: <FileText size={14} />,
-      accessInventoryTransactions: <ArrowRightLeft size={14} />,
-      // Mobile Features icons
-      accessDoctorScreen: <Stethoscope size={14} />,
-      accessLabScreen: <FlaskConical size={14} />,
-      accessAdminScreen: <UserCog size={14} />,
-      accessClinicStaffScreen: <UserCheck size={14} />,
-      accessNurseScreen: <UserPlus size={14} />
-    };
-    return icons[permissionType] || <Shield size={14} />;
+  const handleViewPermissions = (department) => {
+    setSelectedDepartment(department);
+    setShowViewPermissionsModal(true);
   };
 
   const getPermissionStats = () => {
@@ -173,7 +160,19 @@ const DepartmentsTable = () => {
     };
   };
 
+  const getPermissionCount = (department) => {
+    if (!department.permissions) return 0;
+    return Object.values(department.permissions).filter(Boolean).length;
+  };
+
+  const getTotalPermissions = () => {
+    return 17; // 11 web permissions + 5 mobile permissions + 1 SuperAdmin exclusive permission
+  };
+
   const stats = getPermissionStats();
+
+  // Get existing department names for duplicate checking
+  const existingDepartmentNames = departments.map(dept => dept.id.toLowerCase());
 
   return (
     <div className="w-full bg-white rounded-lg shadow-md">
@@ -236,244 +235,119 @@ const DepartmentsTable = () => {
             <thead className="text-sm bg-gray-100">
               <tr>
                 <th className="px-4 py-3 text-left">Department</th>
-                <th className="px-4 py-3">Inventory</th>
-                <th className="px-4 py-3">Overall Inventory</th>
-                <th className="px-4 py-3">Inventory History</th>
-                <th className="px-4 py-3">Patients</th>
-                <th className="px-4 py-3">Billing</th>
-                <th className="px-4 py-3">Laboratory</th>
-                <th className="px-4 py-3">Analytics</th>
-                <th className="px-4 py-3">Medical Certificate</th>
-                <th className="px-4 py-3">Inventory Transactions</th>
-                <th className="px-4 py-3">Settings</th>
-                <th className="px-4 py-3 bg-blue-50">Doctor Screen</th>
-                <th className="px-4 py-3 bg-blue-50">Lab Screen</th>
-                <th className="px-4 py-3 bg-blue-50">Admin Screen</th>
-                <th className="px-4 py-3 bg-blue-50">Clinic Staff Screen</th>
-                <th className="px-4 py-3 bg-blue-50">Nurse Screen</th>
+                <th className="px-4 py-3">Permission Summary</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredDepartments.map((department) => (
-                <tr key={department.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-left">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isSystemDepartment(department.id) ? 'bg-purple-100' : 'bg-blue-100'
-                      }`}>
-                        <Building2 size={20} className={
-                          isSystemDepartment(department.id) ? 'text-purple-600' : 'text-blue-600'
-                        } />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 flex items-center space-x-2">
-                          <span>{department.id}</span>
-                          {isSystemDepartment(department.id) && (
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${
-                              department.id === 'SuperAdmin' 
-                                ? 'bg-red-100 text-red-800' 
-                                : 'bg-purple-100 text-purple-800'
-                            }`}>
-                              {department.id === 'SuperAdmin' ? 'SUPER ADMIN' : 'SYSTEM'}
-                            </span>
-                          )}
+              {filteredDepartments.map((department) => {
+                const permissionCount = getPermissionCount(department);
+                const totalPermissions = getTotalPermissions();
+                const permissionPercentage = (permissionCount / totalPermissions) * 100;
+                
+                return (
+                  <tr key={department.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-left">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          isSystemDepartment(department.id) ? 'bg-purple-100' : 'bg-blue-100'
+                        }`}>
+                          <Building2 size={20} className={
+                            isSystemDepartment(department.id) ? 'text-purple-600' : 'text-blue-600'
+                          } />
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {department.id === 'SuperAdmin' 
-                            ? 'Super Administrator' 
-                            : department.id === 'Admin' 
-                              ? 'System Administrator' 
-                              : 'Custom Department'
-                          }
+                        <div>
+                          <div className="font-medium text-gray-900 flex items-center space-x-2">
+                            <span>{department.id}</span>
+                            {isSystemDepartment(department.id) && (
+                              <span className={`text-xs font-medium px-2 py-1 rounded ${
+                                department.id === 'SuperAdmin' 
+                                  ? 'bg-red-100 text-red-800' 
+                                  : 'bg-purple-100 text-purple-800'
+                              }`}>
+                                {department.id === 'SuperAdmin' ? 'SUPER ADMIN' : 'SYSTEM'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {department.id === 'SuperAdmin' 
+                              ? 'Super Administrator' 
+                              : department.id === 'Admin' 
+                                ? 'System Administrator' 
+                                : 'Custom Department'
+                            }
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessInventory')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessInventory ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessInventory ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessOverallInventory')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessOverallInventory ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessOverallInventory ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessInventoryHistory')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessInventoryHistory ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessInventoryHistory ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessPatients')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessPatients ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessPatients ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessBilling')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessBilling ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessBilling ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessLaboratory')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessLaboratory ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessLaboratory ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessAnalytics')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessAnalytics ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessAnalytics ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessMedicalCertificate')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessMedicalCertificate ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessMedicalCertificate ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessInventoryTransactions')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessInventoryTransactions ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessInventoryTransactions ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessSettings')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessSettings ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessSettings ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 bg-blue-50">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessDoctorScreen')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessDoctorScreen ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessDoctorScreen ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 bg-blue-50">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessLabScreen')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessLabScreen ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessLabScreen ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 bg-blue-50">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessAdminScreen')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessAdminScreen ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessAdminScreen ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 bg-blue-50">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessClinicStaffScreen')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessClinicStaffScreen ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessClinicStaffScreen ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 bg-blue-50">
-                    <div className="flex items-center justify-center space-x-1">
-                      {getPermissionIcon('accessNurseScreen')}
-                      <span className={`text-sm font-medium ${
-                        department.permissions?.accessNurseScreen ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {department.permissions?.accessNurseScreen ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col space-y-1">
-                      <button
-                        className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          isSystemDepartment(department.id)
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        }`}
-                        disabled={isSystemDepartment(department.id)}
-                        onClick={() => {
-                          setSelectedDepartment(department);
-                          setShowEditDepartmentModal(true);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          isSystemDepartment(department.id)
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-red-600 hover:bg-red-700 text-white'
-                        }`}
-                        onClick={() => confirmDeleteDepartment(department)}
-                        disabled={isSystemDepartment(department.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-700">
+                            {permissionCount} / {totalPermissions}
+                          </span>
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                            permissionPercentage >= 80 ? 'bg-green-100 text-green-800' :
+                            permissionPercentage >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {Math.round(permissionPercentage)}%
+                          </span>
+                        </div>
+                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              permissionPercentage >= 80 ? 'bg-green-500' :
+                              permissionPercentage >= 50 ? 'bg-yellow-500' :
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${permissionPercentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col space-y-1">
+                        <button
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-xs transition-colors flex items-center justify-center space-x-1"
+                          onClick={() => handleViewPermissions(department)}
+                        >
+                          <EyeIcon size={12} />
+                          <span>View Permissions</span>
+                        </button>
+                        <button
+                          className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                            isSystemDepartment(department.id)
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
+                          disabled={isSystemDepartment(department.id)}
+                          onClick={() => {
+                            setSelectedDepartment(department);
+                            setShowEditDepartmentModal(true);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                            isSystemDepartment(department.id)
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-red-600 hover:bg-red-700 text-white'
+                          }`}
+                          onClick={() => confirmDeleteDepartment(department)}
+                          disabled={isSystemDepartment(department.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredDepartments.length === 0 && (
                 <tr>
-                  <td colSpan="17" className="px-6 py-8 text-gray-500">
+                  <td colSpan="3" className="px-6 py-8 text-gray-500">
                     <div className="flex flex-col items-center space-y-2">
                       <Building2 size={32} className="text-gray-300" />
                       <span>No departments found.</span>
@@ -491,6 +365,7 @@ const DepartmentsTable = () => {
         showModal={showAddDepartmentModal}
         setShowModal={setShowAddDepartmentModal}
         onAddDepartment={handleAddDepartment}
+        existingDepartments={existingDepartmentNames}
       />
 
       <EditDepartmentModal
@@ -498,6 +373,13 @@ const DepartmentsTable = () => {
         setShowModal={setShowEditDepartmentModal}
         department={selectedDepartment}
         onEditDepartment={handleEditDepartment}
+        existingDepartments={existingDepartmentNames}
+      />
+
+      <ViewDepartmentPermissionsModal
+        showModal={showViewPermissionsModal}
+        setShowModal={setShowViewPermissionsModal}
+        department={selectedDepartment}
       />
 
       {/* Delete Confirmation Modal */}
