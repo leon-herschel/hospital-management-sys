@@ -4,12 +4,31 @@ import { X, Calendar, User, MapPin, Phone, Mail, CreditCard } from 'lucide-react
 const PaidBillingModal = ({ isOpen, onClose, billing }) => {
     if (!isOpen || !billing) return null;
 
-    // Mock services/items data - replace with actual data structure from your Firebase
-    const services = billing.services || billing.items || [
-        { id: 1, name: 'General Consultation', price: 500.00, quantity: 1 },
-        { id: 2, name: 'Blood Test', price: 800.00, quantity: 1 },
-        { id: 3, name: 'X-Ray', price: 1200.00, quantity: 1 }
-    ];
+    // Use actual billedItems from the billing data
+    const billedItems = billing.billedItems || [];
+
+    // Helper function to format item type display
+    const formatItemType = (itemType) => {
+        const typeMap = {
+            'medicine': 'Medicine/Supply',
+            'service': 'Medical Service',
+            'consultation': 'Consultation'
+        };
+        return typeMap[itemType] || itemType;
+    };
+
+    // Helper function to get type styling
+    const getTypeStyle = (itemType) => {
+        const styleMap = {
+            'medicine': 'bg-blue-100 text-blue-800 border-blue-200',
+            'service': 'bg-green-100 text-green-800 border-green-200',
+            'consultation': 'bg-purple-100 text-purple-800 border-purple-200'
+        };
+        return styleMap[itemType] || 'bg-gray-100 text-gray-800 border-gray-200';
+    };
+
+    // Calculate subtotal from actual billed items
+    const subtotal = billedItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -43,6 +62,10 @@ const PaidBillingModal = ({ isOpen, onClose, billing }) => {
                                     <div>
                                         <label className="text-sm font-medium text-gray-600">Full Name</label>
                                         <p className="text-gray-900 font-semibold">{billing.patientFullName || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600">Patient ID</label>
+                                        <p className="text-gray-900">{billing.patientId || 'N/A'}</p>
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-gray-600">Contact</label>
@@ -100,6 +123,15 @@ const PaidBillingModal = ({ isOpen, onClose, billing }) => {
                                         <label className="text-sm font-medium text-gray-600">Clinic</label>
                                         <p className="text-gray-900 font-semibold">{billing.clinicName || 'N/A'}</p>
                                     </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600">Processed By</label>
+                                        <p className="text-gray-900">
+                                            {billing.processedBy ? 
+                                                `${billing.processedBy.firstName} ${billing.processedBy.lastName}` : 
+                                                'System Generated'
+                                            }
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -108,47 +140,92 @@ const PaidBillingModal = ({ isOpen, onClose, billing }) => {
                         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
                                 <h3 className="text-lg font-semibold text-gray-900">Services & Items</h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {billedItems.length} item{billedItems.length !== 1 ? 's' : ''} billed
+                                </p>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Service/Item
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Quantity
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Unit Price
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Total
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {services.map((service, index) => (
-                                            <tr key={service.id || index} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{service.name}</div>
-                                                    {service.description && (
-                                                        <div className="text-sm text-gray-500">{service.description}</div>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {service.quantity || 1}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(service.price || 0)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                                    ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format((service.price || 0) * (service.quantity || 1))}
-                                                </td>
+                                {billedItems.length > 0 ? (
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Service/Item
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Type
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Details
+                                                </th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Quantity
+                                                </th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Unit Price
+                                                </th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Total
+                                                </th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {billedItems.map((item, index) => (
+                                                <tr key={`${item.itemId}-${index}`} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">{item.itemName}</div>
+                                                        {item.timestamp && (
+                                                            <div className="text-xs text-gray-500">
+                                                                Used: {new Date(item.timestamp).toLocaleDateString('en-PH')}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTypeStyle(item.itemType)}`}>
+                                                            {formatItemType(item.itemType)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                        {item.itemType === 'consultation' && item.consultationType && (
+                                                            <div>
+                                                                <div className="font-medium">{item.consultationType}</div>
+                                                                {item.requestedBy && (
+                                                                    <div className="text-xs text-gray-500">by {item.requestedBy}</div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {item.itemType === 'medicine' && (
+                                                            <div className="text-xs text-gray-500">
+                                                                Medicine/Supply Item
+                                                            </div>
+                                                        )}
+                                                        {item.itemType === 'service' && (
+                                                            <div className="text-xs text-gray-500">
+                                                                Medical Service
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                                        {item.quantity || 1}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                                        ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(item.pricePerUnit || item.unitPrice || 0)}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+                                                        ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(item.totalPrice || 0)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="px-6 py-8 text-center">
+                                        <div className="text-gray-500">
+                                            <div className="text-4xl mb-2">📋</div>
+                                            <p>No items found for this billing</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -159,16 +236,16 @@ const PaidBillingModal = ({ isOpen, onClose, billing }) => {
                             </div>
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Subtotal:</span>
-                                    <span className="text-gray-900">₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.subtotal || billing.amount || 0)}</span>
+                                    <span className="text-gray-600">Subtotal ({billedItems.length} item{billedItems.length !== 1 ? 's' : ''}):</span>
+                                    <span className="text-gray-900">₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(subtotal)}</span>
                                 </div>
-                                {billing.discount && (
+                                {billing.discount && billing.discount > 0 && (
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Discount:</span>
                                         <span className="text-red-600">-₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.discount)}</span>
                                     </div>
                                 )}
-                                {billing.tax && (
+                                {billing.tax && billing.tax > 0 && (
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Tax:</span>
                                         <span className="text-gray-900">₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.tax)}</span>
@@ -182,6 +259,12 @@ const PaidBillingModal = ({ isOpen, onClose, billing }) => {
                                         </span>
                                     </div>
                                 </div>
+                                {/* Show calculation verification if there's a discrepancy */}
+                                {Math.abs(subtotal - (billing.amount || 0)) > 0.01 && (
+                                    <div className="text-xs text-gray-500 mt-2">
+                                        Note: Total may include adjustments, discounts, or taxes not itemized above.
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -202,6 +285,24 @@ const PaidBillingModal = ({ isOpen, onClose, billing }) => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Additional Information */}
+                        {billing.createdAt && (
+                            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center gap-2 text-sm text-blue-800">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>
+                                        Bill created: {new Date(billing.createdAt).toLocaleDateString('en-PH', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 

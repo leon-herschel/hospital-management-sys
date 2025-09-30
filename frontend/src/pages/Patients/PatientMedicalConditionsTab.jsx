@@ -10,7 +10,10 @@ import {
   ChevronUp,
   Clock,
   Stethoscope,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Shield
 } from "lucide-react";
 
 function PatientMedicalConditionsTab({
@@ -29,6 +32,7 @@ function PatientMedicalConditionsTab({
   const [filterBy, setFilterBy] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [viewHiddenPermissions, setViewHiddenPermissions] = useState(new Set());
 
   // Get patient's medical history entries from the new data structure
   const patientEntries = useMemo(() => {
@@ -141,6 +145,14 @@ function PatientMedicalConditionsTab({
     });
   }, []);
 
+  const requestViewPermission = useCallback((entryId) => {
+    setViewHiddenPermissions(prev => {
+      const newSet = new Set(prev);
+      newSet.add(entryId);
+      return newSet;
+    });
+  }, []);
+
   const formatDiagnoses = (diagnoses) => {
     if (!diagnoses || !Array.isArray(diagnoses)) return "No diagnoses recorded";
     return diagnoses.map(d => d.description || d.code).filter(Boolean).join(", ") || "No diagnoses recorded";
@@ -149,6 +161,51 @@ function PatientMedicalConditionsTab({
   const formatPrescriptions = (prescriptions) => {
     if (!prescriptions || !Array.isArray(prescriptions)) return [];
     return prescriptions.filter(p => p.medication);
+  };
+
+  // Component to render blurred text with permission request
+  const BlurredContent = ({ children, entryId, label = "sensitive information" }) => {
+    const hasPermission = viewHiddenPermissions.has(entryId);
+    
+    if (hasPermission) {
+      return <>{children}</>;
+    }
+    
+    return (
+      <div className="relative">
+        <div className="filter blur-sm select-none pointer-events-none">
+          {children}
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg border-2 border-dashed border-gray-300">
+          <div className="text-center p-4">
+            <Shield className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600 mb-3">
+              This {label} is protected and requires patient permission to view.
+            </p>
+            <button
+              onClick={() => requestViewPermission(entryId)}
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Request Permission to View</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Component to render data with conditional blurring
+  const ProtectedData = ({ entry, children }) => {
+    if (!entry.isHidden) {
+      return <>{children}</>;
+    }
+    
+    return (
+      <BlurredContent entryId={entry.id} label="medical record">
+        {children}
+      </BlurredContent>
+    );
   };
 
   // Render legacy medical conditions format
@@ -281,215 +338,241 @@ function PatientMedicalConditionsTab({
           paginatedEntries.map((entry) => {
             const isExpanded = expandedEntries.has(entry.id);
             const prescriptions = formatPrescriptions(entry.prescriptions);
+            const isHidden = entry.isHidden;
             
             return (
-              <div key={entry.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <div key={entry.id} className={`bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow ${isHidden ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200'}`}>
+                {/* Hidden Entry Warning Banner */}
+                {isHidden && !viewHiddenPermissions.has(entry.id) && (
+                  <div className="bg-amber-100 border-b border-amber-200 px-6 py-3 rounded-t-lg">
+                    <div className="flex items-center space-x-2 text-amber-800">
+                      <Shield className="w-4 h-4" />
+                      <span className="text-sm font-medium">Protected Medical Record</span>
+                      <span className="text-sm">- Patient permission required to view details</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Entry Header */}
                 <div 
                   className="p-6 cursor-pointer"
                   onClick={() => toggleExpanded(entry.id)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Stethoscope className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {entry.type || "General Consultation"}
-                          </h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>{entry.formattedDate}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{entry.formattedTime}</span>
-                            </div>
-                            {entry.provider && (
-                              <div className="flex items-center space-x-1">
-                                <User className="w-4 h-4" />
-                                <span>Dr. {entry.provider.firstName} {entry.provider.lastName}</span>
-                              </div>
+                  <ProtectedData entry={entry}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isHidden ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                            {isHidden ? (
+                              <Shield className={`w-5 h-5 ${isHidden ? 'text-amber-600' : 'text-blue-600'}`} />
+                            ) : (
+                              <Stethoscope className="w-5 h-5 text-blue-600" />
                             )}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {entry.type || "General Consultation"}
+                            </h3>
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="w-4 h-4" />
+                                <span>{entry.formattedDate}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-4 h-4" />
+                                <span>{entry.formattedTime}</span>
+                              </div>
+                              {entry.provider && (
+                                <div className="flex items-center space-x-1">
+                                  <User className="w-4 h-4" />
+                                  <span>Dr. {entry.provider.firstName} {entry.provider.lastName}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Quick Summary */}
+                        <div className="mt-3 ml-13">
+                          <p className="text-gray-600 line-clamp-2">
+                            {entry.clinicalSummary || "No clinical summary available"}
+                          </p>
+                          <div className="mt-2 flex items-center space-x-4 text-sm">
+                            <span className="text-gray-500">
+                              <strong>Diagnosis:</strong> {formatDiagnoses(entry.diagnosis)}
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Quick Summary */}
-                      <div className="mt-3 ml-13">
-                        <p className="text-gray-600 line-clamp-2">
-                          {entry.clinicalSummary || "No clinical summary available"}
-                        </p>
-                        <div className="mt-2 flex items-center space-x-4 text-sm">
-                          <span className="text-gray-500">
-                            <strong>Diagnosis:</strong> {formatDiagnoses(entry.diagnosis)}
-                          </span>
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        {isHidden && (
+                          <div className="flex items-center space-x-1 text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full border border-amber-200">
+                            <EyeOff className="w-3 h-3" />
+                            <span>Protected</span>
+                          </div>
+                        )}
+                        {prescriptions.length > 0 && (
+                          <div className="flex items-center space-x-1 text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                            <Pill className="w-3 h-3" />
+                            <span>{prescriptions.length} Rx</span>
+                          </div>
+                        )}
+                        {isExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        )}
                       </div>
                     </div>
-
-                    <div className="flex items-center space-x-2">
-                      {prescriptions.length > 0 && (
-                        <div className="flex items-center space-x-1 text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                          <Pill className="w-3 h-3" />
-                          <span>{prescriptions.length} Rx</span>
-                        </div>
-                      )}
-                      {isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
-                  </div>
+                  </ProtectedData>
                 </div>
 
                 {/* Expanded Details */}
                 {isExpanded && (
                   <div className="border-t border-gray-100 p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Clinical Information */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-gray-900 flex items-center space-x-2">
-                          <FileText className="w-4 h-4" />
-                          <span>Clinical Information</span>
-                        </h4>
-                        
-                        {entry.presentIllnessHistory && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Present Illness History</label>
-                            <p className="mt-1 text-gray-600">{entry.presentIllnessHistory}</p>
-                          </div>
-                        )}
-
-                        {entry.reviewOfSymptoms && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Review of Symptoms</label>
-                            <p className="mt-1 text-gray-600">{entry.reviewOfSymptoms}</p>
-                          </div>
-                        )}
-
-                        {entry.allergies && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Allergies</label>
-                            <p className="mt-1 text-gray-600">{entry.allergies}</p>
-                          </div>
-                        )}
-
-                        {entry.vitals && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Vitals</label>
-                            <p className="mt-1 text-gray-600">{entry.vitals}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Treatment Information */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-gray-900 flex items-center space-x-2">
-                          <Activity className="w-4 h-4" />
-                          <span>Treatment Information</span>
-                        </h4>
-
-                        {entry.treatmentPlan && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Treatment Plan</label>
-                            <p className="mt-1 text-gray-600">{entry.treatmentPlan}</p>
-                          </div>
-                        )}
-
-                        {entry.medications && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Medications</label>
-                            <p className="mt-1 text-gray-600">{entry.medications}</p>
-                          </div>
-                        )}
-
-                        {entry.labResults && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Lab Results</label>
-                            <p className="mt-1 text-gray-600">{entry.labResults}</p>
-                          </div>
-                        )}
-
-                        {entry.differentialDiagnosis && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-700">Differential Diagnosis</label>
-                            <p className="mt-1 text-gray-600">{entry.differentialDiagnosis}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* SOAP Notes */}
-                    {entry.soapNotes && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">SOAP Notes</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {entry.soapNotes.subjective && (
+                    <ProtectedData entry={entry}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Clinical Information */}
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-gray-900 flex items-center space-x-2">
+                            <FileText className="w-4 h-4" />
+                            <span>Clinical Information</span>
+                          </h4>
+                          
+                          {entry.presentIllnessHistory && (
                             <div>
-                              <label className="text-sm font-medium text-gray-700">Subjective</label>
-                              <p className="mt-1 text-gray-600">{entry.soapNotes.subjective}</p>
+                              <label className="text-sm font-medium text-gray-700">Present Illness History</label>
+                              <p className="mt-1 text-gray-600">{entry.presentIllnessHistory}</p>
                             </div>
                           )}
-                          {entry.soapNotes.objective && (
+
+                          {entry.reviewOfSymptoms && (
                             <div>
-                              <label className="text-sm font-medium text-gray-700">Objective</label>
-                              <p className="mt-1 text-gray-600">{entry.soapNotes.objective}</p>
+                              <label className="text-sm font-medium text-gray-700">Review of Symptoms</label>
+                              <p className="mt-1 text-gray-600">{entry.reviewOfSymptoms}</p>
                             </div>
                           )}
-                          {entry.soapNotes.assessment && (
+
+                          {entry.allergies && (
                             <div>
-                              <label className="text-sm font-medium text-gray-700">Assessment</label>
-                              <p className="mt-1 text-gray-600">{entry.soapNotes.assessment}</p>
+                              <label className="text-sm font-medium text-gray-700">Allergies</label>
+                              <p className="mt-1 text-gray-600">{entry.allergies}</p>
                             </div>
                           )}
-                          {entry.soapNotes.plan && (
+
+                          {entry.vitals && (
                             <div>
-                              <label className="text-sm font-medium text-gray-700">Plan</label>
-                              <p className="mt-1 text-gray-600">{entry.soapNotes.plan}</p>
+                              <label className="text-sm font-medium text-gray-700">Vitals</label>
+                              <p className="mt-1 text-gray-600">{entry.vitals}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Treatment Information */}
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-gray-900 flex items-center space-x-2">
+                            <Activity className="w-4 h-4" />
+                            <span>Treatment Information</span>
+                          </h4>
+
+                          {entry.treatmentPlan && (
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Treatment Plan</label>
+                              <p className="mt-1 text-gray-600">{entry.treatmentPlan}</p>
+                            </div>
+                          )}
+
+                          {entry.medications && (
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Medications</label>
+                              <p className="mt-1 text-gray-600">{entry.medications}</p>
+                            </div>
+                          )}
+
+                          {entry.labResults && (
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Lab Results</label>
+                              <p className="mt-1 text-gray-600">{entry.labResults}</p>
+                            </div>
+                          )}
+
+                          {entry.differentialDiagnosis && (
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Differential Diagnosis</label>
+                              <p className="mt-1 text-gray-600">{entry.differentialDiagnosis}</p>
                             </div>
                           )}
                         </div>
                       </div>
-                    )}
 
-                    {/* Prescriptions */}
-                    {prescriptions.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 flex items-center space-x-2 mb-3">
-                          <Pill className="w-4 h-4" />
-                          <span>Prescriptions</span>
-                        </h4>
-                        <div className="space-y-3">
-                          {prescriptions.map((prescription, index) => (
-                            <div key={prescription.id || index} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex flex-wrap items-center gap-2 text-sm">
-                                <span className="font-medium text-gray-900">{prescription.medication}</span>
-                                <span className="text-gray-500">•</span>
-                                <span className="text-gray-600">{prescription.dosage}</span>
-                                <span className="text-gray-500">•</span>
-                                <span className="text-gray-600">{prescription.frequency}</span>
-                                <span className="text-gray-500">•</span>
-                                <span className="text-gray-600">{prescription.duration}</span>
-                                {prescription.prescribedDate && (
-                                  <>
-                                    <span className="text-gray-500">•</span>
-                                    <span className="text-gray-500">Prescribed: {prescription.prescribedDate}</span>
-                                  </>
+                      {/* SOAP Notes */}
+                      {entry.soapNotes && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-3">SOAP Notes</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {entry.soapNotes.subjective && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Subjective</label>
+                                <p className="mt-1 text-gray-600">{entry.soapNotes.subjective}</p>
+                              </div>
+                            )}
+                            {entry.soapNotes.objective && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Objective</label>
+                                <p className="mt-1 text-gray-600">{entry.soapNotes.objective}</p>
+                              </div>
+                            )}
+                            {entry.soapNotes.assessment && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Assessment</label>
+                                <p className="mt-1 text-gray-600">{entry.soapNotes.assessment}</p>
+                              </div>
+                            )}
+                            {entry.soapNotes.plan && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Plan</label>
+                                <p className="mt-1 text-gray-600">{entry.soapNotes.plan}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Prescriptions */}
+                      {prescriptions.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 flex items-center space-x-2 mb-3">
+                            <Pill className="w-4 h-4" />
+                            <span>Prescriptions</span>
+                          </h4>
+                          <div className="space-y-3">
+                            {prescriptions.map((prescription, index) => (
+                              <div key={prescription.id || index} className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex flex-wrap items-center gap-2 text-sm">
+                                  <span className="font-medium text-gray-900">{prescription.medication}</span>
+                                  <span className="text-gray-500">•</span>
+                                  <span className="text-gray-600">{prescription.dosage}</span>
+                                  <span className="text-gray-500">•</span>
+                                  <span className="text-gray-600">{prescription.frequency}</span>
+                                  <span className="text-gray-500">•</span>
+                                  <span className="text-gray-600">{prescription.duration}</span>
+                                  {prescription.prescribedDate && (
+                                    <>
+                                      <span className="text-gray-500">•</span>
+                                      <span className="text-gray-500">Prescribed: {prescription.prescribedDate}</span>
+                                    </>
+                                  )}
+                                </div>
+                                {prescription.description && (
+                                  <p className="mt-1 text-sm text-gray-600">{prescription.description}</p>
                                 )}
                               </div>
-                              {prescription.description && (
-                                <p className="mt-1 text-sm text-gray-600">{prescription.description}</p>
-                              )}
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </ProtectedData>
                   </div>
                 )}
               </div>

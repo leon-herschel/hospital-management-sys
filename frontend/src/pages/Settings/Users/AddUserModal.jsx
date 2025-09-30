@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { ref, get, set, push } from "firebase/database";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { EyeIcon, EyeSlashIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { EyeIcon, EyeSlashIcon, XMarkIcon, CheckIcon, XMarkIcon as XIcon } from "@heroicons/react/24/solid";
 import { auth, database } from "../../../firebase/firebase";
 import UserAddRoleModal from "./userAddModal";
 import AddDepartmentModal from "../Departments/AddDepartmentModal";
 import DoctorsAgreementModal from "../Doctors/DoctorsAgreementModal";
+import DoctorForm from "./DoctorForm";
+import PatientForm from "./PatientForm";
 
 const AddUserModal = ({ showModal, setShowModal }) => {
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -25,7 +27,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState(""); // Add current user role state
+  const [currentUserRole, setCurrentUserRole] = useState("");
 
   // Email sending states
   const [emailStatus, setEmailStatus] = useState("");
@@ -47,18 +49,30 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   const [prcIdFile, setPrcIdFile] = useState(null);
   const [prcIdFileUrl, setPrcIdFileUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  // Add state for BIR Number
   const [birNumber, setBirNumber] = useState("");
   const [prcExpiry, setPrcExpiry] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
   const [hasAgreed, setHasAgreed] = useState(false);
 
+  // Password validation checklist
+  const getPasswordValidation = (password) => {
+    return {
+      length: password.length >= 6,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password)
+    };
+  };
+
+  const passwordChecks = getPasswordValidation(password);
+  const isPasswordValid = Object.values(passwordChecks).every(Boolean);
+
   // Filter roles based on current user's role
   const getFilteredRoles = () => {
-    let filteredRoles = roles.filter(role => role !== "superadmin"); // Always exclude superadmin
+    let filteredRoles = roles.filter(role => role !== "superadmin");
     
     if (currentUserRole === "admin") {
-      filteredRoles = filteredRoles.filter(role => role !== "admin"); // Exclude admin if current user is admin
+      filteredRoles = filteredRoles.filter(role => role !== "admin");
     }
     
     return filteredRoles;
@@ -66,10 +80,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
   // Filter departments based on current user's role
   const getFilteredDepartments = () => {
-    let filteredDepartments = departments.filter(dept => dept !== "SuperAdmin"); // Always exclude superadmin
+    let filteredDepartments = departments.filter(dept => dept !== "SuperAdmin");
     
     if (currentUserRole === "admin") {
-      filteredDepartments = filteredDepartments.filter(dept => dept !== "admin"); // Exclude admin if current user is admin
+      filteredDepartments = filteredDepartments.filter(dept => dept !== "admin");
     }
     
     return filteredDepartments;
@@ -85,7 +99,11 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         const userData = userSnap.val();
 
         if (userData?.clinicAffiliation) {
-          setSelectedClinic(userData.clinicAffiliation); // auto-fill clinic ID
+          setSelectedClinic(userData.clinicAffiliation);
+        }
+
+        if (userData?.role) {
+          setCurrentUserRole(userData.role);
         }
 
         // Set current user role for filtering
@@ -120,7 +138,6 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
   const resetForm = () => {
     setFirstName("");
-    setAddress("");
     setAddress("");
     setLastName("");
     setEmail("");
@@ -188,7 +205,6 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     } catch (error) {
       console.error("Email sending error:", error);
 
-      // Handle different types of network errors
       if (error.name === "TypeError" && error.message.includes("fetch")) {
         setEmailStatus(
           "Email service unavailable. Account created successfully without email notification."
@@ -257,7 +273,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
       // If role is doctor, create doctor record using the SAME UID
       if (selectedRole === "doctor") {
-        const doctorRef = ref(database, `doctors/${userId}`); // Using same UID here
+        const doctorRef = ref(database, `doctors/${userId}`);
         await set(doctorRef, {
           firstName,
           lastName,
@@ -276,7 +292,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
       // If role is patient, create patient record using the SAME UID
       if (selectedRole === "patient") {
-        const patientRef = ref(database, `patients/${userId}`); // Using same UID here
+        const patientRef = ref(database, `patients/${userId}`);
         await set(patientRef, {
           firstName,
           lastName,
@@ -303,7 +319,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
         });
       }
 
-      // Send welcome email after successful account creation (optional, non-blocking)
+      // Send welcome email after successful account creation
       sendWelcomeEmail(email, password, selectedRole).catch((emailError) => {
         console.warn(
           "Email sending failed, but account was created successfully:",
@@ -325,26 +341,29 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
   if (!showModal) return null;
 
-  const handleAddRole = async (newRole) => {
-    const roleKey = Object.keys(newRole)[0];
+  // Updated handleAddRole function to auto-fill the role field
+  const handleAddRole = async (newRole, roleKey) => {
     const roleData = newRole[roleKey];
 
     try {
-      await set(ref(database, `roles/${roleKey}`), roleData); // ✅ Save full role object (name + permissions)
-      setRoles((prevRoles) => [...new Set([...prevRoles, roleKey])]); // ✅ Update role list
-      setSelectedRole(roleKey); // optional: auto-select the new role
+      await set(ref(database, `roles/${roleKey}`), roleData);
+      setRoles((prevRoles) => [...new Set([...prevRoles, roleKey])]);
+      // Auto-fill the newly created role
+      setSelectedRole(roleKey);
     } catch (err) {
       console.error("Error adding role:", err);
     }
   };
 
-  const handleAddDepartment = async (newDepartment) => {
-    const deptKey = Object.keys(newDepartment)[0];
-    const deptData = newDepartment[deptKey];
+  // Updated handleAddDepartment function to auto-fill the department field
+  const handleAddDepartment = async (newDepartment, departmentKey) => {
+    const deptData = newDepartment[departmentKey];
 
     try {
-      await set(ref(database, `departments/${deptKey}`), deptData.permissions);
-      setDepartments((prev) => [...new Set([...prev, deptKey])]); // Refresh departments dropdown
+      await set(ref(database, `departments/${departmentKey}`), deptData.permissions);
+      setDepartments((prev) => [...new Set([...prev, departmentKey])]);
+      // Auto-fill the newly created department
+      setSelectedDepartment(departmentKey);
     } catch (err) {
       console.error("Error adding department:", err);
     }
@@ -352,399 +371,457 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white rounded-md p-6 w-full max-w-lg max-h-screen overflow-y-auto shadow-lg relative">
-          <button
-            onClick={() => setShowModal(false)}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-          <h2 className="text-2xl font-bold mb-6">Create User Account</h2>
-          <form onSubmit={handleCreateAccount}>
-            <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-4">User Information</h3>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 relative">
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-6 right-6 text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+            <h2 className="text-2xl font-bold text-white">Create User Account</h2>
+            <p className="text-blue-100 mt-1">Add a new user to the system</p>
+          </div>
 
-              <label className="block mb-2">First Name</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                className="block w-full mb-4 p-2 border rounded-md"
-              />
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+            <form onSubmit={handleCreateAccount} className="p-8 space-y-8">
+              
+              {/* User Information Section */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                  <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
+                  Personal Information
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter first name"
+                    />
+                  </div>
 
-              <label className="block mb-2">Last Name</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                className="block w-full mb-4 p-2 border rounded-md"
-              />
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter last name"
+                    />
+                  </div>
 
-              <label className="block mb-2">Contact Number</label>
-              <input
-                type="text"
-                value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
-                required
-                className="block w-full mb-4 p-2 border rounded-md"
-              />
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Contact Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={contactNumber}
+                      onChange={(e) => setContactNumber(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter contact number"
+                    />
+                  </div>
 
-              <label className="block mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="block w-full mb-4 p-2 border rounded-md"
-              />
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                </div>
 
-              <label className="block mb-2">Password</label>
-              <div className="relative mb-4">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="block w-full p-2 border rounded-md"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-
-              <label className="block mb-2">Confirm Password</label>
-              <div className="relative mb-4">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="block w-full p-2 border rounded-md"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
-                >
-                  {showConfirmPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-4">Clinic & Role</h3>
-
-              <label className="block mb-2 flex justify-between items-center">
-                Select Role
-                <button
-                  type="button"
-                  onClick={() => setShowAddRoleModal(true)}
-                  className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600"
-                >
-                  +
-                </button>
-              </label>
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                required
-                className="block w-full mb-4 p-2 border rounded-md"
-              >
-                <option value="" disabled>
-                  Select a role
-                </option>
-                {getFilteredRoles().map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-              {selectedRole === "doctor" && (
-                <>
-                  <label className="block mb-2">PRC License Number</label>
-                  <input
-                    type="text"
-                    value={prcId}
-                    onChange={(e) => setPrcId(e.target.value)}
-                    required
-                    className="block w-full mb-4 p-2 border rounded-md"
-                  />
-
-                  <label className="block mb-2">Upload PRC ID</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setPrcIdFile(e.target.files[0])}
-                    className="block w-full mb-4 p-2 border rounded-md"
-                  />
-
-                  {prcIdFileUrl && (
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-500 mb-1">Preview:</p>
-                      <img
-                        src={prcIdFileUrl}
-                        alt="PRC ID Preview"
-                        className="w-32 h-20 object-cover border rounded-md"
+                {/* Password Section with Checklist */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        placeholder="Enter password"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeSlashIcon className="h-5 w-5" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
-                  )}
-                  <label className="block mb-2">PRC License Expiry</label>
-                  <input
-                    type="date"
-                    value={prcExpiry}
-                    onChange={(e) => setPrcExpiry(e.target.value)}
-                    required
-                    className="block w-full mb-4 p-2 border rounded-md"
-                  />
+                    
+                    {/* Password Checklist */}
+                    {password && (
+                      <div className="mt-3 p-4 bg-white rounded-lg border border-gray-200">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</p>
+                        <div className="space-y-1">
+                          <div className="flex items-center text-sm">
+                            {passwordChecks.length ? (
+                              <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                            ) : (
+                              <XIcon className="h-4 w-4 text-red-500 mr-2" />
+                            )}
+                            <span className={passwordChecks.length ? 'text-green-700' : 'text-red-700'}>
+                              At least 6 characters
+                            </span>
+                          </div>
+                          <div className="flex items-center text-sm">
+                            {passwordChecks.uppercase ? (
+                              <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                            ) : (
+                              <XIcon className="h-4 w-4 text-red-500 mr-2" />
+                            )}
+                            <span className={passwordChecks.uppercase ? 'text-green-700' : 'text-red-700'}>
+                              One uppercase letter
+                            </span>
+                          </div>
+                          <div className="flex items-center text-sm">
+                            {passwordChecks.lowercase ? (
+                              <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                            ) : (
+                              <XIcon className="h-4 w-4 text-red-500 mr-2" />
+                            )}
+                            <span className={passwordChecks.lowercase ? 'text-green-700' : 'text-red-700'}>
+                              One lowercase letter
+                            </span>
+                          </div>
+                          <div className="flex items-center text-sm">
+                            {passwordChecks.number ? (
+                              <CheckIcon className="h-4 w-4 text-green-500 mr-2" />
+                            ) : (
+                              <XIcon className="h-4 w-4 text-red-500 mr-2" />
+                            )}
+                            <span className={passwordChecks.number ? 'text-green-700' : 'text-red-700'}>
+                              One number
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                  <label className="block mb-2">BIR Number</label>
-                  <input
-                    type="text"
-                    value={birNumber}
-                    onChange={(e) => setBirNumber(e.target.value)}
-                    required
-                    className="block w-full mb-4 p-2 border rounded-md"
-                  />
-                </>
-              )}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        placeholder="Confirm password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeSlashIcon className="h-5 w-5" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+                    {confirmPassword && password !== confirmPassword && (
+                      <p className="text-sm text-red-600 mt-1">Passwords do not match</p>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-              {selectedRole !== "patient" && (
-                <>
-                  <label className="block mb-2">Clinic Affiliation</label>
-                  <select
-                    value={selectedClinic}
-                    onChange={(e) => setSelectedClinic(e.target.value)}
-                    className="block w-full mb-4 p-2 border rounded-md"
-                    disabled={selectedClinic !== ""} // disables if already filled
-                  >
-                    <option value="" disabled>
-                      Select a clinic
-                    </option>
-                    {clinics.map((clinic) => (
-                      <option key={clinic.id} value={clinic.id}>
-                        {clinic.name}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
+              {/* Role Selection Section */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                  <div className="w-2 h-6 bg-purple-600 rounded-full mr-3"></div>
+                  User Role
+                </h3>
 
-              {selectedRole !== "patient" && (
-                <>
-                  <label className="block mb-2 flex justify-between items-center">
-                    Select Department
+                <div className="space-y-2">
+                  <label className="flex justify-between items-center text-sm font-medium text-gray-700">
+                    <span>Select Role <span className="text-red-500">*</span></span>
                     <button
                       type="button"
-                      onClick={() => setShowAddDepartmentModal(true)}
-                      className="ml-2 bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600"
+                      onClick={() => setShowAddRoleModal(true)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 text-xs rounded-full transition-colors duration-200"
                     >
-                      +
+                      + Add Role
                     </button>
                   </label>
                   <select
-                    value={selectedDepartment}
-                    onChange={(e) => setSelectedDepartment(e.target.value)}
-                    required={
-                      selectedRole === "doctor" ||
-                      (selectedRole !== "patient" && selectedRole !== "doctor")
-                    }
-                    className="block w-full mb-4 p-2 border rounded-md"
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white"
                   >
-                    <option value="" disabled>
-                      Select a department
-                    </option>
-                    {getFilteredDepartments().map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
+                    <option value="" disabled>Select a role</option>
+                    {getFilteredRoles().map((role) => (
+                      <option key={role} value={role}>{role}</option>
                     ))}
                   </select>
-                </>
+                </div>
+              </div>
+
+              {/* Doctor Form */}
+              {selectedRole === "doctor" && (
+                <DoctorForm
+                  prcId={prcId}
+                  setPrcId={setPrcId}
+                  prcExpiry={prcExpiry}
+                  setPrcExpiry={setPrcExpiry}
+                  birNumber={birNumber}
+                  setBirNumber={setBirNumber}
+                  prcIdFile={prcIdFile}
+                  setPrcIdFile={setPrcIdFile}
+                  prcIdFileUrl={prcIdFileUrl}
+                  setPrcIdFileUrl={setPrcIdFileUrl}
+                  selectedDepartment={selectedDepartment}
+                  setSelectedDepartment={setSelectedDepartment}
+                  selectedClinic={selectedClinic}
+                  setSelectedClinic={setSelectedClinic}
+                  departments={departments}
+                  clinics={clinics}
+                  getFilteredDepartments={getFilteredDepartments}
+                  setShowAddDepartmentModal={setShowAddDepartmentModal}
+                />
               )}
-              <UserAddRoleModal
-                showModal={showAddRoleModal}
-                setShowModal={setShowAddRoleModal}
-                onAddRole={handleAddRole}
-              />
 
-              <AddDepartmentModal
-                showModal={showAddDepartmentModal}
-                setShowModal={setShowAddDepartmentModal}
-                onAddDepartment={handleAddDepartment}
-              />
-            </div>
-
-            {selectedRole === "patient" && (
-              <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-4">Patient Details</h3>
-                <label className="block mb-2">Address</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                  className="block w-full mb-4 p-2 border rounded-md"
+              {/* Patient Form */}
+              {selectedRole === "patient" && (
+                <PatientForm
+                  address={address}
+                  setAddress={setAddress}
+                  dateOfBirth={dateOfBirth}
+                  setDateOfBirth={setDateOfBirth}
+                  gender={gender}
+                  setGender={setGender}
+                  bloodType={bloodType}
+                  setBloodType={setBloodType}
+                  allergies={allergies}
+                  setAllergies={setAllergies}
+                  medicalConditions={medicalConditions}
+                  setMedicalConditions={setMedicalConditions}
+                  emergencyContactName={emergencyContactName}
+                  setEmergencyContactName={setEmergencyContactName}
+                  emergencyRelationship={emergencyRelationship}
+                  setEmergencyRelationship={setEmergencyRelationship}
+                  emergencyPhone={emergencyPhone}
+                  setEmergencyPhone={setEmergencyPhone}
                 />
-                <label className="block mb-2">Date of Birth</label>
-                <input
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  required
-                  className="block w-full mb-4 p-2 border rounded-md"
-                />
+              )}
 
-                <label className="block mb-2">Gender</label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  required
-                  className="block w-full mb-4 p-2 border rounded-md"
-                >
-                  <option value="" disabled>
-                    Select gender
-                  </option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
+              {/* Other roles (non-doctor, non-patient) */}
+              {selectedRole && selectedRole !== "patient" && selectedRole !== "doctor" && (
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <div className="w-2 h-6 bg-indigo-600 rounded-full mr-3"></div>
+                    Role & Affiliation
+                  </h3>
 
-                <label className="block mb-2">Blood Type</label>
-                <input
-                  type="text"
-                  value={bloodType}
-                  onChange={(e) => setBloodType(e.target.value)}
-                  className="block w-full mb-4 p-2 border rounded-md"
-                />
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Clinic Affiliation <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={selectedClinic}
+                        onChange={(e) => setSelectedClinic(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        required
+                      >
+                        <option value="" disabled>Select a clinic</option>
+                        {clinics.map((clinic) => (
+                          <option key={clinic.id} value={clinic.id}>
+                            {clinic.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                <label className="block mb-2">
-                  Allergies (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={allergies}
-                  onChange={(e) => setAllergies(e.target.value)}
-                  className="block w-full mb-4 p-2 border rounded-md"
-                />
-
-                <label className="block mb-2">
-                  Medical Conditions (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={medicalConditions}
-                  onChange={(e) => setMedicalConditions(e.target.value)}
-                  className="block w-full mb-4 p-2 border rounded-md"
-                />
-
-                <h4 className="text-md font-semibold mt-4 mb-2">
-                  Emergency Contact
-                </h4>
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={emergencyContactName}
-                  onChange={(e) => setEmergencyContactName(e.target.value)}
-                  className="block w-full mb-2 p-2 border rounded-md"
-                />
-                <input
-                  type="text"
-                  placeholder="Relationship"
-                  value={emergencyRelationship}
-                  onChange={(e) => setEmergencyRelationship(e.target.value)}
-                  className="block w-full mb-2 p-2 border rounded-md"
-                />
-                <input
-                  type="text"
-                  placeholder="Phone"
-                  value={emergencyPhone}
-                  onChange={(e) => setEmergencyPhone(e.target.value)}
-                  className="block w-full mb-4 p-2 border rounded-md"
-                />
-              </div>
-            )}
-
-            {error && <div className="text-red-500 mb-4">{error}</div>}
-
-            {/* Email status display */}
-            {emailStatus && (
-              <div
-                className={`mb-4 p-3 rounded-md ${
-                  emailStatus.includes("successfully")
-                    ? "bg-green-100 text-green-700 border border-green-300"
-                    : emailStatus.includes("Failed") ||
-                      emailStatus.includes("failed")
-                    ? "bg-red-100 text-red-700 border border-red-300"
-                    : "bg-blue-100 text-blue-700 border border-blue-300"
-                }`}
-              >
-                {isEmailLoading && (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                    <span>{emailStatus}</span>
+                    <div className="space-y-2">
+                      <label className="flex justify-between items-center text-sm font-medium text-gray-700">
+                        <span>Select Department <span className="text-red-500">*</span></span>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddDepartmentModal(true)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded-full transition-colors duration-200"
+                        >
+                          + Add Department
+                        </button>
+                      </label>
+                      <select
+                        value={selectedDepartment}
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      >
+                        <option value="" disabled>Select a department</option>
+                        {getFilteredDepartments().map((dept) => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                )}
-                {!isEmailLoading && <span>{emailStatus}</span>}
-              </div>
-            )}
+                </div>
+              )}
 
-            <div className="flex justify-center">
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
-                disabled={isLoading || isEmailLoading}
-              >
-                {isLoading ? "Creating Account..." : "Create Account"}
-              </button>
-            </div>
-          </form>
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <XIcon className="h-5 w-5 text-red-500 mr-2" />
+                    <p className="text-red-700 text-sm">{error}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Email Status Display */}
+              {emailStatus && (
+                <div
+                  className={`rounded-lg p-4 border ${
+                    emailStatus.includes("successfully")
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : emailStatus.includes("Failed") || emailStatus.includes("failed")
+                      ? "bg-red-50 text-red-700 border-red-200"
+                      : "bg-blue-50 text-blue-700 border-blue-200"
+                  }`}
+                >
+                  {isEmailLoading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-3"></div>
+                      <span className="text-sm">{emailStatus}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      {emailStatus.includes("successfully") ? (
+                        <CheckIcon className="h-5 w-5 mr-2" />
+                      ) : (
+                        <XIcon className="h-5 w-5 mr-2" />
+                      )}
+                      <span className="text-sm">{emailStatus}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <div className="flex justify-end pt-6 border-t border-gray-200">
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    disabled={isLoading || isEmailLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <UserAddRoleModal
+        showModal={showAddRoleModal}
+        setShowModal={setShowAddRoleModal}
+        onAddRole={handleAddRole}
+      />
+
+      <AddDepartmentModal
+        showModal={showAddDepartmentModal}
+        setShowModal={setShowAddDepartmentModal}
+        onAddDepartment={handleAddDepartment}
+      />
+
       <DoctorsAgreementModal
         show={showAgreement}
         onClose={() => setShowAgreement(false)}
         onAgree={() => setHasAgreed(true)}
       />
+
+      {/* Success Modal */}
       {success && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-md p-6 w-full max-w-md text-center shadow-lg">
-            <h2 className="text-xl font-bold mb-4">
-              Account Created Successfully!
-            </h2>
-            <p className="text-gray-700 mb-4">
-              The user account has been created.
-            </p>
-            {emailStatus && (
-              <p
-                className={`text-sm mb-4 ${
-                  emailStatus.includes("successfully")
-                    ? "text-green-600"
-                    : "text-orange-600"
-                }`}
-              >
-                📧 {emailStatus}
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div className="p-8 text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                <CheckIcon className="h-8 w-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Success!
+              </h2>
+              <p className="text-gray-600 mb-4">
+                The user account has been created successfully.
               </p>
-            )}
-            <button
-              onClick={closeSuccessModal}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              OK
-            </button>
+              {emailStatus && (
+                <div
+                  className={`text-sm mb-6 p-3 rounded-lg ${
+                    emailStatus.includes("successfully")
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-orange-50 text-orange-700 border border-orange-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-center">
+                    <span className="mr-2">📧</span>
+                    <span>{emailStatus}</span>
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={closeSuccessModal}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
+              >
+                Continue
+              </button>
+            </div>
           </div>
         </div>
       )}

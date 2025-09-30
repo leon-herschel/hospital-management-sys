@@ -15,6 +15,7 @@ import DateRangePicker from "../../components/DateRangePicker/DateRangePicker";
 import ReceiptModal from "./ReceiptModal";
 import ServicePaymentModal from "./ServicePaymentModal";
 import PatientBillGenerationModal from "./PatientBillGenerationModal";
+import BillingSuccessModal from "./BillingSuccessModal";
 import QRCode from "qrcode";
 import { Search, Plus, Eye, CreditCard, Trash2, Receipt, Users, Activity, Shield, TestTube } from "lucide-react";
 
@@ -40,12 +41,32 @@ const Billing = () => {
   // Service payment states
   const [isServicePaymentModalOpen, setIsServicePaymentModalOpen] = useState(false);
 
+  // Success modal states
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successModalData, setSuccessModalData] = useState({
+    type: '',
+    patientName: '',
+    amount: null,
+    additionalInfo: ''
+  });
+
   // Cache for already billed items
   const [billedItemsCache, setBilledItemsCache] = useState({});
 
   // Clinic info
   const CLINIC_ID = "clin_cebu_doctors_id";
   const CLINIC_NAME = "Cebu Doctors' University Hospital";
+
+  // Show success modal
+  const showSuccessModal = (type, patientName, amount = null, additionalInfo = '') => {
+    setSuccessModalData({
+      type,
+      patientName,
+      amount,
+      additionalInfo
+    });
+    setIsSuccessModalOpen(true);
+  };
 
   // Fetch and cache all billed items from paid bills
   useEffect(() => {
@@ -180,6 +201,15 @@ const Billing = () => {
         await remove(billingRef);
         setBillings(billings.filter((b) => b.id !== billingToDelete.id));
         setIsDeleteModalOpen(false);
+        
+        // Show success modal
+        showSuccessModal(
+          'bill_deleted',
+          billingToDelete.patientFullName,
+          billingToDelete.amount,
+          'The bill has been permanently removed from the system.'
+        );
+        
         setBillingToDelete(null);
       } catch (error) {
         alert("Error deleting billing: " + error.message);
@@ -203,7 +233,14 @@ const Billing = () => {
       });
 
       setBillings(billings.filter((b) => b.id !== billing.id));
-      alert("✅ Bill marked as paid! Items are now automatically excluded from future bills.");
+      
+      // Show success modal
+      showSuccessModal(
+        'marked_paid',
+        billing.patientFullName,
+        billing.amount,
+        'Items are now automatically excluded from future bills.'
+      );
       
     } catch (error) {
       console.error("❌ Error updating billing status:", error);
@@ -238,12 +275,22 @@ const Billing = () => {
     setIsAddModalOpen(false);
   };
 
+  // Handle successful bill generation from PatientBillGenerationModal
+  const handleBillGenerated = (patientName, amount) => {
+    showSuccessModal(
+      'bill_generated',
+      patientName,
+      amount,
+      'The bill has been created and is ready for payment processing.'
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Modern Header Section */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg">
                 <Activity className="h-8 w-8 text-white" />
@@ -255,7 +302,7 @@ const Billing = () => {
             </div>
             
             {/* Anti-Double-Billing Status */}
-            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 min-w-64">
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 w-full lg:w-auto lg:min-w-64">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Shield className="h-5 w-5 text-emerald-600" />
@@ -275,36 +322,34 @@ const Billing = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Controls Section */}
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-8">
-          <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* Left side - Search and Date Range */}
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="space-y-6">
+            {/* Search and Date Range Row */}
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
               {/* Search */}
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 z-10" />
                 <input
                   type="text"
                   placeholder="Search by patient name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 h-12"
                 />
               </div>
 
               {/* Date Range */}
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <div className="min-w-fit">
-                  <DateRangePicker
-                    startDate={startDate}
-                    endDate={endDate}
-                    onStartDateChange={setStartDate}
-                    onEndDateChange={setEndDate}
-                  />
-                </div>
+              <div className="flex-shrink-0">
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                />
               </div>
             </div>
 
-            {/* Right side - Actions */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Action Buttons Row */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-end">
               <button
                 onClick={() => setIsServicePaymentModalOpen(true)}
                 className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2"
@@ -449,6 +494,7 @@ const Billing = () => {
         <PatientBillGenerationModal
           isOpen={isPatientBillModalOpen}
           onClose={() => setIsPatientBillModalOpen(false)}
+          onBillGenerated={handleBillGenerated}
           patients={patients}
           patientQRCodes={patientQRCodes}
           billedItemsCache={billedItemsCache}
@@ -482,6 +528,18 @@ const Billing = () => {
           billing={viewBilling}
           patientDetails={patientDetails}
           onClose={() => setIsReceiptModalOpen(false)}
+        />
+      )}
+
+      {/* Success Modal */}
+      {isSuccessModalOpen && (
+        <BillingSuccessModal
+          isOpen={isSuccessModalOpen}
+          onClose={() => setIsSuccessModalOpen(false)}
+          type={successModalData.type}
+          patientName={successModalData.patientName}
+          amount={successModalData.amount}
+          additionalInfo={successModalData.additionalInfo}
         />
       )}
     </div>

@@ -4,7 +4,15 @@ import { useAuth } from '../../context/authContext/authContext';
 import { useNavigate } from 'react-router-dom';
 import { ref, get } from 'firebase/database';
 import { database } from '../../firebase/firebase'; 
-import { UserIcon } from '@heroicons/react/16/solid';
+import { 
+  User, 
+  Mail, 
+  Building2, 
+  Stethoscope, 
+  Lock, 
+  LogOut, 
+  UserCircle 
+} from 'lucide-react';
 
 const UserProfileDropdown = ({ onLogout }) => {
   const { currentUser } = useAuth();
@@ -91,7 +99,12 @@ const UserProfileDropdown = ({ onLogout }) => {
 
   const handleUserProfileClick = () => {
     setDropdownVisible(false);
-    navigate('/doctor-profile');
+    // Route based on user role
+    if (userData?.role === 'doctor') {
+      navigate('/doctor-profile');
+    } else {
+      navigate('/user-profile');
+    }
   };
 
   useEffect(() => {
@@ -112,8 +125,9 @@ const UserProfileDropdown = ({ onLogout }) => {
     <>
       {/* Profile Icon */}
       <div ref={iconRef} className="cursor-pointer group" onClick={handleDropdownToggle}>
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
-          <UserIcon className="w-5 h-5 text-white" />
+        <div className="relative w-10 h-10 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 ring-2 ring-white/10 hover:ring-white/20">
+          <User className="w-5 h-5 text-white" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
         </div>
       </div>
 
@@ -123,19 +137,21 @@ const UserProfileDropdown = ({ onLogout }) => {
           <div
             ref={dropdownRef}
             style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left }}
-            className="w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-[99999] overflow-hidden"
+            className="w-72 bg-white/95 backdrop-blur-xl border border-gray-200/60 rounded-2xl shadow-2xl z-[99999] overflow-hidden ring-1 ring-black/5"
           >
             {/* Profile Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-4 text-white">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <UserIcon className="w-6 h-6 text-white" />
+            <div className="relative bg-gradient-to-br from-slate-700 via-slate-600 to-slate-500 px-5 py-6 text-white">
+              <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent"></div>
+              <div className="relative flex items-center space-x-4">
+                <div className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center ring-2 ring-white/20">
+                  <User className="w-7 h-7 text-white" />
                 </div>
-                <div>
-                  <div className="font-semibold text-lg">
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-lg truncate">
                     {userData.fullName || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User'}
                   </div>
-                  <div className="text-blue-100 text-sm">
+                  <div className="text-white/80 text-sm font-medium flex items-center">
+                    {userData.role === 'doctor' && <Stethoscope className="w-3 h-3 mr-1" />}
                     {userData.role?.charAt(0).toUpperCase() + userData.role?.slice(1)}
                   </div>
                 </div>
@@ -143,49 +159,53 @@ const UserProfileDropdown = ({ onLogout }) => {
             </div>
 
             {/* User Details */}
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-              <div className="space-y-1">
-                <div className="flex items-center text-sm text-gray-600">
-                  <span className="w-4 h-4 mr-2">📧</span>
-                  <span className="truncate">{userData.email}</span>
+            <div className="px-5 py-4 bg-gradient-to-b from-gray-50/80 to-white border-b border-gray-100/60">
+              <div className="space-y-3">
+                <div className="flex items-center text-sm text-gray-700 group">
+                  <Mail className="w-4 h-4 mr-3 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                  <span className="truncate font-medium">{userData.email}</span>
                 </div>
                 {(userData.department || userData.specialty) && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <span className="w-4 h-4 mr-2">🏥</span>
-                    <span>{userData.specialty || userData.department} {userData.department && !userData.specialty ? 'Department' : ''}</span>
+                  <div className="flex items-center text-sm text-gray-700 group">
+                    <Stethoscope className="w-4 h-4 mr-3 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                    <span className="font-medium">{userData.specialty || userData.department} {userData.department && !userData.specialty ? 'Department' : ''}</span>
                   </div>
                 )}
-                <div className="flex items-center text-sm text-gray-600">
-                  <span className="w-4 h-4 mr-2">🏢</span>
-                  <span className="truncate">{clinicName}</span>
+                <div className="flex items-center text-sm text-gray-700 group">
+                  <Building2 className="w-4 h-4 mr-3 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                  <span className="truncate font-medium">{clinicName}</span>
                 </div>
               </div>
             </div>
 
             {/* Menu Items */}
             <div className="py-2">
-              {userData.role === 'doctor' && (
-                <button
-                  className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
-                  onClick={handleUserProfileClick}
-                >
-                  <span className="w-5 h-5 mr-3">👨‍⚕️</span>
-                  User Profile
-                </button>
-              )}
+              {/* User Profile - Now available to ALL users */}
               <button
-                className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                className="w-full flex items-center px-5 py-3.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-50/50 hover:text-blue-700 transition-all duration-200 group"
+                onClick={handleUserProfileClick}
+              >
+                <UserCircle className="w-5 h-5 mr-4 text-gray-500 group-hover:text-blue-600 transition-colors" />
+                <span className="font-medium">User Profile</span>
+              </button>
+              
+              <button
+                className="w-full flex items-center px-5 py-3.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-amber-50 hover:to-amber-50/50 hover:text-amber-700 transition-all duration-200 group"
                 onClick={handleChangePasswordClick}
               >
-                <span className="w-5 h-5 mr-3">🔐</span>
-                Change Password
+                <Lock className="w-5 h-5 mr-4 text-gray-500 group-hover:text-amber-600 transition-colors" />
+                <span className="font-medium">Change Password</span>
               </button>
+
+              {/* Separator */}
+              <div className="my-2 mx-4 border-t border-gray-100"></div>
+
               <button
-                className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+                className="w-full flex items-center px-5 py-3.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-50/50 hover:text-red-700 transition-all duration-200 group"
                 onClick={onLogout}
               >
-                <span className="w-5 h-5 mr-3">🚪</span>
-                Logout
+                <LogOut className="w-5 h-5 mr-4 text-gray-500 group-hover:text-red-600 transition-colors" />
+                <span className="font-medium">Logout</span>
               </button>
             </div>
           </div>,

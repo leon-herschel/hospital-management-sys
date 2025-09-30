@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { database } from '../../firebase/firebase';
 import { ref, query, orderByChild, equalTo, onValue } from "firebase/database";
-import { ChevronLeft, ChevronRight, Download, Search, TrendingUp, DollarSign, FileText, Users, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Search, TrendingUp, DollarSign, FileText, Users, Eye, Smartphone, CreditCard, Info } from 'lucide-react';
 import DateRangePicker from '../../components/DateRangePicker/DateRangePicker';
-import PaidBillingModal from './PaidBillingModal'; // Import the modal
+import PaidBillingModal from './PaidBillingModal';
+import GcashTransactionDetailsModal from './GcashTransactionDetailsModal';
 
 const PaidSection = () => {
     const [billingList, setBillingList] = useState([]);
@@ -18,6 +19,8 @@ const PaidSection = () => {
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBilling, setSelectedBilling] = useState(null);
+    const [isGcashModalOpen, setIsGcashModalOpen] = useState(false);
+    const [selectedGcashTransaction, setSelectedGcashTransaction] = useState(null);
 
     // Clinic info - should match your main billing component
     // const CLINIC_ID = 'your-clinic-id';
@@ -97,6 +100,23 @@ const PaidSection = () => {
         return filtered;
     }, [billingList, searchTerm, startDate, endDate, sortField, sortDirection]);
 
+    // Calculate payment method statistics
+    const paymentStats = useMemo(() => {
+        const gcashPayments = filteredBillings.filter(b => b.paymentMethod === 'gcash');
+        const cashPayments = filteredBillings.filter(b => b.paymentMethod !== 'gcash');
+        
+        return {
+            gcash: {
+                count: gcashPayments.length,
+                amount: gcashPayments.reduce((total, billing) => total + (billing.amount || 0), 0)
+            },
+            cash: {
+                count: cashPayments.length,
+                amount: cashPayments.reduce((total, billing) => total + (billing.amount || 0), 0)
+            }
+        };
+    }, [filteredBillings]);
+
     // Calculate total paid amount - your original logic
     const totalPaidAmount = filteredBillings.reduce((total, billing) => total + (billing.amount || 0), 0);
 
@@ -122,22 +142,48 @@ const PaidSection = () => {
         setIsModalOpen(true);
     };
 
+    // Toggle GCash details expansion
+    const toggleGCashDetails = (billingId) => {
+        const newExpandedRows = new Set(expandedGCashRows);
+        if (newExpandedRows.has(billingId)) {
+            newExpandedRows.delete(billingId);
+        } else {
+            newExpandedRows.add(billingId);
+        }
+        setExpandedGCashRows(newExpandedRows);
+    };
+
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedBilling(null);
     };
 
-    // Export functionality
+    // Open GCash transaction details
+const handleViewGcashDetails = (billing) => {
+  setSelectedGcashTransaction(billing);
+  setIsGcashModalOpen(true);
+};
+
+// Close GCash modal
+const handleCloseGcashModal = () => {
+  setIsGcashModalOpen(false);
+  setSelectedGcashTransaction(null);
+};
+
+
+    // Export functionality - Enhanced to include payment method
     const handleExport = () => {
         const csvContent = [
-            ['Patient Name', 'Amount', 'Status', 'Transaction Date', 'Paid Date', 'Clinic'].join(','),
+            ['Patient Name', 'Amount', 'Payment Method', 'Status', 'Transaction Date', 'Paid Date', 'Clinic', 'GCash Reference'].join(','),
             ...filteredBillings.map(billing => [
                 `"${billing.patientFullName || ''}"`,
                 billing.amount || 0,
+                billing.paymentMethod || 'cash',
                 billing.status || '',
                 billing.transactionDate ? new Date(billing.transactionDate).toLocaleDateString() : '',
                 billing.paidDate ? new Date(billing.paidDate).toLocaleDateString() : '',
-                `"${billing.clinicName || ''}"`
+                `"${billing.clinicName || ''}"`,
+                billing.gcashReference || ''
             ].join(','))
         ].join('\n');
 
@@ -175,56 +221,88 @@ const PaidSection = () => {
                 </div>
             </div>
 
-            {/* Enhanced Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            {/* Enhanced Summary Cards - Fixed grid layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
-                            <p className="text-2xl font-bold text-green-600">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-600 mb-1 truncate">Total Revenue</p>
+                            <p className="text-lg font-bold text-green-600 truncate">
                                 ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(totalPaidAmount)}
                             </p>
                         </div>
-                        <div className="p-3 bg-green-100 rounded-full">
-                            <DollarSign className="w-6 h-6 text-green-600" />
+                        <div className="p-2 bg-green-100 rounded-full flex-shrink-0 ml-2">
+                            <DollarSign className="w-4 h-4 text-green-600" />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600 mb-1">Total Transactions</p>
-                            <p className="text-2xl font-bold text-blue-600">{filteredBillings.length}</p>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-600 mb-1 truncate">Transactions</p>
+                            <p className="text-lg font-bold text-blue-600">{filteredBillings.length}</p>
                         </div>
-                        <div className="p-3 bg-blue-100 rounded-full">
-                            <FileText className="w-6 h-6 text-blue-600" />
+                        <div className="p-2 bg-blue-100 rounded-full flex-shrink-0 ml-2">
+                            <FileText className="w-4 h-4 text-blue-600" />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600 mb-1">Average Amount</p>
-                            <p className="text-2xl font-bold text-purple-600">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-600 mb-1 truncate">GCash</p>
+                            <p className="text-sm font-bold text-blue-600">{paymentStats.gcash.count}</p>
+                            <p className="text-xs text-gray-500 truncate">₱{new Intl.NumberFormat('en-PH', { 
+                                minimumFractionDigits: 0, 
+                                maximumFractionDigits: 0 
+                            }).format(paymentStats.gcash.amount)}</p>
+                        </div>
+                        <div className="p-2 bg-blue-100 rounded-full flex-shrink-0 ml-2">
+                            <Smartphone className="w-4 h-4 text-blue-600" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-600 mb-1 truncate">Cash</p>
+                            <p className="text-sm font-bold text-green-600">{paymentStats.cash.count}</p>
+                            <p className="text-xs text-gray-500 truncate">₱{new Intl.NumberFormat('en-PH', { 
+                                minimumFractionDigits: 0, 
+                                maximumFractionDigits: 0 
+                            }).format(paymentStats.cash.amount)}</p>
+                        </div>
+                        <div className="p-2 bg-green-100 rounded-full flex-shrink-0 ml-2">
+                            <CreditCard className="w-4 h-4 text-green-600" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-600 mb-1 truncate">Average</p>
+                            <p className="text-lg font-bold text-purple-600 truncate">
                                 ₱{filteredBillings.length > 0 ? 
-                                    new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(totalPaidAmount / filteredBillings.length) : 
-                                    '0.00'
+                                    new Intl.NumberFormat('en-PH', { minimumFractionDigits: 0 }).format(totalPaidAmount / filteredBillings.length) : 
+                                    '0'
                                 }
                             </p>
                         </div>
-                        <div className="p-3 bg-purple-100 rounded-full">
-                            <TrendingUp className="w-6 h-6 text-purple-600" />
+                        <div className="p-2 bg-purple-100 rounded-full flex-shrink-0 ml-2">
+                            <TrendingUp className="w-4 h-4 text-purple-600" />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600 mb-1">This Month</p>
-                            <p className="text-2xl font-bold text-orange-600">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-600 mb-1 truncate">This Month</p>
+                            <p className="text-lg font-bold text-orange-600">
                                 {filteredBillings.filter(b => {
                                     const billDate = new Date(b.paidDate || b.transactionDate);
                                     const thisMonth = new Date();
@@ -233,8 +311,8 @@ const PaidSection = () => {
                                 }).length}
                             </p>
                         </div>
-                        <div className="p-3 bg-orange-100 rounded-full">
-                            <Users className="w-6 h-6 text-orange-600" />
+                        <div className="p-2 bg-orange-100 rounded-full flex-shrink-0 ml-2">
+                            <Users className="w-4 h-4 text-orange-600" />
                         </div>
                     </div>
                 </div>
@@ -285,7 +363,7 @@ const PaidSection = () => {
                 </div>
             </div>
 
-            {/* Enhanced Table */}
+            {/* Enhanced Table with Payment Method Column */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -294,6 +372,7 @@ const PaidSection = () => {
                                 {[
                                     { key: 'patientFullName', label: 'Patient Name' },
                                     { key: 'amount', label: 'Amount' },
+                                    { key: 'paymentMethod', label: 'Payment Method' },
                                     { key: 'status', label: 'Status' },
                                     { key: 'transactionDate', label: 'Transaction Date' },
                                     { key: 'paidDate', label: 'Paid Date' },
@@ -335,6 +414,28 @@ const PaidSection = () => {
                                             <span className="text-xl font-bold text-green-600">
                                                 ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(billing.amount)}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {billing.paymentMethod === 'gcash' ? (
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium border border-blue-200">
+                                                        <Smartphone className="w-4 h-4 mr-1" />
+                                                        GCash
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleViewGcashDetails(billing)}
+                                                        className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                                                        title="View GCash transaction details"
+                                                    >
+                                                        <Info size={16} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
+                                                    <CreditCard className="w-4 h-4 mr-1" />
+                                                    Cash
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="px-4 py-2 rounded-full text-sm bg-green-100 text-green-800 font-semibold border border-green-200">
@@ -379,11 +480,21 @@ const PaidSection = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-16 text-center">
+                                    <td colSpan="8" className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center">
                                             <div className="text-6xl mb-4 opacity-50">💰</div>
                                             <h3 className="text-xl font-semibold text-gray-900 mb-2">No Paid Billings Found</h3>
-                                            <p className="text-gray-500">Try adjusting your search or date range</p>
+                                            <p className="text-gray-500 mb-4">Try adjusting your search or date range</p>
+                                            <div className="flex items-center space-x-4 text-sm text-gray-400">
+                                                <div className="flex items-center">
+                                                    <Smartphone className="w-4 h-4 mr-1" />
+                                                    <span>GCash payments will show detailed transaction info</span>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <CreditCard className="w-4 h-4 mr-1" />
+                                                    <span>Cash payments are also tracked</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -442,33 +553,66 @@ const PaidSection = () => {
                 )}
             </div>
 
-            {/* Enhanced Results Summary */}
+            {/* Enhanced Results Summary with Payment Method Breakdown */}
             {filteredBillings.length > 0 && (
-                <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200 text-center">
-                    <div className="text-sm text-gray-600">
-                        {searchTerm && (
-                            <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">
-                                Search: "{searchTerm}"
-                            </span>
-                        )}
-                        {(startDate || endDate) && (
-                            <span className="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded mr-2">
-                                Period: {startDate ? startDate.toLocaleDateString() : 'All time'} 
-                                {' '} to {endDate ? endDate.toLocaleDateString() : 'Now'}
-                            </span>
-                        )}
-                        <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">
-                            Total Revenue: ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(totalPaidAmount)}
-                        </span>
+                <div className="mt-6 p-6 bg-white rounded-lg border border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="text-center">
+                            {searchTerm && (
+                                <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded mb-2 text-sm">
+                                    Search: "{searchTerm}"
+                                </span>
+                            )}
+                            {(startDate || endDate) && (
+                                <span className="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded mb-2 text-sm">
+                                    Period: {startDate ? startDate.toLocaleDateString() : 'All time'} 
+                                    {' '} to {endDate ? endDate.toLocaleDateString() : 'Now'}
+                                </span>
+                            )}
+                        </div>
+                        
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600 mb-1">
+                                ₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(totalPaidAmount)}
+                            </div>
+                            <div className="text-sm text-gray-600 font-medium">Total Revenue</div>
+                        </div>
+
+                        <div className="text-center space-y-2">
+                            <div className="flex items-center justify-center space-x-4 text-sm">
+                                <div className="flex items-center">
+                                    <Smartphone className="w-4 h-4 text-blue-600 mr-1" />
+                                    <span className="text-blue-600 font-semibold">{paymentStats.gcash.count} GCash</span>
+                                    <span className="text-gray-500 ml-1">
+                                        (₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(paymentStats.gcash.amount)})
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-center space-x-4 text-sm">
+                                <div className="flex items-center">
+                                    <CreditCard className="w-4 h-4 text-green-600 mr-1" />
+                                    <span className="text-green-600 font-semibold">{paymentStats.cash.count} Cash</span>
+                                    <span className="text-gray-500 ml-1">
+                                        (₱{new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(paymentStats.cash.amount)})
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Modal Component */}
+            {/* Modal Components */}
             <PaidBillingModal 
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 billing={selectedBilling}
+            />
+            
+            <GcashTransactionDetailsModal 
+                isOpen={isGcashModalOpen}
+                onClose={handleCloseGcashModal}
+                transaction={selectedGcashTransaction}
             />
         </div>
     );

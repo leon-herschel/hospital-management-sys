@@ -38,6 +38,11 @@ import LabTestReport from "./pages/AdminAppointments/Laboratory/LabTestReport";
 import DoctorProfile from "./pages/Settings/Doctors/DoctorProfile";
 import Inventory from "./pages/Inventory/InventoryItems";
 import GenerateMedicalCertificate from "./pages/Settings/Doctors/GenerateMedicalCertificate";
+import UsersProfilePage from "./pages/Settings/Users/UserProfilePage";
+import EmployeeAttendanceSystem from "./pages/EmployeeSalaryPage/EmployeeAttendanceSystem";
+import Teleconsultation from "./pages/Teleconsultation/Teleconsultation";
+import SuppliersTable from "./pages/Settings/Suppliers/SuppliersTable";
+import ImportDoctorSignature from "./pages/Settings/Doctors/ImportDoctorSignature";
 import { element } from "prop-types";
 import path from "path";
 
@@ -69,7 +74,6 @@ function App() {
         { path: "access-denied", element: <AccessDenied /> },
         { path: "InventoryHistory", element: <InventoryHistory /> },
         { path: "stockTransfer", element: <StockTransfer /> },
-        { path: "Transfer", element: <Transfer /> },
         { path: "Request", element: <Request /> },
         { path: "requestS", element: <RequestS /> },
         { path: "inventoryStock", element: <InventoryStock /> },
@@ -100,6 +104,13 @@ function App() {
           path: "generate-medical-certificate",
           element: <GenerateMedicalCertificate />,
         },
+        { path: "Transfer", element: <Transfer /> },
+        {path: "user-profile", element: <UsersProfilePage /> },
+        {path: "employee-attendance", element: <EmployeeAttendanceSystem /> },
+        {path: "teleconsultation", element: <Teleconsultation /> },
+        {path:"user-management", element: <UsersTable /> },
+        {path: "supplier-management", element: <SuppliersTable /> },
+        {path: "import-signature", element: <ImportDoctorSignature /> },
       ],
     },
     {
