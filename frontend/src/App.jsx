@@ -28,8 +28,9 @@ import InventoryTransaction from "./pages/History/InventoryTransaction";
 import PaidSection from "./pages/Billing/PaidSection";
 import StockInHistory from "./pages/History/StockInHistory";
 import ForgotPassword from "./components/auth/login/ForgotPassword";
-import AdminConsult from "./pages/AdminAppointments/Consultation/AdminConsult";
 import AdminLab from "./pages/AdminAppointments/Laboratory/AdminLab";
+import AdminSpecialist from "./pages/AdminAppointments/Consultation/AdminSpecialist";
+import AdminConsult from "./pages/AdminAppointments/Consultation/AdminConsult";
 import ClinicInventory from "./pages/Inventory/clinicInventory";
 import ChangePasswordPage from "./components/navigation/ChangePassword";
 import RequestLabTest from "./pages/AdminAppointments/Laboratory/RequestLabTest";
@@ -87,12 +88,13 @@ function App() {
         { path: "InventoryTransaction", element: <InventoryTransaction /> },
         { path: "PaidSection", element: <PaidSection /> },
         { path: "StockInHistory", element: <StockInHistory /> },
-        { path: "AdminConsult", element: <AdminConsult /> },
         { path: "AdminLab", element: <AdminLab /> },
+        { path: "AdminConsult", element: <AdminConsult /> },
         { path: "clinicInventory", element: <ClinicInventory /> },
         { path: "clinicInventory", element: <ClinicInventory /> },
         { path: "change-password", element: <ChangePasswordPage /> },
         { path: "RequestLabTest", element: <RequestLabTest /> },
+        { path: "AdminSpecialist", element: <AdminSpecialist /> },
         { path: "LabTestReport", element: <LabTestReport /> },
         { path: "SpecialistAppointments", element: <SpecialistAppointments /> },
         { path: "doctor-profile", element: <DoctorProfile /> },

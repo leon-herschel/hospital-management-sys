@@ -159,20 +159,20 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   };
 
   // Function to send welcome email
-  const sendWelcomeEmail = async (userEmail, userPassword, userRole) => {
+  const sendWelcomeEmail = async (userEmail, userPassword) => {
     setIsEmailLoading(true);
     setEmailStatus("Sending welcome email...");
 
     try {
-      const response = await fetch("http://localhost:5000/add-user", {
+      const response = await fetch("http://localhost:5001/add-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          firstName: firstName,
           email: userEmail,
           password: userPassword,
-          role: userRole,
         }),
       });
 

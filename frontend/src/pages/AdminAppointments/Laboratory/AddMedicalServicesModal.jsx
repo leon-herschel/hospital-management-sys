@@ -16,9 +16,10 @@ function AddMedicalServices({ open, onClose }) {
     const serviceRef = ref(database, `medicalServices/${serviceType}`);
     const newServiceRef = push(serviceRef);
 
+    // Only include serviceFee in data if it's not a consultation type
     const data =
-      serviceType === "specialties"
-        ? { name, serviceFee }
+      serviceType === "consultationTypes"
+        ? { name, description }
         : { name, description, serviceFee };
 
     await set(newServiceRef, data);
@@ -48,7 +49,6 @@ function AddMedicalServices({ open, onClose }) {
               <option value="consultationTypes">Consultation Type</option>
               <option value="imagingTests">Imaging Test</option>
               <option value="laboratoryTests">Laboratory Test</option>
-              <option value="specialties">Specialty</option>
             </select>
           </div>
 
@@ -64,30 +64,20 @@ function AddMedicalServices({ open, onClose }) {
             />
           </div>
 
-          {serviceType !== "specialties" && (
+          {/* Only show service fee for imaging and laboratory tests, not for consultation types */}
+          {serviceType !== "consultationTypes" && (
             <div>
-              <label className="block mb-1 font-medium">Description</label>
-              <textarea
-                placeholder="Enter service description"
+              <label className="block mb-1 font-medium">Service Fee</label>
+              <input
+                type="number"
+                placeholder="Enter fee"
                 className="w-full border px-3 py-2 rounded"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={serviceFee}
+                onChange={(e) => setserviceFee(e.target.value)}
                 required
               />
             </div>
           )}
-
-          <div>
-            <label className="block mb-1 font-medium">Service Fee</label>
-            <input
-              type="number"
-              placeholder="Enter fee"
-              className="w-full border px-3 py-2 rounded"
-              value={serviceFee}
-              onChange={(e) => setserviceFee(e.target.value)}
-              required
-            />
-          </div>
 
           <div className="flex justify-end space-x-2">
             <button

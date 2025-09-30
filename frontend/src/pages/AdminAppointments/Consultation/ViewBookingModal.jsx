@@ -3,18 +3,18 @@ import { parseISO } from "date-fns";
 import { update, ref, get, set } from "firebase/database";
 import { database } from "../../../firebase/firebase";
 import {
-  XMarkIcon,
-  UserIcon,
-  PhoneIcon,
-  MapPinIcon,
-  ClipboardDocumentListIcon,
-  UserCircleIcon,
-  CalendarDaysIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ArrowPathIcon,
-} from "@heroicons/react/24/outline";
+  X,
+  User,
+  Phone,
+  MapPin,
+  ClipboardList,
+  UserCircle,
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  RotateCw,
+} from "lucide-react";
 
 function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
   const [bookingData, setBookingData] = useState({
@@ -42,14 +42,18 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
         type,
         status,
       } = currentBooking;
+
+      // Fixed: Use correct patient data structure
       setBookingData({
-        name: `${patient?.patientFirstName || ""} ${
-          patient?.patientLastName || ""
-        }`.trim(),
-        phone: patient?.phone || "",
+        name: `${patient?.firstName || ""} ${patient?.lastName || ""}`.trim(),
+        phone: patient?.contactNumber || patient?.phone || "",
         address: patient?.address || "",
         complaints: patient?.complaints?.filter(Boolean) || [],
-        doctor: doctor || "",
+        doctor:
+          doctor?.fullName ||
+          doctor?.firstName + " " + doctor?.lastName ||
+          doctor ||
+          "",
         date: appointmentDate || "",
         time: appointmentTime || "",
         status: status || "Pending",
@@ -63,22 +67,22 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
     switch (status) {
       case "Completed":
         return {
-          icon: CheckCircleIcon,
+          icon: CheckCircle,
           class: "bg-emerald-50 text-emerald-700 border-emerald-200",
         };
       case "Confirmed":
         return {
-          icon: CheckCircleIcon,
+          icon: CheckCircle,
           class: "bg-blue-50 text-blue-700 border-blue-200",
         };
       case "Cancelled":
         return {
-          icon: ExclamationTriangleIcon,
+          icon: AlertTriangle,
           class: "bg-red-50 text-red-700 border-red-200",
         };
       default:
         return {
-          icon: ClockIcon,
+          icon: Clock,
           class: "bg-amber-50 text-amber-700 border-amber-200",
         };
     }
@@ -135,23 +139,36 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
         }
 
         // Check if patient data exists
-        if (!appointmentData.patient) {
-          console.error("No patient information found in appointment data");
+        if (!appointmentData.patientId) {
+          console.error("No patient ID found in appointment data");
           alert("No patient information found.");
           return;
         }
 
         console.log("Appointment data to push:", appointmentData);
 
-        // 3. Set the appointment data directly under bookingId in patients node
-        await set(
-          ref(database, `patients/${currentBooking.id}`),
-          appointmentData
+        // 3. Update patient's confirmedAppointments list
+        const patientRef = ref(
+          database,
+          `patients/${appointmentData.patientId}`
         );
+        const patientSnap = await get(patientRef);
 
-        console.log(
-          `Status updated to ${newStatus} and appointment data pushed to patients for booking ${currentBooking.id}`
-        );
+        if (patientSnap.exists()) {
+          const patientData = patientSnap.val();
+          const updatedAppointments = [
+            ...(patientData.confirmedAppointments || []),
+            currentBooking.id,
+          ];
+
+          await update(patientRef, {
+            confirmedAppointments: updatedAppointments,
+          });
+
+          console.log(
+            `Status updated to ${newStatus} and appointment linked to patient ${appointmentData.patientId}`
+          );
+        }
       } else {
         console.log(
           `Status updated to ${newStatus} for booking ${currentBooking.id}`
@@ -164,7 +181,7 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
       // Show success message
       alert(`Status successfully updated to ${newStatus}`);
     } catch (error) {
-      console.error("Error updating status or pushing to patients:", error);
+      console.error("Error updating status:", error);
       alert("Failed to update status. Please try again.");
     } finally {
       setUpdatingStatus(false);
@@ -185,11 +202,11 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
             onClick={toggleModal}
             className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-3 rounded-xl">
-              <UserIcon className="h-6 w-6" />
+              <User className="h-6 w-6" />
             </div>
             <div>
               <h2 className="text-2xl font-bold">Appointment Details</h2>
@@ -205,7 +222,7 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
           {/* Patient Information */}
           <div className="bg-gray-50 rounded-xl p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <UserIcon className="h-5 w-5 text-blue-600" />
+              <User className="h-5 w-5 text-blue-600" />
               Patient Information
             </h3>
 
@@ -221,7 +238,7 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1 flex items-center gap-1">
-                  <PhoneIcon className="h-4 w-4" />
+                  <Phone className="h-4 w-4" />
                   Phone Number
                 </label>
                 <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-800">
@@ -232,7 +249,7 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
 
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-600 mb-1 flex items-center gap-1">
-                <MapPinIcon className="h-4 w-4" />
+                <MapPin className="h-4 w-4" />
                 Address
               </label>
               <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-800">
@@ -244,7 +261,7 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
           {/* Medical Information */}
           <div className="bg-gray-50 rounded-xl p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <ClipboardDocumentListIcon className="h-5 w-5 text-green-600" />
+              <ClipboardList className="h-5 w-5 text-green-600" />
               Medical Information
             </h3>
 
@@ -277,14 +294,14 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
           {/* Appointment Information */}
           <div className="bg-gray-50 rounded-xl p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <CalendarDaysIcon className="h-5 w-5 text-purple-600" />
+              <Calendar className="h-5 w-5 text-purple-600" />
               Appointment Information
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1 flex items-center gap-1">
-                  <UserCircleIcon className="h-4 w-4" />
+                  <UserCircle className="h-4 w-4" />
                   Assigned Doctor
                 </label>
                 <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-800">
@@ -314,7 +331,7 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1 flex items-center gap-1">
-                  <ClockIcon className="h-4 w-4" />
+                  <Clock className="h-4 w-4" />
                   Appointment Time
                 </label>
                 <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-800">
@@ -377,13 +394,13 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
                     <option value="Cancelled">Cancelled</option>
                   </select>
                   {updatingStatus && (
-                    <ArrowPathIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 animate-spin text-gray-400" />
+                    <RotateCw className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 animate-spin text-gray-400" />
                   )}
                 </div>
 
                 {updatingStatus && (
                   <p className="text-sm text-blue-600 mt-2 flex items-center gap-2">
-                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                    <RotateCw className="h-4 w-4 animate-spin" />
                     Updating status...
                   </p>
                 )}
@@ -398,7 +415,7 @@ function ViewBookingModal({ isOpen, toggleModal, currentBooking }) {
                       <ul className="space-y-1 text-blue-600">
                         <li>
                           • <strong>Confirmed:</strong> Patient data will be
-                          moved to patients database
+                          linked to patients database
                         </li>
                         <li>
                           • <strong>Completed:</strong> Marks appointment as

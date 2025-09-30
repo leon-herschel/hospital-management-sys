@@ -93,7 +93,7 @@ const Sidebar = () => {
     "/CsrTransferHistory": "Transfer History",
     "/InvetoryTransaction": "Transactions",
     "/PaidSection": "PaidSection",
-    "/AdminConsult": "Admin Consultation",
+    "/AdminConsult": "Consultation Appointments",
     "/AdminLab": "Laboratory",
     "/RequestLabTest": "Lab Test Request",
     "/SpecialistAppointments": "Specialist Appointments",
@@ -287,6 +287,42 @@ const Sidebar = () => {
                   >
                     <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
                     Lab Test Reports
+                  </Link>
+
+                  <Link
+                    to="/SpecialistAppointments"
+                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                      isActive("/SpecialistAppointments")
+                        ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                    Specialist Referral
+                  </Link>
+
+                  <Link
+                    to="/AdminConsult"
+                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                      isActive("/AdminConsult")
+                        ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                    Consultation Appoinment Requests
+                  </Link>
+
+                  <Link
+                    to="/AdminSpecialist"
+                    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                      isActive("/AdminSpecialist")
+                        ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                    Specialist Appoinment History
                   </Link>
                 </div>
               </div>
