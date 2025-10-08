@@ -50,6 +50,7 @@ const Sidebar = () => {
   const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [billingDropdownOpen, setBillingDropdownOpen] = useState(false);
+  const [billingDropdownOpen, setBillingDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     setIsLogoutModalOpen(true);
@@ -91,6 +92,7 @@ const Sidebar = () => {
     "/med": "Pharmacy Department",
     "/ViewMedReq": "View Medicine Request",
     "/ViewRequest": "View Supply Request",
+    "/Transfer": "Transfer Items",
     "/Transfer": "Transfer Items",
     "/transferMed": "Transfer Medicine",
     "/requestS": "Request Stock",
@@ -265,6 +267,7 @@ const Sidebar = () => {
                 >
                   <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
                   Referrence Items
+                  Referrence Items
                 </Link>
 
                 {permissions?.accessInventory && (
@@ -294,11 +297,113 @@ const Sidebar = () => {
     Inventory Transactions
   </Link>
 )}
+                 {permissions?.accessInventoryHistory && (
+  <Link
+    to="/InventoryTransaction"
+    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+      isActive("/InventoryTransaction")
+        ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
+        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+    }`}
+  >
+    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+    Inventory Transactions
+  </Link>
+)}
               </div>
             </div>
           )}
 
           {/* Appointment Scheduling Dropdown */}
+          {/* Transfer Supply */}
+          {permissions?.accessTransferStocks && (
+            <Link
+              to="/Transfer"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/Transfer")
+                  ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ArrowsRightLeftIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/Transfer")
+                    ? "text-orange-400"
+                    : "text-slate-400 group-hover:text-orange-400"
+                }`}
+              />
+              <span>Transfer Supply</span>
+            </Link>
+          )}
+
+          {/* Pending Supply Request */}
+          {(department === "CSR" || department === "Admin") && (
+            <Link
+              to="ViewRequest"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/ViewRequest")
+                  ? "bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-white border border-amber-500/30 shadow-lg shadow-amber-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ClockIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/ViewRequest")
+                    ? "text-amber-400"
+                    : "text-slate-400 group-hover:text-amber-400"
+                }`}
+              />
+              <span>Pending Supply Requests</span>
+            </Link>
+          )}
+
+
+          {/* Employee Attendance & Salary System */}
+          {/* {(department === "Admin" || department === "HR" || permissions?.accessSettings) && (
+            <Link
+              to="/employee-attendance"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/employee-attendance")
+                  ? "bg-gradient-to-r from-indigo-600/20 to-blue-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <UsersIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/employee-attendance")
+                    ? "text-indigo-400"
+                    : "text-slate-400 group-hover:text-indigo-400"
+                }`}
+              />
+              <span>Employee Attendance</span>
+              {isActive("/employee-attendance") && (
+                <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
+              )}
+            </Link>
+          )} */}
+
+          {/* Patients */}
+         {permissions?.accessPatients && (
+  <Link
+    to="/patients"
+    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+      isActive("/patients")
+        ? "bg-gradient-to-r from-violet-600/20 to-purple-600/20 text-white border border-violet-500/30 shadow-lg shadow-violet-500/20"
+        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+    }`}
+  >
+    <UserGroupIcon
+      className={`w-5 h-5 mr-3 transition-colors ${
+        isActive("/patients")
+          ? "text-violet-400"
+          : "text-slate-400 group-hover:text-violet-400"
+      }`}
+    />
+    <span>Patient Management</span>
+  </Link>
+)}
+
+{permissions?.accessLaboratory && (
           {/* Transfer Supply */}
           {permissions?.accessTransferStocks && (
             <Link
@@ -520,18 +625,87 @@ const Sidebar = () => {
   </div>
 )}
 
+{/* Billing Management Dropdown */}
+{permissions?.accessBilling && (
+  <div>
+    <button
+      onClick={() => setBillingDropdownOpen(!billingDropdownOpen)}
+      className={`group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+        isActive("/billing") || isActive("/PaidSection")
+          ? "bg-gradient-to-r from-emerald-600/20 to-green-600/20 text-white border border-emerald-500/30 shadow-lg shadow-emerald-500/20"
+          : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+      }`}
+    >
+      <div className="flex items-center">
+        <CreditCardIcon
+          className={`w-5 h-5 mr-3 transition-colors ${
+            isActive("/billing") || isActive("/PaidSection")
+              ? "text-emerald-400"
+              : "text-slate-400 group-hover:text-emerald-400"
+          }`}
+        />
+        <span>Billing Management</span>
+      </div>
+      <ChevronDownIcon
+        className={`w-4 h-4 transition-transform duration-200 ${
+          billingDropdownOpen ? "rotate-180" : "rotate-0"
+        }`}
+      />
+    </button>
+
+    {/* Dropdown Items */}
+    <div
+      className={`ml-4 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
+        billingDropdownOpen
+          ? "max-h-96 opacity-100 mb-2"
+          : "max-h-0 opacity-0"
+      }`}
+    >
+      <Link
+        to="/billing"
+        className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+          isActive("/billing")
+            ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
+            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+        }`}
+      >
+        <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+        Billing
+      </Link>
+
+      <Link
+        to="/PaidSection"
+        className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+          isActive("/PaidSection")
+            ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
+            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+        }`}
+      >
+        <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+        Billing Paid Section
+      </Link>
+    </div>
+  </div>
+)}
+
+          {/* Medical Certificate */}
+          {permissions?.accessMedicalCertificate && (
           {/* Medical Certificate */}
           {permissions?.accessMedicalCertificate && (
             <Link
               to="/generate-medical-certificate"
+              to="/generate-medical-certificate"
               className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/generate-medical-certificate")
                 isActive("/generate-medical-certificate")
                   ? "bg-gradient-to-r from-teal-600/20 to-cyan-600/20 text-white border border-teal-500/30 shadow-lg shadow-teal-500/20"
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
               <ClipboardDocumentCheckIcon
+              <ClipboardDocumentCheckIcon
                 className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/generate-medical-certificate")
                   isActive("/generate-medical-certificate")
                     ? "text-teal-400"
                     : "text-slate-400 group-hover:text-teal-400"
@@ -541,9 +715,32 @@ const Sidebar = () => {
               {isActive("/generate-medical-certificate") && (
                 <div className="ml-auto w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
               )}
+              <span>Medical Certificate</span>
+              {isActive("/generate-medical-certificate") && (
+                <div className="ml-auto w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
+              )}
             </Link>
           )}
 
+          {permissions?.accessSettings && (
+  <Link
+    to="/user-management"
+    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+      isActive("/user-management")
+        ? "bg-gradient-to-r from-cyan-600/20 to-blue-600/20 text-white border border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+    }`}
+  >
+    <UsersIcon
+      className={`w-5 h-5 mr-3 transition-colors ${
+        isActive("/user-management")
+          ? "text-cyan-400"
+          : "text-slate-400 group-hover:text-cyan-400"
+      }`}
+    />
+    <span>User Management</span>
+  </Link>
+)}
           {permissions?.accessSettings && (
   <Link
     to="/user-management"
@@ -583,8 +780,46 @@ const Sidebar = () => {
     <span>Supplier Management</span>
   </Link>
 )}
+{permissions?.accessSettings && (
+  <Link
+    to="/supplier-management"
+    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+      isActive("/supplier-management")
+        ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
+        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+    }`}
+  >
+    <TruckIcon
+      className={`w-5 h-5 mr-3 transition-colors ${
+        isActive("/supplier-management")
+          ? "text-orange-400"
+          : "text-slate-400 group-hover:text-orange-400"
+      }`}
+    />
+    <span>Supplier Management</span>
+  </Link>
+)}
 
           {/* Analytics */}
+          {permissions?.accessAnalytics && (
+            <Link
+              to="/analytics"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/analytics")
+                  ? "bg-gradient-to-r from-cyan-600/20 to-blue-600/20 text-white border border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ChartBarIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/analytics")
+                    ? "text-cyan-400"
+                    : "text-slate-400 group-hover:text-cyan-400"
+                }`}
+              />
+              <span>Analytics</span>
+            </Link>
+          )}
           {permissions?.accessAnalytics && (
             <Link
               to="/analytics"

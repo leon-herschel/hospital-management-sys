@@ -17,7 +17,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Initialize Firebase services
 
 // Initialize Firebase services
 export const auth = getAuth(app);
@@ -35,3 +38,6 @@ export async function askAI(prompt) {
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
+
+// Export the config if needed elsewhere
+export { firebaseConfig };
