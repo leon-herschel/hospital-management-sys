@@ -50,7 +50,7 @@ const Sidebar = () => {
   const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [billingDropdownOpen, setBillingDropdownOpen] = useState(false);
-  const [billingDropdownOpen, setBillingDropdownOpen] = useState(false);
+  
 
   const handleLogout = () => {
     setIsLogoutModalOpen(true);
@@ -403,7 +403,6 @@ const Sidebar = () => {
   </Link>
 )}
 
-{permissions?.accessLaboratory && (
           {/* Transfer Supply */}
           {permissions?.accessTransferStocks && (
             <Link
@@ -688,24 +687,23 @@ const Sidebar = () => {
   </div>
 )}
 
-          {/* Medical Certificate */}
-          {permissions?.accessMedicalCertificate && (
+         
           {/* Medical Certificate */}
           {permissions?.accessMedicalCertificate && (
             <Link
-              to="/generate-medical-certificate"
+             
               to="/generate-medical-certificate"
               className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/generate-medical-certificate")
+                
                 isActive("/generate-medical-certificate")
                   ? "bg-gradient-to-r from-teal-600/20 to-cyan-600/20 text-white border border-teal-500/30 shadow-lg shadow-teal-500/20"
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
-              <ClipboardDocumentCheckIcon
+             
               <ClipboardDocumentCheckIcon
                 className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/generate-medical-certificate")
+                 
                   isActive("/generate-medical-certificate")
                     ? "text-teal-400"
                     : "text-slate-400 group-hover:text-teal-400"
