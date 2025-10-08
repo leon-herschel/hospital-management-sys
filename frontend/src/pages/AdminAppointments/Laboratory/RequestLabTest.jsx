@@ -46,6 +46,9 @@ function RequestLabTest() {
       scheduledDate: true,
       scheduledTime: true,
     },
+    showSuccessModal: false,
+    showErrorModal: false,
+    errorMessage: "",
   });
 
   // Helper function to get doctor's full name
@@ -339,8 +342,6 @@ function RequestLabTest() {
 
       await update(transactionRef, { labTestSched });
 
-      alert("Lab test scheduled successfully!");
-
       // Reset form
       setForm({
         selectedTransactionId: "",
@@ -357,15 +358,28 @@ function RequestLabTest() {
           scheduledDate: true,
           scheduledTime: true,
         },
+        submitting: false,
+        loading: false,
+        showSuccessModal: true,
       }));
-
-      navigate("/doctor-dashboard");
     } catch (error) {
       console.error("Submit error:", error);
-      alert("Error: " + error.message);
+      setState((prev) => ({
+        ...prev,
+        submitting: false,
+        loading: false,
+        showErrorModal: true,
+        errorMessage: error.message,
+      }));
     }
+  };
 
-    setState((prev) => ({ ...prev, submitting: false, loading: false }));
+  const closeSuccessModal = () => {
+    setState((prev) => ({ ...prev, showSuccessModal: false }));
+  };
+
+  const closeErrorModal = () => {
+    setState((prev) => ({ ...prev, showErrorModal: false, errorMessage: "" }));
   };
 
   return (
@@ -446,10 +460,6 @@ function RequestLabTest() {
                       <span>{transaction.clinicName}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <DollarSign className="w-4 h-4 text-purple-600" />
-                      <span>₱{transaction.serviceFee?.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
                       <Clock className="w-4 h-4 text-orange-600" />
                       <span>
                         Created:{" "}
@@ -505,10 +515,6 @@ function RequestLabTest() {
                   <p>
                     <strong>Clinic:</strong>{" "}
                     {state.selectedTransaction.clinicName}
-                  </p>
-                  <p>
-                    <strong>Fee:</strong> ₱
-                    {state.selectedTransaction.serviceFee?.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -848,6 +854,66 @@ function RequestLabTest() {
           )}
         </button>
       </div>
+
+      {/* Success Modal */}
+      {state.showSuccessModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div className="p-8 text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Success!
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Lab test has been scheduled successfully.
+              </p>
+              <div className="text-sm mb-6 p-3 rounded-lg bg-green-50 text-green-700 border border-green-200">
+                <div className="flex items-center justify-center">
+                  <span className="mr-2">🧪</span>
+                  <span>The patient will be notified about the schedule.</span>
+                </div>
+              </div>
+              <button
+                onClick={closeSuccessModal}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {state.showErrorModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div className="p-8 text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Error!</h2>
+              <p className="text-gray-600 mb-4">
+                An error occurred while scheduling the lab test.
+              </p>
+              <div className="text-sm mb-6 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">
+                <div className="flex items-center justify-center">
+                  <span className="mr-2">⚠️</span>
+                  <span>{state.errorMessage}</span>
+                </div>
+              </div>
+              <button
+                onClick={closeErrorModal}
+                className="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

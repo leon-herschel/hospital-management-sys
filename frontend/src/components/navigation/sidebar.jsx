@@ -100,7 +100,7 @@ const Sidebar = () => {
     "/AdminConsult": "Consultation Appointments",
     "/AdminLab": "Laboratory",
     "/RequestLabTest": "Lab Test Request",
-    "/SpecialistAppointments": "Specialist Appointments",
+    "/SpecialistAppointments": "Specialist Referral",
     "/LabTestReport": "Lab Test Report",
     "/clinicInventory": "Clinic Inventory",
     "/InventoryTransaction": "Inventory Transactions",
@@ -313,8 +313,11 @@ const Sidebar = () => {
             </Link>
           )}
 
-          {/* Employee Attendance & Salary System */}
-          {/* {(department === "Admin" || department === "HR" || permissions?.accessSettings) && (
+          {/* Employee Attendance & Salary System *
+          
+          {(department === "Admin" ||
+            department === "HR" ||
+            permissions?.accessSettings) && (
             <Link
               to="/employee-attendance"
               className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
@@ -335,7 +338,7 @@ const Sidebar = () => {
                 <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
               )}
             </Link>
-          )} */}
+          )} 
 
           {/* Patients */}
           {permissions?.accessPatients && (
