@@ -43,6 +43,7 @@ import EmployeeAttendanceSystem from "./pages/EmployeeSalaryPage/EmployeeAttenda
 import Teleconsultation from "./pages/Teleconsultation/Teleconsultation";
 import SuppliersTable from "./pages/Settings/Suppliers/SuppliersTable";
 import ImportDoctorSignature from "./pages/Settings/Doctors/ImportDoctorSignature";
+import AIAssistant from "./pages/AIAssistant/AIAssistant";
 import { element } from "prop-types";
 import path from "path";
 
@@ -111,6 +112,7 @@ function App() {
         {path:"user-management", element: <UsersTable /> },
         {path: "supplier-management", element: <SuppliersTable /> },
         {path: "import-signature", element: <ImportDoctorSignature /> },
+        {path: "ai-assistant", element: <AIAssistant /> }, 
       ],
     },
     {

@@ -29,7 +29,8 @@ import {
   BuildingOffice2Icon,
   UsersIcon,
   VideoCameraIcon,
-  TruckIcon // Added for Teleconsultation
+  TruckIcon,
+  CpuChipIcon // Added for Teleconsultation
 } from "@heroicons/react/24/outline";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -49,6 +50,7 @@ const Sidebar = () => {
   const permissions = useAccessControl();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [billingDropdownOpen, setBillingDropdownOpen] = useState(false);
+  
 
   const handleLogout = () => {
     setIsLogoutModalOpen(true);
@@ -91,6 +93,7 @@ const Sidebar = () => {
     "/ViewMedReq": "View Medicine Request",
     "/ViewRequest": "View Supply Request",
     "/Transfer": "Transfer Items",
+    "/Transfer": "Transfer Items",
     "/transferMed": "Transfer Medicine",
     "/requestS": "Request Stock",
     "/PharmacyTransferHistory": "Transfer History",
@@ -112,7 +115,8 @@ const Sidebar = () => {
     "/teleconsultation": "Teleconsultation", // Added title for teleconsultation
     "/user-management": "Users",
     "/supplier-management": "Suppliers",
-    "/import-signature": "Create Doctor Signature"
+    "/import-signature": "Create Doctor Signature",
+    "/ai-assistant": "AI Assistant" // Added title for AI Assistant
   };
 
   let currentTitle = "Overview";
@@ -172,6 +176,31 @@ const Sidebar = () => {
             <span>Overview</span>
             {isActive("/dashboard") && (
               <div className="ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            )}
+          </Link>
+
+             <Link
+            to="/ai-assistant"
+            className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+              isActive("/ai-assistant")
+                ? "bg-gradient-to-r from-indigo-600/20 to-purple-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+            }`}
+          >
+            <CpuChipIcon
+              className={`w-5 h-5 mr-3 transition-colors ${
+                isActive("/ai-assistant")
+                  ? "text-indigo-400"
+                  : "text-slate-400 group-hover:text-indigo-400"
+              }`}
+            />
+            <span>AI Assistant</span>
+            {/* Add a "NEW" badge */}
+            <span className="ml-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+              NEW
+            </span>
+            {isActive("/ai-assistant") && (
+              <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
             )}
           </Link>
 
@@ -237,6 +266,7 @@ const Sidebar = () => {
                   }`}
                 >
                   <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                  Referrence Items
                   Referrence Items
                 </Link>
 
@@ -360,6 +390,74 @@ const Sidebar = () => {
   </Link>
 )}
 
+          {/* Transfer Supply */}
+          {permissions?.accessTransferStocks && (
+            <Link
+              to="/Transfer"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/Transfer")
+                  ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ArrowsRightLeftIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/Transfer")
+                    ? "text-orange-400"
+                    : "text-slate-400 group-hover:text-orange-400"
+                }`}
+              />
+              <span>Transfer Supply</span>
+            </Link>
+          )}
+
+          {/* Pending Supply Request */}
+          {(department === "CSR" || department === "Admin") && (
+            <Link
+              to="ViewRequest"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/ViewRequest")
+                  ? "bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-white border border-amber-500/30 shadow-lg shadow-amber-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ClockIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/ViewRequest")
+                    ? "text-amber-400"
+                    : "text-slate-400 group-hover:text-amber-400"
+                }`}
+              />
+              <span>Pending Supply Requests</span>
+            </Link>
+          )}
+
+
+          {/* Employee Attendance & Salary System */}
+          {/* {(department === "Admin" || department === "HR" || permissions?.accessSettings) && (
+            <Link
+              to="/employee-attendance"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/employee-attendance")
+                  ? "bg-gradient-to-r from-indigo-600/20 to-blue-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <UsersIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/employee-attendance")
+                    ? "text-indigo-400"
+                    : "text-slate-400 group-hover:text-indigo-400"
+                }`}
+              />
+              <span>Employee Attendance</span>
+              {isActive("/employee-attendance") && (
+                <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
+              )}
+            </Link>
+          )} */}
+
+
 {permissions?.accessLaboratory && (
             <div className="space-y-1">
               <div
@@ -429,7 +527,6 @@ const Sidebar = () => {
             </div>
           )}
 
-
 {/* Billing Management Dropdown */}
 {permissions?.accessBilling && (
   <div>
@@ -493,18 +590,23 @@ const Sidebar = () => {
   </div>
 )}
 
+         
           {/* Medical Certificate */}
           {permissions?.accessMedicalCertificate && (
             <Link
+             
               to="/generate-medical-certificate"
               className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                
                 isActive("/generate-medical-certificate")
                   ? "bg-gradient-to-r from-teal-600/20 to-cyan-600/20 text-white border border-teal-500/30 shadow-lg shadow-teal-500/20"
                   : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
               }`}
             >
+             
               <ClipboardDocumentCheckIcon
                 className={`w-5 h-5 mr-3 transition-colors ${
+                 
                   isActive("/generate-medical-certificate")
                     ? "text-teal-400"
                     : "text-slate-400 group-hover:text-teal-400"
@@ -516,7 +618,6 @@ const Sidebar = () => {
               )}
             </Link>
           )}
-
           {permissions?.accessSettings && (
   <Link
     to="/user-management"
@@ -557,7 +658,6 @@ const Sidebar = () => {
   </Link>
 )}
 
-          {/* Analytics */}
           {permissions?.accessAnalytics && (
             <Link
               to="/analytics"

@@ -1,8 +1,9 @@
-// firebase/firebase.js
+// AIAssistant.jsx
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1w0tPJff953vbLjNDVCUBdFKZdw9m9lE",
@@ -16,12 +17,27 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Initialize Firebase services
 
 // Initialize Firebase services
 export const auth = getAuth(app);
 export const database = getDatabase(app);
 export const functions = getFunctions(app);
+
+// Initialize the Gemini AI
+export const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a GenerativeModel instance
+export const model = getGenerativeModel(ai, { model: "gemini-2.0-flash-exp" });
+
+// Example: calling the model
+export async function askAI(prompt) {
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
 
 // Export the config if needed elsewhere
 export { firebaseConfig };
