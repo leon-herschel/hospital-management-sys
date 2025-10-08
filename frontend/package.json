@@ -14,7 +14,7 @@
     "@heroicons/react": "^2.1.5",
     "caniuse-lite": "^1.0.30001731",
     "d3": "^7.9.0",
-    "firebase": "^10.13.1",
+    "firebase": "^12.3.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.5.29",
     "lucide-react": "^0.536.0",

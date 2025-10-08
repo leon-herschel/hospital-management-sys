@@ -4,7 +4,7 @@ import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import { EyeIcon, EyeSlashIcon, XMarkIcon, CheckIcon, XMarkIcon as XIcon } from "@heroicons/react/24/solid";
 import { auth, database } from "../../firebase/firebase";
-import { firebaseConfig } from "../../firebase/firebase";
+// import { firebaseConfig } from "../../firebase/firebase";
 import UserAddPatientSuccessModal from "./UserAddPatientSuccessModal";
 
 

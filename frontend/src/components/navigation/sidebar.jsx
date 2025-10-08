@@ -29,7 +29,8 @@ import {
   BuildingOffice2Icon,
   UsersIcon,
   VideoCameraIcon,
-  TruckIcon // Added for Teleconsultation
+  TruckIcon,
+  CpuChipIcon // Added for Teleconsultation
 } from "@heroicons/react/24/outline";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -112,7 +113,8 @@ const Sidebar = () => {
     "/teleconsultation": "Teleconsultation", // Added title for teleconsultation
     "/user-management": "Users",
     "/supplier-management": "Suppliers",
-    "/import-signature": "Create Doctor Signature"
+    "/import-signature": "Create Doctor Signature",
+    "/ai-assistant": "AI Assistant" // Added title for AI Assistant
   };
 
   let currentTitle = "Overview";
@@ -172,6 +174,31 @@ const Sidebar = () => {
             <span>Overview</span>
             {isActive("/dashboard") && (
               <div className="ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            )}
+          </Link>
+
+             <Link
+            to="/ai-assistant"
+            className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+              isActive("/ai-assistant")
+                ? "bg-gradient-to-r from-indigo-600/20 to-purple-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+            }`}
+          >
+            <CpuChipIcon
+              className={`w-5 h-5 mr-3 transition-colors ${
+                isActive("/ai-assistant")
+                  ? "text-indigo-400"
+                  : "text-slate-400 group-hover:text-indigo-400"
+              }`}
+            />
+            <span>AI Assistant</span>
+            {/* Add a "NEW" badge */}
+            <span className="ml-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+              NEW
+            </span>
+            {isActive("/ai-assistant") && (
+              <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
             )}
           </Link>
 
