@@ -29,7 +29,8 @@ import {
   BuildingOffice2Icon,
   UsersIcon,
   VideoCameraIcon,
-  TruckIcon, // Added for Teleconsultation
+  TruckIcon,
+  CpuChipIcon, // Added for Teleconsultation
 } from "@heroicons/react/24/outline";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -91,6 +92,7 @@ const Sidebar = () => {
     "/ViewMedReq": "View Medicine Request",
     "/ViewRequest": "View Supply Request",
     "/Transfer": "Transfer Items",
+    "/Transfer": "Transfer Items",
     "/transferMed": "Transfer Medicine",
     "/requestS": "Request Stock",
     "/PharmacyTransferHistory": "Transfer History",
@@ -113,6 +115,7 @@ const Sidebar = () => {
     "/user-management": "Users",
     "/supplier-management": "Suppliers",
     "/import-signature": "Create Doctor Signature",
+    "/ai-assistant": "AI Assistant", // Added title for AI Assistant
   };
 
   let currentTitle = "Overview";
@@ -172,6 +175,31 @@ const Sidebar = () => {
             <span>Overview</span>
             {isActive("/dashboard") && (
               <div className="ml-auto w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            )}
+          </Link>
+
+          <Link
+            to="/ai-assistant"
+            className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+              isActive("/ai-assistant")
+                ? "bg-gradient-to-r from-indigo-600/20 to-purple-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+            }`}
+          >
+            <CpuChipIcon
+              className={`w-5 h-5 mr-3 transition-colors ${
+                isActive("/ai-assistant")
+                  ? "text-indigo-400"
+                  : "text-slate-400 group-hover:text-indigo-400"
+              }`}
+            />
+            <span>AI Assistant</span>
+            {/* Add a "NEW" badge */}
+            <span className="ml-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+              NEW
+            </span>
+            {isActive("/ai-assistant") && (
+              <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
             )}
           </Link>
 
@@ -236,7 +264,7 @@ const Sidebar = () => {
                   }`}
                 >
                   <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
-                  Referrence Items
+                  Referrence Items Referrence Items
                 </Link>
 
                 {permissions?.accessInventory && (
@@ -361,6 +389,72 @@ const Sidebar = () => {
             </Link>
           )}
 
+          {/* Transfer Supply */}
+          {permissions?.accessTransferStocks && (
+            <Link
+              to="/Transfer"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/Transfer")
+                  ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ArrowsRightLeftIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/Transfer")
+                    ? "text-orange-400"
+                    : "text-slate-400 group-hover:text-orange-400"
+                }`}
+              />
+              <span>Transfer Supply</span>
+            </Link>
+          )}
+
+          {/* Pending Supply Request */}
+          {(department === "CSR" || department === "Admin") && (
+            <Link
+              to="ViewRequest"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/ViewRequest")
+                  ? "bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-white border border-amber-500/30 shadow-lg shadow-amber-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <ClockIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/ViewRequest")
+                    ? "text-amber-400"
+                    : "text-slate-400 group-hover:text-amber-400"
+                }`}
+              />
+              <span>Pending Supply Requests</span>
+            </Link>
+          )}
+
+          {/* Employee Attendance & Salary System */}
+          {/* {(department === "Admin" || department === "HR" || permissions?.accessSettings) && (
+            <Link
+              to="/employee-attendance"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/employee-attendance")
+                  ? "bg-gradient-to-r from-indigo-600/20 to-blue-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <UsersIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/employee-attendance")
+                    ? "text-indigo-400"
+                    : "text-slate-400 group-hover:text-indigo-400"
+                }`}
+              />
+              <span>Employee Attendance</span>
+              {isActive("/employee-attendance") && (
+                <div className="ml-auto w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
+              )}
+            </Link>
+          )} */}
+
           {permissions?.accessLaboratory && (
             <div className="space-y-1">
               <div
@@ -466,153 +560,70 @@ const Sidebar = () => {
             </div>
           )}
 
-          {/* Transfer Supply */}
-          {(department === "" || department === "Admin") && (
-            <Link
-              to="Transfer"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/Transfer")
-                  ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <ArrowsRightLeftIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/Transfer")
-                    ? "text-orange-400"
-                    : "text-slate-400 group-hover:text-orange-400"
-                }`}
-              />
-              <span>Transfer Supply</span>
-            </Link>
-          )}
-
-          {/* Transfer Medicine */}
-
-          {/* Pending Supply Request */}
-          {(department === "CSR" || department === "Admin") && (
-            <Link
-              to="ViewRequest"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/ViewRequest")
-                  ? "bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-white border border-amber-500/30 shadow-lg shadow-amber-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <ClockIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/ViewRequest")
-                    ? "text-amber-400"
-                    : "text-slate-400 group-hover:text-amber-400"
-                }`}
-              />
-              <span>Pending Supply Requests</span>
-            </Link>
-          )}
-
-          {/* Request Stock */}
-          <Link
-            to="requestS"
-            className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-              isActive("/requestS")
-                ? "bg-gradient-to-r from-indigo-600/20 to-blue-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
-                : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-            }`}
-          >
-            <InboxStackIcon
-              className={`w-5 h-5 mr-3 transition-colors ${
-                isActive("/requestS")
-                  ? "text-indigo-400"
-                  : "text-slate-400 group-hover:text-indigo-400"
-              }`}
-            />
-            <span>Request Stock</span>
-          </Link>
-
-          {/* Inventory Transactions */}
-          {permissions?.accessInventoryHistory && (
-            <Link
-              to="/InventoryTransaction"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/InventoryTransaction")
-                  ? "bg-gradient-to-r from-green-600/20 to-emerald-600/20 text-white border border-green-500/30 shadow-lg shadow-green-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <DocumentTextIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/InventoryTransaction")
-                    ? "text-green-400"
-                    : "text-slate-400 group-hover:text-green-400"
-                }`}
-              />
-              <span>Inventory Transactions</span>
-            </Link>
-          )}
-
-          {/* Patients */}
-          {permissions?.accessPatients && (
-            <Link
-              to="/patients"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/patients")
-                  ? "bg-gradient-to-r from-violet-600/20 to-purple-600/20 text-white border border-violet-500/30 shadow-lg shadow-violet-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <UserGroupIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/patients")
-                    ? "text-violet-400"
-                    : "text-slate-400 group-hover:text-violet-400"
-                }`}
-              />
-              <span>Patients</span>
-            </Link>
-          )}
-
-          {/* Billing */}
-          {/* Billing Section */}
+          {/* Billing Management Dropdown */}
           {permissions?.accessBilling && (
-            <Link
-              to="/billing"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/billing")
-                  ? "bg-gradient-to-r from-emerald-600/20 to-green-600/20 text-white border border-emerald-500/30 shadow-lg shadow-emerald-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <CreditCardIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/billing")
-                    ? "text-emerald-400"
-                    : "text-slate-400 group-hover:text-emerald-400"
+            <div>
+              <button
+                onClick={() => setBillingDropdownOpen(!billingDropdownOpen)}
+                className={`group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  isActive("/billing") || isActive("/PaidSection")
+                    ? "bg-gradient-to-r from-emerald-600/20 to-green-600/20 text-white border border-emerald-500/30 shadow-lg shadow-emerald-500/20"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
                 }`}
-              />
-              <span>Billing</span>
-            </Link>
+              >
+                <div className="flex items-center">
+                  <CreditCardIcon
+                    className={`w-5 h-5 mr-3 transition-colors ${
+                      isActive("/billing") || isActive("/PaidSection")
+                        ? "text-emerald-400"
+                        : "text-slate-400 group-hover:text-emerald-400"
+                    }`}
+                  />
+                  <span>Billing Management</span>
+                </div>
+                <ChevronDownIcon
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    billingDropdownOpen ? "rotate-180" : "rotate-0"
+                  }`}
+                />
+              </button>
+
+              {/* Dropdown Items */}
+              <div
+                className={`ml-4 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
+                  billingDropdownOpen
+                    ? "max-h-96 opacity-100 mb-2"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                <Link
+                  to="/billing"
+                  className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                    isActive("/billing")
+                      ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  }`}
+                >
+                  <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                  Billing
+                </Link>
+
+                <Link
+                  to="/PaidSection"
+                  className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                    isActive("/PaidSection")
+                      ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                  }`}
+                >
+                  <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
+                  Billing Paid Section
+                </Link>
+              </div>
+            </div>
           )}
 
-          {/* Billing Paid Section */}
-          {permissions?.accessBilling && (
-            <Link
-              to="/PaidSection"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                isActive("/PaidSection")
-                  ? "bg-gradient-to-r from-green-600/20 to-teal-600/20 text-white border border-green-500/30 shadow-lg shadow-green-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-              }`}
-            >
-              <BanknotesIcon
-                className={`w-5 h-5 mr-3 transition-colors ${
-                  isActive("/PaidSection")
-                    ? "text-green-400"
-                    : "text-slate-400 group-hover:text-green-400"
-                }`}
-              />
-              <span>Billing Paid Section</span>
-            </Link>
-          )}
+          {/* Medical Certificate */}
           {permissions?.accessMedicalCertificate && (
             <Link
               to="/generate-medical-certificate"
@@ -635,8 +646,46 @@ const Sidebar = () => {
               )}
             </Link>
           )}
+          {permissions?.accessSettings && (
+            <Link
+              to="/user-management"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/user-management")
+                  ? "bg-gradient-to-r from-cyan-600/20 to-blue-600/20 text-white border border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <UsersIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/user-management")
+                    ? "text-cyan-400"
+                    : "text-slate-400 group-hover:text-cyan-400"
+                }`}
+              />
+              <span>User Management</span>
+            </Link>
+          )}
 
-          {/* Analytics */}
+          {permissions?.accessSettings && (
+            <Link
+              to="/supplier-management"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/supplier-management")
+                  ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <TruckIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/supplier-management")
+                    ? "text-orange-400"
+                    : "text-slate-400 group-hover:text-orange-400"
+                }`}
+              />
+              <span>Supplier Management</span>
+            </Link>
+          )}
+
           {permissions?.accessAnalytics && (
             <Link
               to="/analytics"
