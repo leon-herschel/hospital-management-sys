@@ -297,19 +297,6 @@ const Sidebar = () => {
     Inventory Transactions
   </Link>
 )}
-                 {permissions?.accessInventoryHistory && (
-  <Link
-    to="/InventoryTransaction"
-    className={`flex items-center px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-      isActive("/InventoryTransaction")
-        ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"
-        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
-    }`}
-  >
-    <div className="w-1.5 h-1.5 bg-current rounded-full mr-3" />
-    Inventory Transactions
-  </Link>
-)}
               </div>
             </div>
           )}
@@ -470,26 +457,6 @@ const Sidebar = () => {
             </Link>
           )} */}
 
-          {/* Patients */}
-         {permissions?.accessPatients && (
-  <Link
-    to="/patients"
-    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-      isActive("/patients")
-        ? "bg-gradient-to-r from-violet-600/20 to-purple-600/20 text-white border border-violet-500/30 shadow-lg shadow-violet-500/20"
-        : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
-    }`}
-  >
-    <UserGroupIcon
-      className={`w-5 h-5 mr-3 transition-colors ${
-        isActive("/patients")
-          ? "text-violet-400"
-          : "text-slate-400 group-hover:text-violet-400"
-      }`}
-    />
-    <span>Patient Management</span>
-  </Link>
-)}
 
 {permissions?.accessLaboratory && (
             <div className="space-y-1">
