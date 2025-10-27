@@ -3,7 +3,7 @@ import { ref, update, get, push } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { Plus, Package, TrendingUp } from 'lucide-react';
 
-function ClinicStockIn({ item, onClose, currentUserId }) {
+function ClinicStockIn({ item, onClose, currentUserId, onSuccess }) {
   const [stockInQuantity, setStockInQuantity] = useState(0);
   const [itemName, setItemName] = useState('');
   const [reason, setReason] = useState('');
@@ -167,37 +167,30 @@ const handleSubmit = async (e) => {
 
   try {
     const newQuantity = item.quantity + stockInQuantity;
-    
-    // CRITICAL: Update thresholdBase to the new total quantity after stock-in
     const newThresholdBase = newQuantity;
-    
-    // Calculate status for transaction record and display only
     const oldStatus = determineStatus(item.quantity, item.thresholdBase || item.quantity);
     const newStatus = determineStatus(newQuantity, newThresholdBase);
     
     const updatedData = {
       quantity: newQuantity,
-      thresholdBase: newThresholdBase, // This is the key change - update threshold base
+      thresholdBase: newThresholdBase,
       lastUpdated: new Date().toISOString().split('T')[0],
-      // REMOVED: status field - calculate dynamically instead
-      currentThreshold: Math.floor(newThresholdBase * 0.5) // Store current 50% threshold for reference
+      currentThreshold: Math.floor(newThresholdBase * 0.5),
     };
 
-    // Update the inventory stock
     const clinicInventoryRef = ref(database, `clinicInventoryStock/${item.clinicId}/${item.itemId}`);
     await update(clinicInventoryRef, updatedData);
 
-    // Create transaction record with detailed threshold information
     await createTransactionRecord(stockInQuantity, newQuantity, newThresholdBase, oldStatus, newStatus);
 
-    alert(
-      `Successfully added ${stockInQuantity} units to inventory!\n` +
-      `New Total: ${newQuantity} units\n` +
-      `New Threshold Base: ${newThresholdBase}\n` +
-      `New Low Stock Threshold: ${Math.floor(newThresholdBase * 0.5)} units\n` +
-      `Status: ${oldStatus} → ${newStatus}`
-    );
-    onClose();
+    // ✅ Trigger success modal from parent
+    if (onSuccess) {
+      onSuccess(`Successfully stocked in ${stockInQuantity} units! New total: ${newQuantity}`);
+    }
+
+    // ✅ Close the modal
+    if (onClose) onClose();
+
   } catch (error) {
     console.error('Error updating stock:', error);
     setError('Failed to update stock. Please try again.');

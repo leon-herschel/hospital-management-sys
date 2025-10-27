@@ -5,6 +5,7 @@ import { ref, get, onValue } from 'firebase/database';
 import { database } from '../../../firebase/firebase';
 import AvailabilityModal from './AvailabilityModal';
 import ProfessionalFeeModal from './ProfessionalFeeModal';
+import { PencilIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
 const DoctorProfile = () => {
   const { currentUser } = useAuth();
@@ -15,6 +16,8 @@ const DoctorProfile = () => {
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [showFeesModal, setShowFeesModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [signatureCount, setSignatureCount] = useState(0);
+  const [activeSignature, setActiveSignature] = useState(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -26,71 +29,89 @@ const DoctorProfile = () => {
   }, [currentUser, navigate]);
 
   const fetchDoctorData = async () => {
-  try {
-    const doctorId = currentUser.uid; 
+    try {
+      const doctorId = currentUser.uid; 
 
-    // First get user data
-    const userRef = ref(database, `users/${doctorId}`);
-    const userSnapshot = await get(userRef);
+      // First get user data
+      const userRef = ref(database, `users/${doctorId}`);
+      const userSnapshot = await get(userRef);
 
-    if (!userSnapshot.exists() || userSnapshot.val().role !== 'doctor') {
-      console.error('User is not a doctor or does not exist');
-      navigate('/dashboard');
-      return;
-    }
+      if (!userSnapshot.exists() || userSnapshot.val().role !== 'doctor') {
+        console.error('User is not a doctor or does not exist');
+        navigate('/dashboard');
+        return;
+      }
 
-    const userData = userSnapshot.val();
+      const userData = userSnapshot.val();
 
-    // Then get doctor data
-    const doctorRef = ref(database, `doctors/${doctorId}`);
-    const doctorSnapshot = await get(doctorRef);
+      // Then get doctor data
+      const doctorRef = ref(database, `doctors/${doctorId}`);
+      const doctorSnapshot = await get(doctorRef);
 
-    if (doctorSnapshot.exists()) {
-      const doctorInfo = doctorSnapshot.val();
-      // Merge user email into doctorData
-      setDoctorData({ ...doctorInfo, email: userData.email, id: doctorId });
-    } else {
-      // Doctor record doesn’t exist, create it
-      const newDoctorData = {
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        fullName: `Dr. ${userData.firstName} ${userData.lastName}`.trim(),
-        email: userData.email,
-        specialty: userData.department || 'General Medicine',
-        contactNumber: userData.contactNumber || '',
-        clinicAffiliations: userData.clinicAffiliation ? [userData.clinicAffiliation] : [],
-        birNumber: userData.birNumber || '',
-        prcId: userData.prcId || '',
+      if (doctorSnapshot.exists()) {
+        const doctorInfo = doctorSnapshot.val();
+        setDoctorData({ ...doctorInfo, email: userData.email, id: doctorId });
+      } else {
+        // Doctor record doesn't exist, create it
+        const newDoctorData = {
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          fullName: `Dr. ${userData.firstName} ${userData.lastName}`.trim(),
+          email: userData.email,
+          specialty: userData.department || 'General Medicine',
+          contactNumber: userData.contactNumber || '',
+          clinicAffiliations: userData.clinicAffiliation ? [userData.clinicAffiliation] : [],
+          birNumber: userData.birNumber || '',
+          prcId: userData.prcId || '',
+        };
+
+        await update(doctorRef, newDoctorData);
+        setDoctorData({ ...newDoctorData, id: doctorId });
+      }
+
+      // Availability listener
+      const availabilityRef = ref(database, `doctors/${doctorId}/availability`);
+      const unsubscribeAvailability = onValue(availabilityRef, (snapshot) => {
+        setAvailability(snapshot.exists() ? snapshot.val() : null);
+      });
+
+      // Fees listener
+      const feesRef = ref(database, `doctors/${doctorId}/professionalFees`);
+      const unsubscribeFees = onValue(feesRef, (snapshot) => {
+        setProfessionalFees(snapshot.exists() ? snapshot.val() : null);
+      });
+
+      // Signatures listener
+      const signaturesRef = ref(database, `doctorSignatures/${doctorId}`);
+      const unsubscribeSignatures = onValue(signaturesRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const signaturesArray = Object.entries(data).map(([key, value]) => ({
+            id: key,
+            ...value
+          }));
+          setSignatureCount(signaturesArray.length);
+          
+          const active = signaturesArray.find(sig => sig.isActive);
+          setActiveSignature(active || null);
+        } else {
+          setSignatureCount(0);
+          setActiveSignature(null);
+        }
+      });
+
+      setLoading(false);
+
+      return () => {
+        unsubscribeAvailability();
+        unsubscribeFees();
+        unsubscribeSignatures();
       };
-
-      await update(doctorRef, newDoctorData);
-      setDoctorData({ ...newDoctorData, id: doctorId });
+    } catch (error) {
+      console.error('Error fetching doctor data:', error);
+      setLoading(false);
     }
-
-    // Availability listener
-    const availabilityRef = ref(database, `doctors/${doctorId}/availability`);
-    const unsubscribeAvailability = onValue(availabilityRef, (snapshot) => {
-      setAvailability(snapshot.exists() ? snapshot.val() : null);
-    });
-
-    // Fees listener
-    const feesRef = ref(database, `doctors/${doctorId}/professionalFees`);
-    const unsubscribeFees = onValue(feesRef, (snapshot) => {
-      setProfessionalFees(snapshot.exists() ? snapshot.val() : null);
-    });
-
-    setLoading(false);
-
-    return () => {
-      unsubscribeAvailability();
-      unsubscribeFees();
-    };
-  } catch (error) {
-    console.error('Error fetching doctor data:', error);
-    setLoading(false);
-  }
-};
-
+  };
 
   const formatTimeSlot = (slot) => {
     return `${slot.startTime} - ${slot.endTime}`;
@@ -147,6 +168,71 @@ const DoctorProfile = () => {
             >
               Back to Dashboard
             </button>
+          </div>
+        </div>
+
+        {/* Digital Signature Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
+                <PencilIcon className="w-6 h-6" />
+                <span>Digital Signature</span>
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Manage your signature for medical certificates</p>
+            </div>
+            <button
+              onClick={() => navigate('/import-signature')}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+            >
+              <span>Manage Signatures</span>
+              <ArrowRightIcon className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="bg-gray-50 p-4 rounded-md">
+            {activeSignature ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white rounded-lg p-3 border-2 border-green-300">
+                    <img
+                      src={activeSignature.base64Data}
+                      alt="Active signature"
+                      className="max-h-16 max-w-xs"
+                      style={{ filter: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 flex items-center">
+                      <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Active Signature
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {signatureCount} signature{signatureCount !== 1 ? 's' : ''} saved
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Last updated: {new Date(activeSignature.uploadedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <PencilIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 font-medium">No Active Signature</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {signatureCount > 0 
+                    ? `${signatureCount} signature${signatureCount !== 1 ? 's' : ''} saved (none active)`
+                    : 'Upload or draw your signature to get started'}
+                </p>
+                <button
+                  onClick={() => navigate('/import-signature')}
+                  className="mt-3 text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                >
+                  Add Signature →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -218,18 +304,18 @@ const DoctorProfile = () => {
                       ₱{professionalFees?.followUpFee?.toFixed(2) || '0.00'}
                     </span>
                   </div>
-                   <div className="flex justify-between items-center">
+                  {/* <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">Referral Fee:</span>
                     <span className="text-lg font-semibold text-green-600">
                       ₱{professionalFees?.referralFee?.toFixed(2) || '0.00'}
                     </span>
                   </div>
-                   <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">Patronage Fee:</span>
                     <span className="text-lg font-semibold text-green-600">
                       ₱{professionalFees?.patronageFee?.toFixed(2) || '0.00'}
                     </span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               

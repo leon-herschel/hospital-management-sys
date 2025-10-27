@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/solid";
+import SuccessModal from "../../../components/reusable/SuccessModal";
 
 const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment, existingDepartments = [] }) => {
   const [departmentName, setDepartmentName] = useState("");
@@ -29,7 +30,7 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment, existing
     if (showSuccessModal) {
       const timer = setTimeout(() => {
         setShowSuccessModal(false);
-      }, 3000); // 3 seconds
+      }, 5000); // 3 seconds
 
       return () => clearTimeout(timer);
     }
@@ -142,23 +143,15 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment, existing
 
   return (
     <>
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-md p-6 w-full max-w-sm shadow-lg text-center">
-            <h2 className="text-xl font-bold mb-2">Department Created!</h2>
-            <p className="text-gray-600 mb-4">The department was added successfully.</p>
-            <button
-              onClick={() => setShowSuccessModal(false)}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
+     <SuccessModal
+        show={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Department Created!"
+        message="The department was added successfully."
+      />
 
       {/* Add Department Modal */}
+      {showModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div className="bg-white rounded-md p-6 w-full max-w-lg shadow-lg relative">
           <button
@@ -364,9 +357,12 @@ const AddDepartmentModal = ({ showModal, setShowModal, onAddDepartment, existing
                 Create Department
               </button>
             </div>
+
+            
           </form>
         </div>
       </div>
+      )}
     </>
   );
 };

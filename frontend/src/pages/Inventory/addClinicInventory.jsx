@@ -3,7 +3,8 @@ import { ref, onValue, set, get } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import { database } from "../../firebase/firebase";
 
-function AddClinicInventory() {
+// ✅ Add onSuccess prop to component
+function AddClinicInventory({ onSuccess }) {
   const [clinicId, setClinicId] = useState("");
   const [clinicName, setClinicName] = useState("");
   const [inventoryItems, setInventoryItems] = useState([]);
@@ -13,6 +14,8 @@ function AddClinicInventory() {
   const [userRole, setUserRole] = useState("");
   const [availableClinics, setAvailableClinics] = useState([]);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+const [note, setNote] = useState("");
+
 
   // Enhanced utility function for calculating status based on dynamic threshold
   const calculateInventoryStatus = (currentQuantity, thresholdBase) => {
@@ -20,7 +23,6 @@ function AddClinicInventory() {
       return 'Critical';
     }
     
-    // Calculate 50% threshold based on thresholdBase
     const threshold = Math.floor(thresholdBase * 0.5);
     
     if (currentQuantity < threshold) {
@@ -30,8 +32,13 @@ function AddClinicInventory() {
     return 'Good';
   };
 
+    const checkDuplicateEntry = async (clinicId, selectedItemId) => {
+    const itemRef = ref(database, `clinicInventoryStock/${clinicId}/${selectedItemId}`);
+    const snapshot = await get(itemRef);
+    return snapshot.exists(); // returns true if already added
+  };
+
   useEffect(() => {
-    // Fetch all inventory items
     const inventoryRef = ref(database, "inventoryItems");
     onValue(inventoryRef, (snapshot) => {
       const data = snapshot.val() || {};
@@ -42,7 +49,6 @@ function AddClinicInventory() {
       setInventoryItems(items);
     });
 
-    // Fetch logged-in user and determine role/clinic access
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
@@ -52,8 +58,7 @@ function AddClinicInventory() {
         if (userData) {
           setUserRole(userData.role || "");
           
-          // If admin or superadmin, fetch all clinics
-          if (userData.role === "admin" || userData.role === "superadmin") {
+          if (userData.role === "" || userData.role === "superadmin") {
             const clinicsRef = ref(database, "clinics");
             get(clinicsRef).then((clinicsSnapshot) => {
               const clinicsData = clinicsSnapshot.val() || {};
@@ -65,11 +70,9 @@ function AddClinicInventory() {
               setIsLoadingUser(false);
             });
           } else {
-            // For regular users, use their clinic affiliation
             if (userData.clinicAffiliation) {
               setClinicId(userData.clinicAffiliation);
               
-              // Fetch the clinic name for display
               const clinicRef = ref(database, `clinics/${userData.clinicAffiliation}`);
               get(clinicRef).then((clinicSnap) => {
                 const clinicData = clinicSnap.val();
@@ -91,83 +94,77 @@ function AddClinicInventory() {
     }
   }, []);
 
-  // Handle clinic selection for admins
   const handleClinicChange = (selectedClinicId) => {
     setClinicId(selectedClinicId);
     const selectedClinic = availableClinics.find(clinic => clinic.id === selectedClinicId);
     setClinicName(selectedClinic ? selectedClinic.name : "");
   };
 
-  // Updated handleSubmit function in AddClinicInventory.js
+  // ✅ Updated handleSubmit to call onSuccess callback
   const handleSubmit = async () => {
-    if (!clinicId || !selectedItemId || !quantity) {
-      alert("Please complete all required fields.");
+  if (!clinicId || !selectedItemId || !quantity) {
+    setNote("⚠️ Please complete all required fields before submitting.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    // 🟡 Step 1: Check for duplicate
+    const isDuplicate = await checkDuplicateEntry(clinicId, selectedItemId);
+    if (isDuplicate) {
+      setNote("⚠️ This inventory item already exists for this clinic.");
+      setLoading(false);
       return;
     }
 
-    const itemRef = ref(
-      database,
-      `clinicInventoryStock/${clinicId}/${selectedItemId}`
-    );
-
+    // 🟢 Step 2: Proceed with adding
+    const itemRef = ref(database, `clinicInventoryStock/${clinicId}/${selectedItemId}`);
     const quantityNumber = parseInt(quantity);
-    
-    // Check if this item already exists to preserve existing data
-    const existingSnapshot = await get(itemRef);
-    const existingData = existingSnapshot.val() || {};
-    
-    // For new items, the initial quantity becomes the thresholdBase
-    // For existing items, we maintain the existing thresholdBase
-    const thresholdBase = existingSnapshot.exists() ? 
-      (existingData.thresholdBase || quantityNumber) : 
-      quantityNumber;
-    
-    // Calculate the 50% threshold based on thresholdBase
+
+    const thresholdBase = quantityNumber;
     const threshold = Math.floor(thresholdBase * 0.5);
-    
+
     const payload = {
       quantity: quantityNumber,
-      thresholdBase: thresholdBase,
+      thresholdBase,
       lastUpdated: new Date().toISOString(),
-      // REMOVED: status field - calculate dynamically instead
-      departmentStock: existingData.departmentStock || {},
-      // Store the original quantity for historical reference
-      originalQuantity: existingData.originalQuantity || quantityNumber,
-      // Store the current threshold for transparency
-      currentThreshold: threshold
+      departmentStock: {},
+      originalQuantity: quantityNumber,
+      currentThreshold: threshold,
     };
 
-    setLoading(true);
-    try {
-      await set(itemRef, payload);
-      
-      // Calculate status for display in alert only
-      const displayStatus = calculateInventoryStatus(quantityNumber, thresholdBase);
-      
-      alert(
-        `Clinic inventory ${existingSnapshot.exists() ? 'updated' : 'added'} successfully!\n` +
-        `Clinic: ${clinicName}\n` +
-        `Status: ${displayStatus}\n` +
-        `Threshold Base: ${thresholdBase} units\n` +
-        `Low Stock Threshold: ${threshold} units (50% of base)`
-      );
-      setSelectedItemId("");
-      setQuantity("");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save clinic inventory.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    await set(itemRef, payload);
 
-  // Enhanced preview calculation for display
+    const displayStatus = calculateInventoryStatus(quantityNumber, thresholdBase);
+    const itemName = inventoryItems.find(item => item.id === selectedItemId)?.name || selectedItemId;
+
+    const message = 
+      `✅ Clinic inventory added successfully!\n\n` +
+      `📦 Item: ${itemName}\n` +
+      `🏥 Clinic: ${clinicName}\n` +
+      `📊 Status: ${displayStatus}\n` +
+      `⚖️ Threshold Base: ${thresholdBase} units\n` +
+      `🔻 Low Stock Threshold: ${threshold} units (50% of base)`;
+
+    if (onSuccess) onSuccess(message);
+
+    // Reset form and note
+    setSelectedItemId("");
+    setQuantity("");
+    setNote("");
+  } catch (error) {
+    console.error(error);
+    setNote("❌ Failed to save clinic inventory. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   const getPreviewInfo = () => {
     if (!quantity || isNaN(quantity)) return null;
     
     const quantityNumber = parseInt(quantity);
-    
-    // For new items, the initial quantity becomes the thresholdBase
     const thresholdBase = quantityNumber;
     const threshold = Math.floor(thresholdBase * 0.5);
     const status = calculateInventoryStatus(quantityNumber, thresholdBase);
@@ -177,7 +174,7 @@ function AddClinicInventory() {
       thresholdBase,
       threshold,
       status,
-      percentageOfBase: 100, // New items are always at 100% initially
+      percentageOfBase: 100,
       unitsUntilLow: Math.max(0, quantityNumber - threshold),
       isAboveThreshold: quantityNumber >= threshold
     };
@@ -185,7 +182,6 @@ function AddClinicInventory() {
 
   const previewInfo = getPreviewInfo();
 
-  // Show loading state while fetching user data
   if (isLoadingUser) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -199,8 +195,7 @@ function AddClinicInventory() {
     );
   }
 
-  // Check if user has permission to add inventory
-  const canAddInventory = userRole === "admin" || userRole === "superadmin" || clinicId;
+  const canAddInventory = userRole === "" || userRole === "superadmin" || clinicId;
 
   if (!canAddInventory) {
     return (
@@ -244,7 +239,7 @@ function AddClinicInventory() {
           <div className="mb-6">
             <label className="block text-sm font-semibold mb-3 text-slate-700 flex items-center space-x-2">
               <span>Clinic</span>
-              {(userRole === "admin" || userRole === "superadmin") && (
+              {(userRole === "" || userRole === "superadmin") && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200">
                   <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -254,7 +249,7 @@ function AddClinicInventory() {
               )}
             </label>
             
-            {userRole === "admin" || userRole === "superadmin" ? (
+            {userRole === "" || userRole === "superadmin" ? (
               <select
                 value={clinicId}
                 onChange={(e) => handleClinicChange(e.target.value)}
@@ -286,7 +281,7 @@ function AddClinicInventory() {
           </div>
 
           {/* Selected Clinic Info for Admins */}
-          {(userRole === "admin" || userRole === "superadmin") && clinicId && (
+          {(userRole === "" || userRole === "superadmin") && clinicId && (
             <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -301,37 +296,56 @@ function AddClinicInventory() {
                   </div>
                 </div>
                 <div className="px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-medium rounded-full shadow-sm">
-                  {userRole === "superadmin" ? "Super Admin" : "Admin"} Access
+                  {userRole === "superadmin" ? "Super Admin" : ""} Access
                 </div>
               </div>
             </div>
           )}
 
           {/* Inventory Item Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold mb-3 text-slate-700">Inventory Item</label>
-            <div className="relative">
-              <input
-                list="inventory-options"
-                placeholder="Type or select inventory item"
-                className="w-full p-4 border border-slate-300 rounded-xl bg-white text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 shadow-sm hover:border-slate-400 pl-12"
-                onChange={(e) => {
-                  const selected = inventoryItems.find(item => item.name === e.target.value);
-                  setSelectedItemId(selected ? selected.id : "");
-                }}
-              />
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                <svg className="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <datalist id="inventory-options">
-              {inventoryItems.map((item) => (
-                <option key={item.id} value={item.name} />
-              ))}
-            </datalist>
-          </div>
+    <div className="mb-6">
+  <label className="block text-sm font-semibold mb-3 text-slate-700">
+    Inventory Item
+  </label>
+  <div className="relative">
+    <input
+      list="inventory-options"
+      placeholder="Type or select inventory item"
+      className="w-full p-4 border border-slate-300 rounded-xl bg-white text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 shadow-sm hover:border-slate-400 pl-12"
+      onChange={(e) => {
+        const selected = inventoryItems.find(item => item.name === e.target.value);
+        setSelectedItemId(selected ? selected.id : "");
+        setNote(selected ? "" : "⚠️ Please select a valid inventory item from the list.");
+      }}
+    />
+    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+      <svg
+        className="w-5 h-5 text-slate-400"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path
+          fillRule="evenodd"
+          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </div>
+  </div>
+
+  {/* ✅ Note Section */}
+  {note && (
+    <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+      {note}
+    </p>
+  )}
+
+  <datalist id="inventory-options">
+    {inventoryItems.map((item) => (
+      <option key={item.id} value={item.name} />
+    ))}
+  </datalist>
+</div>
 
           {/* Quantity Input */}
           <div className="mb-6">
@@ -353,7 +367,7 @@ function AddClinicInventory() {
             </div>
           </div>
 
-          {/* Enhanced Preview Section */}
+          {/* Preview Section */}
           {previewInfo && (
             <div className="mb-8 bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 border border-violet-200/60 rounded-2xl p-6 shadow-lg shadow-violet-500/5">
               <div className="flex items-center space-x-3 mb-6">
@@ -413,106 +427,6 @@ function AddClinicInventory() {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span>{previewInfo.status}</span>
-                </div>
-              </div>
-
-              {/* Visual Representation */}
-              <div className="mb-6">
-                <p className="text-sm text-violet-600 mb-3 font-medium">Stock Level Visualization:</p>
-                <div className="relative">
-                  <div className="w-full bg-gradient-to-r from-slate-200 to-slate-300 rounded-full h-8 shadow-inner">
-                    <div
-                      className={`h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg relative overflow-hidden ${
-                        previewInfo.status === 'Good' ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
-                        previewInfo.status === 'Low' ? 'bg-gradient-to-r from-yellow-500 to-amber-600' : 
-                        'bg-gradient-to-r from-red-500 to-rose-600'
-                      }`}
-                      style={{ width: '100%' }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"></div>
-                      <span className="relative z-10">{previewInfo.quantity} units</span>
-                    </div>
-                    {/* Threshold Marker */}
-                    <div 
-                      className="absolute top-0 w-1 h-8 bg-gradient-to-b from-red-500 to-red-600 rounded-full shadow-lg"
-                      style={{ left: '50%' }}
-                      title="50% Threshold Line"
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-600 mt-2 font-medium">
-                    <span>0</span>
-                    <span className="text-red-600 font-semibold">← Threshold: {previewInfo.threshold}</span>
-                    <span>Base: {previewInfo.thresholdBase}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status Information */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border border-white/60 shadow-lg text-sm mb-4">
-                <h4 className="font-bold text-slate-700 mb-3 flex items-center space-x-2">
-                  <svg className="w-4 h-4 text-violet-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <span>Status Information</span>
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-600">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                    <span><strong>Current Level:</strong> {previewInfo.percentageOfBase}% of threshold base</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <span><strong>Units until Low Status:</strong> {previewInfo.unitsUntilLow} units</span>
-                  </div>
-                  <div className="flex items-center space-x-2 md:col-span-2">
-                    <div className={`w-2 h-2 rounded-full ${previewInfo.isAboveThreshold ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span><strong>Threshold Status:</strong>
-                      <span className={`ml-1 font-semibold ${previewInfo.isAboveThreshold ? 'text-green-600' : 'text-red-600'}`}>
-                        {previewInfo.isAboveThreshold ? 'Above threshold ✓' : 'Below threshold ⚠️'}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* How Dynamic Thresholds Work */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border border-white/60 shadow-lg text-sm">
-                <h4 className="font-bold text-slate-700 mb-3 flex items-center space-x-2">
-                  <svg className="w-4 h-4 text-violet-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  <span>How Dynamic Thresholds Work</span>
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-600">
-                  <div className="space-y-2">
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      <span><strong>Good:</strong> Quantity is at or above 50% of the threshold base</span>
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      <span><strong>Low:</strong> Quantity is below 50% of the threshold base</span>
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      <span><strong>Critical:</strong> Quantity is 0 or below</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      <span><strong>Threshold Base:</strong> Updates to the new total quantity when you stock in</span>
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-indigo-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      <span><strong>Smart Adjustment:</strong> When you stock in more items, the threshold base adjusts to prevent false alerts</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200/60">
-                  <p className="text-xs text-slate-700">
-                    <strong>Example:</strong> Add 200 units → Base: 200, Threshold: 100. When quantity drops below 100, status becomes "Low". This dynamic system adapts to your restocking patterns.
-                  </p>
                 </div>
               </div>
             </div>

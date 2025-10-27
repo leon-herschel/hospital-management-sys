@@ -1,6 +1,26 @@
 import { useState, useEffect } from "react";
 import { ref, update, onValue } from "firebase/database";
 import { database } from "../../../firebase/firebase";
+import { CheckCircle } from "lucide-react";
+
+const SuccessModal = ({ onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 2500);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg p-8 w-full max-w-sm shadow-lg text-center">
+        <div className="flex justify-center mb-4">
+          <CheckCircle className="w-16 h-16 text-green-500" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-800 mb-2">Success!</h3>
+        <p className="text-gray-600">Availability updated successfully</p>
+      </div>
+    </div>
+  );
+};
 
 const AvailabilityModal = ({ doctor, onClose }) => {
   const [availabilityData, setAvailabilityData] = useState({
@@ -18,6 +38,7 @@ const AvailabilityModal = ({ doctor, onClose }) => {
     date: "",
     timeSlots: []
   });
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -148,168 +169,171 @@ const AvailabilityModal = ({ doctor, onClose }) => {
       };
 
       await update(availabilityRef, dataToSave);
-      alert("Availability updated successfully!");
-      onClose();
+      setShowSuccess(true);
     } catch (error) {
       console.error("Error updating availability:", error);
       alert("Error updating availability. Please try again.");
     }
   };
 
+  const handleSuccessComplete = () => {
+    setShowSuccess(false);
+    setTimeout(onClose, 300);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-md p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Set Availability - {doctor.fullName}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Weekly Schedule */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4">Weekly Schedule</h3>
-          {daysOfWeek.map(day => (
-            <div key={day} className="mb-4 border border-gray-200 rounded-md p-4">
-              <div className="flex items-center mb-3">
-                <input
-                  type="checkbox"
-                  id={day}
-                  checked={availabilityData[day].enabled}
-                  onChange={() => toggleDayEnabled(day)}
-                  className="mr-3"
-                />
-                <label htmlFor={day} className="font-medium capitalize">
-                  {day}
-                </label>
-              </div>
-              
-              {availabilityData[day].enabled && (
-                <div className="ml-6">
-                  {availabilityData[day].timeSlots.map((slot, index) => (
-                    <div key={index} className="flex items-center space-x-3 mb-2">
-                      <input
-                        type="time"
-                        value={slot.startTime}
-                        onChange={(e) => updateTimeSlot(day, index, 'startTime', e.target.value)}
-                        className="border border-gray-300 rounded px-3 py-1"
-                      />
-                      <span>to</span>
-                      <input
-                        type="time"
-                        value={slot.endTime}
-                        onChange={(e) => updateTimeSlot(day, index, 'endTime', e.target.value)}
-                        className="border border-gray-300 rounded px-3 py-1"
-                      />
-                      <button
-                        onClick={() => removeTimeSlot(day, index)}
-                        className="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => addTimeSlot(day)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-                  >
-                    Add Time Slot
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Specific Dates */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4">Specific Dates</h3>
-          
-          {/* Add new specific date */}
-          <div className="mb-4 border border-gray-200 rounded-md p-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <input
-                type="date"
-                value={newSpecificDate.date}
-                onChange={(e) => setNewSpecificDate(prev => ({ ...prev, date: e.target.value }))}
-                className="border border-gray-300 rounded px-3 py-1"
-              />
-              <button
-                onClick={addSpecificDate}
-                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-              >
-                Add Date
-              </button>
-            </div>
+    <>
+      {showSuccess && <SuccessModal onClose={handleSuccessComplete} />}
+      
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white rounded-md p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-lg">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Set Availability - {doctor.fullName}</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+            >
+              ×
+            </button>
           </div>
 
-          {/* List specific dates */}
-          {specificDates.map((dateItem, dateIndex) => (
-            <div key={dateIndex} className="mb-4 border border-gray-200 rounded-md p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-medium">{dateItem.date}</h4>
+          {/* Weekly Schedule */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4">Weekly Schedule</h3>
+            {daysOfWeek.map(day => (
+              <div key={day} className="mb-4 border border-gray-200 rounded-md p-4">
+                <div className="flex items-center mb-3">
+                  <input
+                    type="checkbox"
+                    id={day}
+                    checked={availabilityData[day].enabled}
+                    onChange={() => toggleDayEnabled(day)}
+                    className="mr-3"
+                  />
+                  <label htmlFor={day} className="font-medium capitalize">
+                    {day}
+                  </label>
+                </div>
+                
+                {availabilityData[day].enabled && (
+                  <div className="ml-6">
+                    {availabilityData[day].timeSlots.map((slot, index) => (
+                      <div key={index} className="flex items-center space-x-3 mb-2">
+                        <input
+                          type="time"
+                          value={slot.startTime}
+                          onChange={(e) => updateTimeSlot(day, index, 'startTime', e.target.value)}
+                          className="border border-gray-300 rounded px-3 py-1"
+                        />
+                        <span>to</span>
+                        <input
+                          type="time"
+                          value={slot.endTime}
+                          onChange={(e) => updateTimeSlot(day, index, 'endTime', e.target.value)}
+                          className="border border-gray-300 rounded px-3 py-1"
+                        />
+                
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addTimeSlot(day)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                    >
+                      Add Time Slot
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Specific Dates */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4">Specific Dates</h3>
+            
+            {/* Add new specific date */}
+            <div className="mb-4 border border-gray-200 rounded-md p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <input
+                  type="date"
+                  value={newSpecificDate.date}
+                  onChange={(e) => setNewSpecificDate(prev => ({ ...prev, date: e.target.value }))}
+                  className="border border-gray-300 rounded px-3 py-1"
+                />
                 <button
-                  onClick={() => removeSpecificDate(dateIndex)}
-                  className="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600"
+                  onClick={addSpecificDate}
+                  className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                 >
-                  Remove Date
+                  Add Date
                 </button>
               </div>
-              
-              {dateItem.timeSlots.map((slot, slotIndex) => (
-                <div key={slotIndex} className="flex items-center space-x-3 mb-2 ml-4">
-                  <input
-                    type="time"
-                    value={slot.startTime}
-                    onChange={(e) => updateSpecificDateTimeSlot(dateIndex, slotIndex, 'startTime', e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-1"
-                  />
-                  <span>to</span>
-                  <input
-                    type="time"
-                    value={slot.endTime}
-                    onChange={(e) => updateSpecificDateTimeSlot(dateIndex, slotIndex, 'endTime', e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-1"
-                  />
+            </div>
+
+            {/* List specific dates */}
+            {specificDates.map((dateItem, dateIndex) => (
+              <div key={dateIndex} className="mb-4 border border-gray-200 rounded-md p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-medium">{dateItem.date}</h4>
                   <button
-                    onClick={() => removeSpecificDateTimeSlot(dateIndex, slotIndex)}
+                    onClick={() => removeSpecificDate(dateIndex)}
                     className="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600"
                   >
-                    Remove
+                    Remove Date
                   </button>
                 </div>
-              ))}
-              
-              <button
-                onClick={() => addSpecificDateTimeSlot(dateIndex)}
-                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 ml-4"
-              >
-                Add Time Slot
-              </button>
-            </div>
-          ))}
-        </div>
+                
+                {dateItem.timeSlots.map((slot, slotIndex) => (
+                  <div key={slotIndex} className="flex items-center space-x-3 mb-2 ml-4">
+                    <input
+                      type="time"
+                      value={slot.startTime}
+                      onChange={(e) => updateSpecificDateTimeSlot(dateIndex, slotIndex, 'startTime', e.target.value)}
+                      className="border border-gray-300 rounded px-3 py-1"
+                    />
+                    <span>to</span>
+                    <input
+                      type="time"
+                      value={slot.endTime}
+                      onChange={(e) => updateSpecificDateTimeSlot(dateIndex, slotIndex, 'endTime', e.target.value)}
+                      className="border border-gray-300 rounded px-3 py-1"
+                    />
+                    <button
+                      onClick={() => removeSpecificDateTimeSlot(dateIndex, slotIndex)}
+                      className="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                
+                <button
+                  onClick={() => addSpecificDateTimeSlot(dateIndex)}
+                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 ml-4"
+                >
+                  Add Time Slot
+                </button>
+              </div>
+            ))}
+          </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-4">
-          <button
-            onClick={onClose}
-            className="bg-gray-300 text-black px-6 py-2 rounded-md hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="bg-teal-600 text-white px-6 py-2 rounded-md hover:bg-teal-700"
-          >
-            Save Availability
-          </button>
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              className="bg-gray-300 text-black px-6 py-2 rounded-md hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="bg-teal-600 text-white px-6 py-2 rounded-md hover:bg-teal-700"
+            >
+              Save Availability
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

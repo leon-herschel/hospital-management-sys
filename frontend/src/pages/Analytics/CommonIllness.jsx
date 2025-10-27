@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ref, get } from "firebase/database";
 import { database } from "../../firebase/firebase";
-import { useAuth } from "../../context/authContext/authContext"; // Assuming you have an auth context
+import { useAuth } from "../../context/authContext/authContext"; 
 import { 
   PieChart, 
   Pie, 
