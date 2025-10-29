@@ -3,7 +3,7 @@ import { ref, remove, get } from 'firebase/database';
 import { database } from '../../firebase/firebase';
 import { Trash2, AlertTriangle, X } from 'lucide-react';
 
-function DeleteClinicInventory({ item, onClose }) {
+function DeleteClinicInventory({ item, onClose, onSuccess}) {
   const [itemName, setItemName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,27 +30,31 @@ function DeleteClinicInventory({ item, onClose }) {
   }, [item.itemId]);
 
   const handleDelete = async () => {
-    if (confirmText !== 'DELETE') {
-      setError('Please type "DELETE" to confirm the deletion.');
-      return;
-    }
+  if (confirmText !== 'DELETE') {
+    setError('Please type "DELETE" to confirm the deletion.');
+    return;
+  }
 
-    setLoading(true);
-    setError('');
+  setLoading(true);
+  setError('');
 
-    try {
-      const clinicInventoryRef = ref(database, `clinicInventoryStock/${item.clinicId}/${item.itemId}`);
-      await remove(clinicInventoryRef);
+  try {
+    const clinicInventoryRef = ref(database, `clinicInventoryStock/${item.clinicId}/${item.itemId}`);
+    await remove(clinicInventoryRef);
 
-      alert('Inventory item deleted successfully!');
-      onClose();
-    } catch (error) {
-      console.error('Error deleting inventory:', error);
-      setError('Failed to delete inventory item. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ✅ Trigger success (same style as your edit)
+    if (onSuccess) onSuccess("Inventory item deleted successfully!");
+
+    // ✅ Close modal
+    if (onClose) onClose();
+  } catch (error) {
+    console.error('Error deleting inventory:', error);
+    setError('Failed to delete inventory item. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const isDeleteEnabled = confirmText === 'DELETE';
 

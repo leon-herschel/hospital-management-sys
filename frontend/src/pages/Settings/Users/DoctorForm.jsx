@@ -1,4 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAuth } from "firebase/auth";
+import { ref, get } from "firebase/database";
+import { database } from "../../../firebase/firebase";
+
+
 
 const DoctorForm = ({
   prcId,
@@ -20,6 +25,33 @@ const DoctorForm = ({
   getFilteredDepartments,
   setShowAddDepartmentModal
 }) => {
+
+  const [currentUserRole, setCurrentUserRole] = useState(""); 
+  const [expiryError, setExpiryError] = useState("");
+
+   useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (user) {
+          const userRef = ref(database, `users/${user.uid}/role`);
+          const snapshot = await get(userRef);
+          if (snapshot.exists()) {
+            setCurrentUserRole(snapshot.val());
+          } else {
+            console.warn("No role found for user");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
       <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
@@ -27,27 +59,44 @@ const DoctorForm = ({
         Doctor Information
       </h3>
 
-      <div className="space-y-6">
-        {/* Department and Clinic Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Clinic Affiliation <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={selectedClinic}
-              onChange={(e) => setSelectedClinic(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-              required
-            >
-              <option value="" disabled>Select a clinic</option>
-              {clinics.map((clinic) => (
-                <option key={clinic.id} value={clinic.id}>
-                  {clinic.name}
-                </option>
-              ))}
-            </select>
-          </div>
+     <div className="space-y-6">
+  {/* Department and Clinic Selection */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {/* ✅ Clinic Affiliation Dropdown */}
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-700">
+        Clinic Affiliation <span className="text-red-500">*</span>
+      </label>
+      <select
+        value={selectedClinic}
+        onChange={(e) => setSelectedClinic(e.target.value)}
+        required
+        disabled={currentUserRole !== "superadmin"} // 👈 disable for non-superadmins
+        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 
+          focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white 
+          ${currentUserRole !== "superadmin" ? "opacity-60 cursor-not-allowed" : ""}`}
+      >
+        <option value="" disabled>
+          {currentUserRole !== "superadmin"
+            ? "You are restricted to your assigned clinic"
+            : "Select a clinic"}
+        </option>
+
+        {clinics.map((clinic) => (
+          <option key={clinic.id} value={clinic.id}>
+            {clinic.name}
+          </option>
+        ))}
+      </select>
+
+      {/* Info note for non-superadmins */}
+      {currentUserRole !== "superadmin" && (
+        <p className="text-xs text-gray-500 italic mt-1">
+          Only superadmins can change clinic affiliation.
+        </p>
+      )}
+    </div>
+
 
           <div className="space-y-2">
             <label className="flex justify-between items-center text-sm font-medium text-gray-700">
@@ -90,18 +139,38 @@ const DoctorForm = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              PRC License Expiry <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={prcExpiry}
-              onChange={(e) => setPrcExpiry(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            />
-          </div>
+      <div className="space-y-2">
+  <label className="block text-sm font-medium text-gray-700">
+    PRC License Expiry <span className="text-red-500">*</span>
+  </label>
+  <input
+    type="date"
+    value={prcExpiry}
+    onChange={(e) => {
+      const selectedDate = new Date(e.target.value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Ignore time for comparison
+
+      if (selectedDate < today) {
+        setExpiryError("PRC License Expiry cannot be a past date.");
+        setPrcExpiry(""); // Clear invalid input
+      } else {
+        setExpiryError(""); // Clear error when valid
+        setPrcExpiry(e.target.value);
+      }
+    }}
+    required
+    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+      expiryError ? "border-red-500" : "border-gray-300"
+    }`}
+  />
+  {expiryError && (
+    <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-1">
+      {expiryError}
+    </p>
+  )}
+</div>
+
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">

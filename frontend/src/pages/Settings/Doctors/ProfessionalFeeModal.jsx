@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ref, get, update } from "firebase/database";
 import { database } from "../../../firebase/firebase";
-import SuccessModal from "./ProfessionalFeeSuccessModal"; // Import the success modal
 import ProfessionalFeeSuccessModal from "./ProfessionalFeeSuccessModal";
 
 const ProfessionalFeeModal = ({ doctor, onClose }) => {
@@ -98,7 +97,7 @@ const ProfessionalFeeModal = ({ doctor, onClose }) => {
   // Handle success modal close
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    onClose(); // Close the main modal after success
+    setTimeout(onClose, 300);
   };
 
   // Close modal when clicking outside
@@ -177,7 +176,7 @@ const ProfessionalFeeModal = ({ doctor, onClose }) => {
                 </div>
 
                 {/* Referral Fee */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Referral Fee
                   </label>
@@ -191,10 +190,10 @@ const ProfessionalFeeModal = ({ doctor, onClose }) => {
                       className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                     />
                   </div>
-                </div>
+                </div> */}
 
                 {/* Patronage Fee */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Patronage Fee
                   </label>
@@ -208,7 +207,7 @@ const ProfessionalFeeModal = ({ doctor, onClose }) => {
                       className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
             )}
           </div>

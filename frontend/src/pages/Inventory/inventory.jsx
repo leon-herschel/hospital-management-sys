@@ -13,6 +13,8 @@ import AddMedicineModal from "./AddMedicineModal";
 import AddSupplyModal from "./AddSupplyModal";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import SuccessModal from "../../components/reusable/SuccessModal";
+
 
 
 const Inventory = () => {
@@ -25,6 +27,8 @@ const Inventory = () => {
   const [endDate, setEndDate] = useState(null);
   const [showMedicineModal, setShowMedicineModal] = useState(false);
   const [showSupplyModal, setShowSupplyModal] = useState(false);
+const [showSuccessModal, setShowSuccessModal] = useState(false);
+const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const inventoryRef = ref(database, "inventoryItems");
@@ -289,6 +293,7 @@ const Inventory = () => {
     toggleModal={() => setShowSupplyModal(false)}
   />
 )}
+
 
 
 
