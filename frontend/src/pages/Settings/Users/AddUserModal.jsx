@@ -181,13 +181,15 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     );
   };
 
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+
   // Function to send welcome email
   const sendWelcomeEmail = async (userEmail, userPassword) => {
     setIsEmailLoading(true);
     setEmailStatus("Sending welcome email...");
 
     try {
-      const response = await fetch("http://localhost:5001/add-user", {
+      const response = await fetch(`${API_URL}/add-user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
