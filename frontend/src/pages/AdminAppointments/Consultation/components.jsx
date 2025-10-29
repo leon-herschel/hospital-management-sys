@@ -1,5 +1,6 @@
 // AdminAppointments - Consultation/components.jsx (ENHANCED VERSION)
 import React from "react";
+import { useState } from "react";
 import {
   UserCheck,
   Stethoscope,
@@ -24,6 +25,7 @@ import {
   getFirstDayOfMonth,
   formatDate,
   monthNames,
+  timeToMinutes,
 } from "./utils";
 
 // ===== AppointmentHeader Component (unchanged) =====
@@ -143,6 +145,7 @@ export function AppointmentStatsCard({ appointmentsWithPatients }) {
 export function DoctorInfoCard({
   currentDoctor,
   currentClinic,
+  selectedGeneralist,
   specialists,
   selectedSpecialist,
   onSpecialistChange,
@@ -189,19 +192,36 @@ export function DoctorInfoCard({
           <UserCheck className="w-6 h-6 text-blue-600" />
         </div>
         <h2 className="text-xl font-bold text-gray-800">
-          Doctor & Clinic Info
+          Generalist & Specialist Info
         </h2>
       </div>
 
       {currentDoctor && (
         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4">
-          <h3 className="font-semibold text-blue-800 mb-2">Referring Doctor</h3>
+          <h3 className="font-semibold text-blue-800 mb-2">Referring Staff</h3>
           <p>
-            <strong>Name:</strong> Dr. {getDoctorFullName(currentDoctor)}
+            <strong>Name:</strong> {getDoctorFullName(currentDoctor)}
           </p>
           {currentDoctor.specialty && (
             <p>
               <strong>Specialty:</strong> {currentDoctor.specialty}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Generalist Doctor Info - NEW */}
+      {selectedGeneralist && (
+        <div className="bg-purple-50 rounded-lg p-4 border border-purple-200 mb-4">
+          <h3 className="font-semibold text-purple-800 mb-2">
+            Patient's Generalist
+          </h3>
+          <p>
+            <strong>Name:</strong> Dr. {selectedGeneralist.fullName}
+          </p>
+          {selectedGeneralist.specialty && (
+            <p>
+              <strong>Specialty:</strong> {selectedGeneralist.specialty}
             </p>
           )}
         </div>
@@ -466,7 +486,7 @@ export function PatientSelectionCard({
   );
 }
 
-// ===== CalendarCard Component (unchanged) =====
+// ===== CalendarCard Component
 export function CalendarCard({
   form,
   calendarDate,
@@ -483,12 +503,12 @@ export function CalendarCard({
     const firstDay = getFirstDayOfMonth(calendarDate);
     const days = [];
 
-    // Add empty cells for days before the first day of the month
+    const todayAtMidnight = new Date();
+    todayAtMidnight.setHours(0, 0, 0, 0);
+
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="p-2"></div>);
     }
-
-    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(
         calendarDate.getFullYear(),
@@ -499,7 +519,8 @@ export function CalendarCard({
       const isAvailable = isDateAvailable(date);
       const isSelected = form.selectedDate === dateStr;
       const isToday = dateStr === formatDate(new Date());
-      const isPast = date < new Date().setHours(0, 0, 0, 0);
+
+      const isPast = date < todayAtMidnight;
 
       days.push(
         <div
@@ -513,9 +534,9 @@ export function CalendarCard({
               : isAvailable
               ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
               : "bg-gray-50 text-gray-400 cursor-not-allowed"
-          } ${isToday ? "ring-2 ring-blue-400" : ""}`}
+          } `}
         >
-          {day}
+          {day}{" "}
         </div>
       );
     }
@@ -524,26 +545,37 @@ export function CalendarCard({
   };
 
   const renderTimeSlots = () => {
+    const now = new Date();
+    const selectedDateStr = form.selectedDate;
+    const todayStr = formatDate(now);
+    const isToday = selectedDateStr === todayStr;
+    const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+
     return availableTimeSlots.map((slot) => {
       const isBooked = bookedAppointments.includes(slot.time);
       const isSelected = form.selectedTimeSlot === slot.time;
+      const slotTimeMinutes = timeToMinutes(slot.time);
+      const isPastTime = isToday && slotTimeMinutes < currentTimeMinutes;
+      const isDisabled = isBooked || isPastTime;
 
       return (
         <div
           key={slot.id}
-          onClick={() => !isBooked && onTimeSlotSelect(slot)}
-          className={`rounded-lg p-3 text-center cursor-pointer transition-all transform hover:scale-105 shadow-sm min-h-[60px] flex flex-col justify-center ${
-            isBooked
-              ? "bg-red-400 text-white cursor-not-allowed opacity-75"
+          onClick={() => !isDisabled && onTimeSlotSelect(slot)}
+          className={`rounded-lg p-3 text-center cursor-pointer transition-all transform shadow-sm min-h-[60px] flex flex-col justify-center ${
+            isDisabled
+              ? isPastTime
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
+                : "bg-red-400 text-white cursor-not-allowed opacity-75"
               : isSelected
               ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105"
-              : "bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600"
+              : "bg-gradient-to-r from-green-400 to-blue-500 text-white hover:from-green-500 hover:to-blue-600 hover:scale-105" // Active style
           }`}
         >
-          <div className="font-semibold text-sm">{slot.display}</div>
+          <div className="font-semibold text-sm">{slot.display}</div>{" "}
           {slot.duration && (
             <div className="text-xs opacity-80">{slot.duration} min</div>
-          )}
+          )}{" "}
         </div>
       );
     });
@@ -739,11 +771,11 @@ export function AppointmentSummary({
         isSpecial: true,
       },
     currentDoctor && {
-      title: "Referring Doctor",
+      title: "Referring Staff",
       content: (
         <div className="space-y-2">
           <p>
-            <strong>Name:</strong> Dr. {getDoctorFullName(currentDoctor)}
+            <strong>Name:</strong> {getDoctorFullName(currentDoctor)}
           </p>
           {currentDoctor.specialty && (
             <p>
@@ -884,7 +916,7 @@ export function AppointmentSummary({
           ))}
         </div>
 
-        {/* NEW: Enhanced warning section */}
+        {/*
         {selectedPatientAppointment?.relatedReferralId && (
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center space-x-2 text-yellow-800">
@@ -892,39 +924,74 @@ export function AppointmentSummary({
               <p className="font-semibold">Warning: Existing Referral</p>
             </div>
             <p className="text-sm text-yellow-700 mt-1">
-              This appointment already has a referral (ID:{" "}
+              This patient already has a referral with (Dr:{" "}
               {selectedPatientAppointment.relatedReferralId}). Creating a new
               referral will update the existing one.
             </p>
           </div>
         )}
+              */}
       </div>
     </div>
   );
 }
 
 // ===== SubmitButton Component (unchanged) =====
-export function SubmitButton({ onSubmit, submitting, hasErrors }) {
+
+export function SubmitButton({
+  onSubmit,
+  submitting,
+  hasErrors,
+  showSuccessModal,
+  setShowSuccessModal,
+}) {
+  const handleSubmit = async () => {
+    await onSubmit();
+    setShowSuccessModal(true);
+  };
+
   return (
-    <div className="flex justify-center max-w-7xl mx-auto px-6 pb-10">
-      <button
-        onClick={onSubmit}
-        disabled={submitting || hasErrors}
-        className={`px-8 py-4 rounded-xl font-semibold text-lg shadow-lg transition-all transform ${
-          submitting || hasErrors
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:scale-105 active:scale-95"
-        }`}
-      >
-        {submitting ? (
-          <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            <span>Booking Appointment...</span>
+    <>
+      <div className="flex justify-center max-w-7xl mx-auto px-6 pb-10">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || hasErrors}
+          className={`px-8 py-4 rounded-xl font-semibold text-lg shadow-lg transition-all transform ${
+            submitting || hasErrors
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:scale-105 active:scale-95"
+          }`}
+        >
+          {submitting ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Booking Appointment...</span>
+            </div>
+          ) : (
+            "Book Specialist Appointment"
+          )}
+        </button>
+      </div>
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Success!</h2>
+            <p className="text-gray-600 mb-6">
+              Specialist appointment booked successfully.
+            </p>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium"
+            >
+              Close
+            </button>
           </div>
-        ) : (
-          "Book Specialist Appointment"
-        )}
-      </button>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

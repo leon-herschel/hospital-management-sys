@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { ref, get, set, push } from "firebase/database";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { EyeIcon, EyeSlashIcon, XMarkIcon, CheckIcon, XMarkIcon as XIcon } from "@heroicons/react/24/solid";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  XMarkIcon,
+  CheckIcon,
+  XMarkIcon as XIcon,
+} from "@heroicons/react/24/solid";
 import { auth, database } from "../../../firebase/firebase";
 import UserAddRoleModal from "./userAddModal";
 import AddDepartmentModal from "../Departments/AddDepartmentModal";
@@ -60,7 +66,7 @@ const AddUserModal = ({ showModal, setShowModal }) => {
       length: password.length >= 6,
       uppercase: /[A-Z]/.test(password),
       lowercase: /[a-z]/.test(password),
-      number: /\d/.test(password)
+      number: /\d/.test(password),
     };
   };
 
@@ -69,23 +75,27 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
   // Filter roles based on current user's role
   const getFilteredRoles = () => {
-    let filteredRoles = roles.filter(role => role !== "superadmin");
-    
+    let filteredRoles = roles.filter((role) => role !== "superadmin");
+
     if (currentUserRole === "admin") {
-      filteredRoles = filteredRoles.filter(role => role !== "admin");
+      filteredRoles = filteredRoles.filter((role) => role !== "admin");
     }
-    
+
     return filteredRoles;
   };
 
   // Filter departments based on current user's role
   const getFilteredDepartments = () => {
-    let filteredDepartments = departments.filter(dept => dept !== "SuperAdmin");
-    
+    let filteredDepartments = departments.filter(
+      (dept) => dept !== "SuperAdmin"
+    );
+
     if (currentUserRole === "admin") {
-      filteredDepartments = filteredDepartments.filter(dept => dept !== "admin");
+      filteredDepartments = filteredDepartments.filter(
+        (dept) => dept !== "admin"
+      );
     }
-    
+
     return filteredDepartments;
   };
 
@@ -172,20 +182,20 @@ const AddUserModal = ({ showModal, setShowModal }) => {
   };
 
   // Function to send welcome email
-  const sendWelcomeEmail = async (userEmail, userPassword, userRole) => {
+  const sendWelcomeEmail = async (userEmail, userPassword) => {
     setIsEmailLoading(true);
     setEmailStatus("Sending welcome email...");
 
     try {
-      const response = await fetch("http://localhost:5000/add-user", {
+      const response = await fetch("http://localhost:5001/add-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          firstName: firstName,
           email: userEmail,
           password: userPassword,
-          role: userRole,
         }),
       });
 
@@ -360,7 +370,10 @@ const AddUserModal = ({ showModal, setShowModal }) => {
     const deptData = newDepartment[departmentKey];
 
     try {
-      await set(ref(database, `departments/${departmentKey}`), deptData.permissions);
+      await set(
+        ref(database, `departments/${departmentKey}`),
+        deptData.permissions
+      );
       setDepartments((prev) => [...new Set([...prev, departmentKey])]);
       // Auto-fill the newly created department
       setSelectedDepartment(departmentKey);
@@ -381,20 +394,21 @@ const AddUserModal = ({ showModal, setShowModal }) => {
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
-            <h2 className="text-2xl font-bold text-white">Create User Account</h2>
+            <h2 className="text-2xl font-bold text-white">
+              Create User Account
+            </h2>
             <p className="text-blue-100 mt-1">Add a new user to the system</p>
           </div>
 
           <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
             <form onSubmit={handleCreateAccount} className="p-8 space-y-8">
-              
               {/* User Information Section */}
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
                 <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
                   <div className="w-2 h-6 bg-blue-600 rounded-full mr-3"></div>
                   Personal Information
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
@@ -480,11 +494,13 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                         )}
                       </button>
                     </div>
-                    
+
                     {/* Password Checklist */}
                     {password && (
                       <div className="mt-3 p-4 bg-white rounded-lg border border-gray-200">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</p>
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Password Requirements:
+                        </p>
                         <div className="space-y-1">
                           <div className="flex items-center text-sm">
                             {passwordChecks.length ? (
@@ -492,7 +508,13 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                             ) : (
                               <XIcon className="h-4 w-4 text-red-500 mr-2" />
                             )}
-                            <span className={passwordChecks.length ? 'text-green-700' : 'text-red-700'}>
+                            <span
+                              className={
+                                passwordChecks.length
+                                  ? "text-green-700"
+                                  : "text-red-700"
+                              }
+                            >
                               At least 6 characters
                             </span>
                           </div>
@@ -502,7 +524,13 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                             ) : (
                               <XIcon className="h-4 w-4 text-red-500 mr-2" />
                             )}
-                            <span className={passwordChecks.uppercase ? 'text-green-700' : 'text-red-700'}>
+                            <span
+                              className={
+                                passwordChecks.uppercase
+                                  ? "text-green-700"
+                                  : "text-red-700"
+                              }
+                            >
                               One uppercase letter
                             </span>
                           </div>
@@ -512,7 +540,13 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                             ) : (
                               <XIcon className="h-4 w-4 text-red-500 mr-2" />
                             )}
-                            <span className={passwordChecks.lowercase ? 'text-green-700' : 'text-red-700'}>
+                            <span
+                              className={
+                                passwordChecks.lowercase
+                                  ? "text-green-700"
+                                  : "text-red-700"
+                              }
+                            >
                               One lowercase letter
                             </span>
                           </div>
@@ -522,7 +556,13 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                             ) : (
                               <XIcon className="h-4 w-4 text-red-500 mr-2" />
                             )}
-                            <span className={passwordChecks.number ? 'text-green-700' : 'text-red-700'}>
+                            <span
+                              className={
+                                passwordChecks.number
+                                  ? "text-green-700"
+                                  : "text-red-700"
+                              }
+                            >
                               One number
                             </span>
                           </div>
@@ -546,7 +586,9 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-700 transition-colors"
                       >
                         {showConfirmPassword ? (
@@ -557,7 +599,9 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                       </button>
                     </div>
                     {confirmPassword && password !== confirmPassword && (
-                      <p className="text-sm text-red-600 mt-1">Passwords do not match</p>
+                      <p className="text-sm text-red-600 mt-1">
+                        Passwords do not match
+                      </p>
                     )}
                   </div>
                 </div>
@@ -572,7 +616,9 @@ const AddUserModal = ({ showModal, setShowModal }) => {
 
                 <div className="space-y-2">
                   <label className="flex justify-between items-center text-sm font-medium text-gray-700">
-                    <span>Select Role <span className="text-red-500">*</span></span>
+                    <span>
+                      Select Role <span className="text-red-500">*</span>
+                    </span>
                     <button
                       type="button"
                       onClick={() => setShowAddRoleModal(true)}
@@ -587,9 +633,13 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white"
                   >
-                    <option value="" disabled>Select a role</option>
+                    <option value="" disabled>
+                      Select a role
+                    </option>
                     {getFilteredRoles().map((role) => (
-                      <option key={role} value={role}>{role}</option>
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -644,73 +694,87 @@ const AddUserModal = ({ showModal, setShowModal }) => {
               )}
 
               {/* Other roles (non-doctor, non-patient) */}
-              {selectedRole && selectedRole !== "patient" && selectedRole !== "doctor" && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                    <div className="w-2 h-6 bg-indigo-600 rounded-full mr-3"></div>
-                    Role & Affiliation
-                  </h3>
-
- <div className="space-y-2">
-  <label className="block text-sm font-medium text-gray-700">
-    Clinic Affiliation <span className="text-red-500">*</span>
-  </label>
-
-  <select
-    value={selectedClinic}
-    onChange={(e) => setSelectedClinic(e.target.value)}
-    required
-    disabled={currentUserRole !== "superadmin"} // 👈 disables dropdown for non-superadmins
-    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 
-      focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white 
-      ${currentUserRole !== "superadmin" ? "opacity-60 cursor-not-allowed" : ""}`}
-  >
-    <option value="" disabled>
-      {currentUserRole !== "superadmin"
-        ? "You are restricted to your assigned clinic"
-        : "Select a clinic"}
-    </option>
-
-    {clinics.map((clinic) => (
-      <option key={clinic.id} value={clinic.id}>
-        {clinic.name}
-      </option>
-    ))}
-  </select>
-
-  {/* Info note for clarity */}
-  {currentUserRole !== "superadmin" && (
-    <p className="text-xs text-gray-500 italic mt-1">
-      Only superadmins can change clinic affiliation.
-    </p>
-  )}
+              {selectedRole &&
+                selectedRole !== "patient" &&
+                selectedRole !== "doctor" && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                      <div className="w-2 h-6 bg-indigo-600 rounded-full mr-3"></div>
+                      Role & Affiliation
+                    </h3>
 
                     <div className="space-y-2">
-                      <label className="flex justify-between items-center text-sm font-medium text-gray-700">
-                        <span>Select Department <span className="text-red-500">*</span></span>
-                        <button
-                          type="button"
-                          onClick={() => setShowAddDepartmentModal(true)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded-full transition-colors duration-200"
-                        >
-                          + Add Department
-                        </button>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Clinic Affiliation{" "}
+                        <span className="text-red-500">*</span>
                       </label>
+
                       <select
-                        value={selectedDepartment}
-                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                        value={selectedClinic}
+                        onChange={(e) => setSelectedClinic(e.target.value)}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        disabled={currentUserRole !== "superadmin"} // 👈 disables dropdown for non-superadmins
+                        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 
+      focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white 
+      ${
+        currentUserRole !== "superadmin" ? "opacity-60 cursor-not-allowed" : ""
+      }`}
                       >
-                        <option value="" disabled>Select a department</option>
-                        {getFilteredDepartments().map((dept) => (
-                          <option key={dept} value={dept}>{dept}</option>
+                        <option value="" disabled>
+                          {currentUserRole !== "superadmin"
+                            ? "You are restricted to your assigned clinic"
+                            : "Select a clinic"}
+                        </option>
+
+                        {clinics.map((clinic) => (
+                          <option key={clinic.id} value={clinic.id}>
+                            {clinic.name}
+                          </option>
                         ))}
                       </select>
+
+                      {/* Info note for clarity */}
+                      {currentUserRole !== "superadmin" && (
+                        <p className="text-xs text-gray-500 italic mt-1">
+                          Only superadmins can change clinic affiliation.
+                        </p>
+                      )}
+
+                      <div className="space-y-2">
+                        <label className="flex justify-between items-center text-sm font-medium text-gray-700">
+                          <span>
+                            Select Department{" "}
+                            <span className="text-red-500">*</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddDepartmentModal(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded-full transition-colors duration-200"
+                          >
+                            + Add Department
+                          </button>
+                        </label>
+                        <select
+                          value={selectedDepartment}
+                          onChange={(e) =>
+                            setSelectedDepartment(e.target.value)
+                          }
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                        >
+                          <option value="" disabled>
+                            Select a department
+                          </option>
+                          {getFilteredDepartments().map((dept) => (
+                            <option key={dept} value={dept}>
+                              {dept}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Error Display */}
               {error && (
@@ -728,7 +792,8 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                   className={`rounded-lg p-4 border ${
                     emailStatus.includes("successfully")
                       ? "bg-green-50 text-green-700 border-green-200"
-                      : emailStatus.includes("Failed") || emailStatus.includes("failed")
+                      : emailStatus.includes("Failed") ||
+                        emailStatus.includes("failed")
                       ? "bg-red-50 text-red-700 border-red-200"
                       : "bg-blue-50 text-blue-700 border-blue-200"
                   }`}

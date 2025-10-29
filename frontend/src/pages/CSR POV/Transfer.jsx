@@ -15,6 +15,8 @@ import {
   AlertCircle,
   CheckCircle,
   Loader,
+  X,
+  Check,
 } from "lucide-react";
 
 const Transfer = () => {
@@ -28,6 +30,7 @@ const Transfer = () => {
   const [departments, setDepartments] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedForRemoval, setSelectedForRemoval] = useState([]); // New state for bulk removal
   const [userClinicId, setUserClinicId] = useState(null); // Add state for user's clinic
   const selectRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
@@ -153,6 +156,62 @@ const Transfer = () => {
     setSelectedItems(
       selectedItems.filter((item) => item.itemKey !== itemToRemove.itemKey)
     );
+    // Also remove from selectedForRemoval if it was selected
+    setSelectedForRemoval(
+      selectedForRemoval.filter((key) => key !== itemToRemove.itemKey)
+    );
+  };
+
+  // New functions for bulk removal
+  const handleCheckboxChange = (itemKey, isChecked) => {
+    if (isChecked) {
+      setSelectedForRemoval([...selectedForRemoval, itemKey]);
+    } else {
+      setSelectedForRemoval(
+        selectedForRemoval.filter((key) => key !== itemKey)
+      );
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedForRemoval.length === selectedItems.length) {
+      // If all are selected, deselect all
+      setSelectedForRemoval([]);
+    } else {
+      // Select all
+      setSelectedForRemoval(selectedItems.map((item) => item.itemKey));
+    }
+  };
+
+  const handleBulkRemove = () => {
+    if (selectedForRemoval.length === 0) {
+      alert("Please select items to remove.");
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to remove ${
+      selectedForRemoval.length
+    } selected item${selectedForRemoval.length !== 1 ? "s" : ""}?`;
+    if (window.confirm(confirmMessage)) {
+      setSelectedItems(
+        selectedItems.filter(
+          (item) => !selectedForRemoval.includes(item.itemKey)
+        )
+      );
+      setSelectedForRemoval([]);
+    }
+  };
+
+  const handleRemoveAll = () => {
+    if (selectedItems.length === 0) {
+      alert("No items to remove.");
+      return;
+    }
+
+    if (window.confirm("Are you sure you want to remove all items?")) {
+      setSelectedItems([]);
+      setSelectedForRemoval([]);
+    }
   };
 
   const handleQuantityChange = (item, value) => {
@@ -260,6 +319,7 @@ const Transfer = () => {
       alert("Transfer successful!");
       setFormData({ ...formData, reason: "" });
       setSelectedItems([]);
+      setSelectedForRemoval([]);
     } catch (error) {
       console.error("Error processing transfer:", error);
     } finally {
@@ -388,16 +448,62 @@ const Transfer = () => {
 
         {/* Selected Items Table */}
         <div className="bg-gray-50 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Package size={20} className="text-gray-700" />
-            <h2 className="font-semibold text-lg text-gray-700">
-              Selected Items
-            </h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Package size={20} className="text-gray-700" />
+              <h2 className="font-semibold text-lg text-gray-700">
+                Selected Items
+              </h2>
+              {selectedItems.length > 0 && (
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+                  {selectedItems.length} item
+                  {selectedItems.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            {/* Bulk Action Buttons */}
             {selectedItems.length > 0 && (
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
-                {selectedItems.length} item
-                {selectedItems.length !== 1 ? "s" : ""}
-              </span>
+              <div className="flex items-center gap-2">
+                {selectedForRemoval.length > 0 && (
+                  <span className="text-sm text-gray-600">
+                    {selectedForRemoval.length} selected
+                  </span>
+                )}
+                <button
+                  onClick={handleSelectAll}
+                  className="flex items-center gap-1 px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+                  title={
+                    selectedForRemoval.length === selectedItems.length
+                      ? "Deselect All"
+                      : "Select All"
+                  }
+                >
+                  <Check size={16} />
+                  {selectedForRemoval.length === selectedItems.length
+                    ? "Deselect All"
+                    : "Select All"}
+                </button>
+                <button
+                  onClick={handleBulkRemove}
+                  disabled={selectedForRemoval.length === 0}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                    selectedForRemoval.length === 0
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-red-500 hover:bg-red-600 text-white"
+                  }`}
+                >
+                  <Trash2 size={16} />
+                  Remove Selected
+                </button>
+                <button
+                  onClick={handleRemoveAll}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                >
+                  <X size={16} />
+                  Remove All
+                </button>
+              </div>
             )}
           </div>
 
@@ -405,6 +511,17 @@ const Transfer = () => {
             <table className="w-full">
               <thead className="bg-gray-100">
                 <tr>
+                  <th className="text-left p-4 font-semibold text-gray-700 w-12">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedItems.length > 0 &&
+                        selectedForRemoval.length === selectedItems.length
+                      }
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
                   <th className="text-left p-4 font-semibold text-gray-700">
                     Item Name
                   </th>
@@ -422,6 +539,16 @@ const Transfer = () => {
                     key={item.itemKey}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                   >
+                    <td className="p-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedForRemoval.includes(item.itemKey)}
+                        onChange={(e) =>
+                          handleCheckboxChange(item.itemKey, e.target.checked)
+                        }
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="p-4 font-medium">{item.itemName}</td>
                     <td className="p-4">
                       <input
@@ -452,7 +579,7 @@ const Transfer = () => {
 
                 {/* Add Item Row */}
                 <tr className="border-t-2 border-gray-200">
-                  <td colSpan="3" className="p-4">
+                  <td colSpan="4" className="p-4">
                     {selectOptions.length > 0 ? (
                       <Select
                         key={selectedItems.length}

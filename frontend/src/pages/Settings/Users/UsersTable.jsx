@@ -1,27 +1,42 @@
-import { useState, useEffect } from 'react';
-import { ref, onValue, remove } from 'firebase/database';
-import { database } from '../../../firebase/firebase';
-import { Users, Search, Plus, Edit, Trash2, UserCheck, Building, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
-import EditUserModal from './EditUserModal';
-import AddUserModal from './AddUserModal';
+import { useState, useEffect } from "react";
+import { ref, onValue, remove } from "firebase/database";
+import { database } from "../../../firebase/firebase";
+import {
+  Users,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  UserCheck,
+  Building,
+  Mail,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import EditUserModal from "./EditUserModal";
+import AddUserModal from "./AddUserModal";
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [editedData, setEditedData] = useState({ email: '', department: '', role: '' });
+  const [editedData, setEditedData] = useState({
+    email: "",
+    department: "",
+    role: "",
+  });
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 15;
 
   useEffect(() => {
-    const usersRef = ref(database, 'users');
+    const usersRef = ref(database, "users");
     const unsubscribe = onValue(usersRef, (snapshot) => {
       const usersList = [];
       snapshot.forEach((childSnapshot) => {
@@ -37,33 +52,38 @@ const UsersTable = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = users.filter(user => {
+    const filtered = users.filter((user) => {
       // Filter out users with 'specialist' and 'superadmin' roles
-      if (user?.role?.toLowerCase() === 'specialist' || user?.role?.toLowerCase() === 'superadmin') {
+      if (
+        user?.role?.toLowerCase() === "specialist" ||
+        user?.role?.toLowerCase() === "superadmin"
+      ) {
         return false;
       }
 
-      const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.toLowerCase();
+      const fullName = `${user?.firstName || ""} ${
+        user?.lastName || ""
+      }`.toLowerCase();
       const searchLower = searchTerm.toLowerCase();
-    
+
       // Debugging line to catch any undefined fields
       if (
-        typeof user?.email !== 'string' ||
-        typeof user?.firstName !== 'string' ||
-        typeof user?.lastName !== 'string' ||
-        typeof user?.role !== 'string' ||
-        typeof user?.department !== 'string'
+        typeof user?.email !== "string" ||
+        typeof user?.firstName !== "string" ||
+        typeof user?.lastName !== "string" ||
+        typeof user?.role !== "string" ||
+        typeof user?.department !== "string"
       ) {
-        console.log('⚠️ Malformed user object:', user);
+        console.log("⚠️ Malformed user object:", user);
       }
-    
+
       return (
-        (user?.email || '').toLowerCase().includes(searchLower) ||
-        (user?.firstName || '').toLowerCase().includes(searchLower) ||
-        (user?.lastName || '').toLowerCase().includes(searchLower) ||
+        (user?.email || "").toLowerCase().includes(searchLower) ||
+        (user?.firstName || "").toLowerCase().includes(searchLower) ||
+        (user?.lastName || "").toLowerCase().includes(searchLower) ||
         fullName.includes(searchLower) ||
-        (user?.role || '').toLowerCase().includes(searchLower) ||
-        (user?.department || '').toLowerCase().includes(searchLower)
+        (user?.role || "").toLowerCase().includes(searchLower) ||
+        (user?.department || "").toLowerCase().includes(searchLower)
       );
     });
     setFilteredUsers(filtered);
@@ -76,10 +96,10 @@ const UsersTable = () => {
       try {
         const userRef = ref(database, `users/${userToDelete.id}`);
         await remove(userRef);
-        setUserToDelete(null); 
-        setShowDeleteConfirm(false); 
+        setUserToDelete(null);
+        setShowDeleteConfirm(false);
       } catch (error) {
-        console.error('Error deleting user: ', error.message);
+        console.error("Error deleting user: ", error.message);
       }
     }
   };
@@ -97,28 +117,33 @@ const UsersTable = () => {
 
   const getUserStats = () => {
     // Filter out specialists and superadmins from stats
-    const countableUsers = users.filter(user => 
-      user?.role?.toLowerCase() !== 'specialist' && 
-      user?.role?.toLowerCase() !== 'superadmin'
+    const countableUsers = users.filter(
+      (user) =>
+        user?.role?.toLowerCase() !== "specialist" &&
+        user?.role?.toLowerCase() !== "superadmin"
     );
     const totalUsers = countableUsers.length;
-    const adminUsers = countableUsers.filter(user => user.role === 'admin').length;
-    const activeUsers = countableUsers.filter(user => user.status !== 'inactive').length;
-    
+    const adminUsers = countableUsers.filter(
+      (user) => user.role === "admin"
+    ).length;
+    const activeUsers = countableUsers.filter(
+      (user) => user.status !== "inactive"
+    ).length;
+
     return {
       total: totalUsers,
       admin: adminUsers,
-      active: activeUsers
+      active: activeUsers,
     };
   };
 
   const getDepartmentIcon = (department) => {
     const icons = {
-      'Admin': <UserCheck size={20} />,
-      'IT': <Users size={20} />,
-      'HR': <Users size={20} />,
-      'Finance': <Building size={20} />,
-      'Operations': <Building size={20} />
+      Admin: <UserCheck size={20} />,
+      IT: <Users size={20} />,
+      HR: <Users size={20} />,
+      Finance: <Building size={20} />,
+      Operations: <Building size={20} />,
     };
     return icons[department] || <Users size={20} />;
   };
@@ -149,7 +174,7 @@ const UsersTable = () => {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -159,25 +184,25 @@ const UsersTable = () => {
         for (let i = 1; i <= 4; i++) {
           pages.push(i);
         }
-        pages.push('...');
+        pages.push("...");
         pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
         pages.push(1);
-        pages.push('...');
+        pages.push("...");
         for (let i = totalPages - 3; i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
         pages.push(1);
-        pages.push('...');
+        pages.push("...");
         for (let i = currentPage - 1; i <= currentPage + 1; i++) {
           pages.push(i);
         }
-        pages.push('...');
+        pages.push("...");
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -192,7 +217,9 @@ const UsersTable = () => {
               <Users size={24} />
               <span>Users Management</span>
             </h2>
-            <p className="text-gray-600 mt-1">Manage user accounts and access</p>
+            <p className="text-gray-600 mt-1">
+              Manage user accounts and access
+            </p>
           </div>
           <button
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md flex items-center space-x-2 transition-colors"
@@ -211,12 +238,16 @@ const UsersTable = () => {
             <p className="text-xs text-blue-600">Registered accounts</p>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-400">
-            <h3 className="text-sm font-semibold text-purple-800">Admin Users</h3>
+            <h3 className="text-sm font-semibold text-purple-800">
+              Admin Users
+            </h3>
             <p className="text-2xl font-bold text-purple-900">{stats.admin}</p>
             <p className="text-xs text-purple-600">Administrative access</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-            <h3 className="text-sm font-semibold text-green-800">Active Users</h3>
+            <h3 className="text-sm font-semibold text-green-800">
+              Active Users
+            </h3>
             <p className="text-2xl font-bold text-green-900">{stats.active}</p>
             <p className="text-xs text-green-600">Currently active</p>
           </div>
@@ -242,7 +273,9 @@ const UsersTable = () => {
         {filteredUsers.length > 0 && (
           <div className="mb-4 flex justify-between items-center text-sm text-gray-600">
             <div>
-              Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} users
+              Showing {startIndex + 1} to{" "}
+              {Math.min(endIndex, filteredUsers.length)} of{" "}
+              {filteredUsers.length} users
             </div>
             <div>
               Page {currentPage} of {totalPages}
@@ -264,20 +297,32 @@ const UsersTable = () => {
             </thead>
             <tbody>
               {currentUsers.map((user) => (
-                <tr key={user.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                <tr
+                  key={user.id}
+                  className="bg-white border-b hover:bg-gray-50 transition-colors"
+                >
                   <td className="px-4 py-3 text-left">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        user.role === 'admin' ? 'bg-purple-100' : 'bg-blue-100'
-                      }`}>
-                        <Users size={20} className={
-                          user.role === 'admin' ? 'text-purple-600' : 'text-blue-600'
-                        } />
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          user.role === "admin"
+                            ? "bg-purple-100"
+                            : "bg-blue-100"
+                        }`}
+                      >
+                        <Users
+                          size={20}
+                          className={
+                            user.role === "admin"
+                              ? "text-purple-600"
+                              : "text-blue-600"
+                          }
+                        />
                       </div>
                       <div>
                         <div className="font-medium text-gray-900 flex items-center space-x-2">
                           <span>{`${user.firstName} ${user.lastName}`}</span>
-                          {user.role === 'admin' && (
+                          {user.role === "admin" && (
                             <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded">
                               ADMIN
                             </span>
@@ -302,12 +347,15 @@ const UsersTable = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.role === 'admin' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {(user?.role || "N/A").charAt(0).toUpperCase() + (user?.role || "N/A").slice(1)}
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.role === "admin"
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {(user?.role || "N/A").charAt(0).toUpperCase() +
+                        (user?.role || "N/A").slice(1)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -320,11 +368,13 @@ const UsersTable = () => {
                       </button>
                       <button
                         className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                          user.role === 'admin' && user.department === 'Admin'
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-red-600 hover:bg-red-700 text-white'
+                          user.role === "admin" && user.department === "Admin"
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-red-600 hover:bg-red-700 text-white"
                         }`}
-                        disabled={user.role === 'admin' && user.department === 'Admin'}
+                        disabled={
+                          user.role === "admin" && user.department === "Admin"
+                        }
                         onClick={() => confirmDeleteUser(user)}
                       >
                         Delete
@@ -356,8 +406,8 @@ const UsersTable = () => {
                 disabled={currentPage === 1}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                   currentPage === 1
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <ChevronLeft size={16} className="mr-1" />
@@ -369,14 +419,16 @@ const UsersTable = () => {
               {getPageNumbers().map((page, index) => (
                 <button
                   key={index}
-                  onClick={() => typeof page === 'number' && handlePageChange(page)}
-                  disabled={page === '...'}
+                  onClick={() =>
+                    typeof page === "number" && handlePageChange(page)
+                  }
+                  disabled={page === "..."}
                   className={`px-3 py-2 text-sm font-medium rounded-md ${
                     page === currentPage
-                      ? 'bg-blue-600 text-white'
-                      : page === '...'
-                      ? 'text-gray-400 cursor-default'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? "bg-blue-600 text-white"
+                      : page === "..."
+                      ? "text-gray-400 cursor-default"
+                      : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   {page}
@@ -390,8 +442,8 @@ const UsersTable = () => {
                 disabled={currentPage === totalPages}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                   currentPage === totalPages
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 Next
@@ -403,10 +455,10 @@ const UsersTable = () => {
       </div>
 
       {/* Edit User Modal */}
-      <EditUserModal 
-        showModal={showEditModal} 
-        setShowModal={setShowEditModal} 
-        userId={selectedUserId} 
+      <EditUserModal
+        showModal={showEditModal}
+        setShowModal={setShowEditModal}
+        userId={selectedUserId}
         onClose={() => setShowEditModal(false)}
       />
 
@@ -415,7 +467,9 @@ const UsersTable = () => {
         <AddUserModal
           showModal={showAddUserModal}
           setShowModal={setShowAddUserModal}
-          onUserAdded={() => {/* leave blank sa*/}}
+          onUserAdded={() => {
+            /* leave blank sa*/
+          }}
         />
       )}
 
@@ -427,13 +481,19 @@ const UsersTable = () => {
               <div className="w-12 h-12 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
                 <Users size={24} className="text-red-600" />
               </div>
-              <h2 className="text-xl font-bold mb-2 text-gray-900">Delete User</h2>
+              <h2 className="text-xl font-bold mb-2 text-gray-900">
+                Delete User
+              </h2>
               <p className="text-gray-600 mb-2">
                 Are you sure you want to delete{" "}
-                <span className="font-semibold">{userToDelete?.firstName} {userToDelete?.lastName}</span>?
+                <span className="font-semibold">
+                  {userToDelete?.firstName} {userToDelete?.lastName}
+                </span>
+                ?
               </p>
               <p className="mb-6 text-sm text-red-600">
-                Delete function is not complete yet and will not delete a user from Firebase Authentication.
+                Delete function is not complete yet and will not delete a user
+                from Firebase Authentication.
               </p>
               <div className="flex justify-center space-x-4">
                 <button
