@@ -13,6 +13,7 @@ import DepartmentBreakdownModal from "./DepartmentBreakdownModal";
 import DateRangePicker from "../../components/DateRangePicker/DateRangePicker";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import SuccessModal from "../../components/reusable/SuccessModal";
 
 function ClinicInventoryVisual() {
   const [inventory, setInventory] = useState([]);
@@ -29,6 +30,8 @@ function ClinicInventoryVisual() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [viewType, setViewType] = useState("cards");
+  const [successMessage, setSuccessMessage] = useState("");
+const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   // Role-based access control states
   const [currentUser, setCurrentUser] = useState(null);
@@ -58,6 +61,15 @@ function ClinicInventoryVisual() {
   const toggleStockInModal = () => setIsStockInModalOpen(!isStockInModalOpen);
   const toggleDeleteModal = () => setIsDeleteModalOpen(!isDeleteModalOpen);
   const toggleDepartmentBreakdown = () => setIsDepartmentBreakdownOpen(!isDepartmentBreakdownOpen);
+  const triggerSuccess = (message) => {
+  setSuccessMessage(message);
+  setShowSuccessModal(true);
+  setTimeout(() => {
+    setShowSuccessModal(false);
+    setSuccessMessage("");
+  }, 2000); // auto-close after 2 seconds
+};
+
 
   const handleEdit = (item) => {
     setSelectedItem(item);
@@ -817,22 +829,29 @@ function ClinicInventoryVisual() {
 
       {/* Modals */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl relative">
-            <button
-              onClick={closeAllModals}
-              className="absolute top-2 right-2 text-gray-600 hover:text-black"
-            >
-              ✕
-            </button>
-            <AddClinicInventory 
-              onClose={closeAllModals} 
-              userClinicId={isAdminUser() ? null : getUserClinicId()}
-              isAdminUser={isAdminUser()}
-            />
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl relative">
+      <button
+        onClick={closeAllModals}
+        className="absolute top-2 right-2 text-gray-600 hover:text-black"
+      >
+        ✕
+      </button>
+     {isAddModalOpen && (
+ <AddClinicInventory
+    showModal={isAddModalOpen}
+    setShowModal={setIsAddModalOpen}
+    onSuccess={() => {
+      setIsAddModalOpen(false); // close AddClinicInventory modal
+      triggerSuccess("Item successfully added to clinic inventory!"); // show success modal
+    }}
+  /> 
+)}  
+
+    </div>
+  </div>
+)}
+
 
       {isEditModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -843,51 +862,56 @@ function ClinicInventoryVisual() {
             >
               ✕
             </button>
-            <EditClinicInventory 
-              item={selectedItem} 
-              onClose={closeAllModals}
-              isAdminUser={isAdminUser()}
-            />
+            <EditClinicInventory
+    showModal={isEditModalOpen}
+    setShowModal={setIsEditModalOpen}
+    item={selectedItem}
+    onClose={() => setIsEditModalOpen(false)}
+    onSuccess={() => triggerSuccess("Item updated successfully!")}
+  />
           </div>
         </div>
       )}
 
-      {isStockInModalOpen && selectedItem && currentUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl relative">
-            <button
-              onClick={closeAllModals}
-              className="absolute top-2 right-2 text-gray-600 hover:text-black"
-            >
-              ✕
-            </button>
-            <ClinicStockIn 
-              item={selectedItem} 
-              onClose={closeAllModals} 
-              currentUserId={currentUser.uid}
-              isAdminUser={isAdminUser()}
-            />
-          </div>
-        </div>
-      )}
+  {isStockInModalOpen && selectedItem && currentUser && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl relative">
+      <button
+        onClick={closeAllModals}
+        className="absolute top-2 right-2 text-gray-600 hover:text-black"
+      >
+        ✕
+      </button>
+      <ClinicStockIn 
+        item={selectedItem} 
+        onClose={closeAllModals} 
+        onSuccess={(msg) => triggerSuccess(msg)}  
+        currentUserId={currentUser.uid}
+        isAdminUser={isAdminUser()}
+      />
+    </div>
+  </div>
+)}
 
-      {isDeleteModalOpen && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md relative">
-            <button
-              onClick={closeAllModals}
-              className="absolute top-2 right-2 text-gray-600 hover:text-black"
-            >
-              ✕
-            </button>
-            <DeleteClinicInventory 
-              item={selectedItem} 
-              onClose={closeAllModals}
-              isAdminUser={isAdminUser()}
-            />
-          </div>
-        </div>
-      )}
+ {isDeleteModalOpen && selectedItem && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded shadow-lg w-full max-w-md relative">
+      <button
+        onClick={closeAllModals}
+        className="absolute top-2 right-2 text-gray-600 hover:text-black"
+      >
+        ✕
+      </button>
+      <DeleteClinicInventory
+        item={selectedItem}
+        onClose={closeAllModals}
+        onSuccess={(msg) => triggerSuccess(msg)}   
+        isAdminUser={isAdminUser()}
+      />
+    </div>
+  </div>
+)}
+
       {isDepartmentBreakdownOpen && selectedItem && (
         <DepartmentBreakdownModal
           item={selectedItem}
@@ -895,7 +919,15 @@ function ClinicInventoryVisual() {
           inventoryNames={inventoryNames}
           clinics={clinics}
         />
+        
       )}
+
+      <SuccessModal
+  show={showSuccessModal}
+  onClose={() => setShowSuccessModal(false)}
+  message={successMessage}
+/>
+
     </div>
   );
 }

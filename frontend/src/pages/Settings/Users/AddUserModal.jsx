@@ -703,28 +703,42 @@ const AddUserModal = ({ showModal, setShowModal }) => {
                       Role & Affiliation
                     </h3>
 
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Clinic Affiliation{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={selectedClinic}
-                          onChange={(e) => setSelectedClinic(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                          required
-                        >
-                          <option value="" disabled>
-                            Select a clinic
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Clinic Affiliation{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+
+                      <select
+                        value={selectedClinic}
+                        onChange={(e) => setSelectedClinic(e.target.value)}
+                        required
+                        disabled={currentUserRole !== "superadmin"} // 👈 disables dropdown for non-superadmins
+                        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 
+      focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white 
+      ${
+        currentUserRole !== "superadmin" ? "opacity-60 cursor-not-allowed" : ""
+      }`}
+                      >
+                        <option value="" disabled>
+                          {currentUserRole !== "superadmin"
+                            ? "You are restricted to your assigned clinic"
+                            : "Select a clinic"}
+                        </option>
+
+                        {clinics.map((clinic) => (
+                          <option key={clinic.id} value={clinic.id}>
+                            {clinic.name}
                           </option>
-                          {clinics.map((clinic) => (
-                            <option key={clinic.id} value={clinic.id}>
-                              {clinic.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        ))}
+                      </select>
+
+                      {/* Info note for clarity */}
+                      {currentUserRole !== "superadmin" && (
+                        <p className="text-xs text-gray-500 italic mt-1">
+                          Only superadmins can change clinic affiliation.
+                        </p>
+                      )}
 
                       <div className="space-y-2">
                         <label className="flex justify-between items-center text-sm font-medium text-gray-700">

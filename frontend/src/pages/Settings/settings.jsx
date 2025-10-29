@@ -1,20 +1,26 @@
-import { useState } from 'react';
-import RolesTable from './Roles/RolesTable';
+import { useState } from "react";
+import RolesTable from "./Roles/RolesTable";
 import AccessDenied from "../ErrorPages/AccessDenied";
 import { useAccessControl } from "../../components/roles/accessControl";
-import DepartmentsTable from './Departments/DepartmentsTable';
-import ClinicsTable from './Clinics/ClinicTable';
-import DoctorsTable from './Doctors/DoctorsTable';
-import SuppliersTable from './Suppliers/SuppliersTable';
+import DepartmentsTable from "./Departments/DepartmentsTable";
+import ClinicsTable from "./Clinics/ClinicTable";
+import DoctorsTable from "./Doctors/DoctorsTable";
+import SuccessModal from "../../components/reusable/SuccessModal"; // ✅ import here
 
 const Settings = () => {
-  const [tableView, setTableView] = useState('Role Management');
+  const [tableView, setTableView] = useState("Role Management");
   const permissions = useAccessControl();
-  
-  // Since the permissions object contains accessClinicManagement,
-  // and this is likely only granted to superadmin users,
-  // we can use this permission directly
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [successTitle, setSuccessTitle] = useState("");
+
   const shouldShowClinicManagement = permissions?.accessClinicManagement === true;
+
+  const handleShowSuccess = (title, message) => {
+    setSuccessTitle(title);
+    setSuccessMessage(message);
+    setShowSuccessModal(true);
+  };
 
   const handleClick = (view) => {
     setTableView(view);
@@ -26,6 +32,14 @@ const Settings = () => {
 
   return (
     <div className="w-full">
+      {/* ✅ Success Modal Global */}
+      <SuccessModal
+        show={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title={successTitle}
+        message={successMessage}
+      />
+
       {/* Tabs */}
       <div className="mb-4 flex justify-start items-center flex-wrap gap-2">
         {shouldShowClinicManagement && (
@@ -60,7 +74,6 @@ const Settings = () => {
         >
           Department Management
         </button>
-        
         <button
           onClick={() => handleClick("Doctor Management")}
           className={`px-6 py-2 rounded-md transition duration-200 ${
@@ -73,10 +86,19 @@ const Settings = () => {
         </button>
       </div>
 
-      {tableView === 'Role Management' && <RolesTable />}
-      {tableView === 'Department Management' && <DepartmentsTable />}
-      {shouldShowClinicManagement && tableView === 'Clinic Management' && <ClinicsTable />}
-      {tableView === 'Doctor Management' && <DoctorsTable />}
+      {/* Tables */}
+      {tableView === "Role Management" && (
+        <RolesTable onSuccess={handleShowSuccess} />
+      )}
+      {tableView === "Department Management" && (
+        <DepartmentsTable onSuccess={handleShowSuccess} />
+      )}
+      {shouldShowClinicManagement && tableView === "Clinic Management" && (
+        <ClinicsTable onSuccess={handleShowSuccess} />
+      )}
+      {tableView === "Doctor Management" && (
+        <DoctorsTable onSuccess={handleShowSuccess} />
+      )}
     </div>
   );
 };

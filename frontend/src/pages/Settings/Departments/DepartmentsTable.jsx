@@ -24,6 +24,7 @@ import {
 import AddDepartmentModal from './AddDepartmentModal';
 import EditDepartmentModal from './EditDepartmentModal';
 import ViewDepartmentPermissionsModal from './ViewDepartmentPermissionsModal';
+import SuccessModal from '../../../components/reusable/SuccessModal';
 
 const DepartmentsTable = () => {
   const [departments, setDepartments] = useState([]);
@@ -35,6 +36,9 @@ const DepartmentsTable = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);  
+  const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);  
 
   // Helper function to check if department is system-locked
   const isSystemDepartment = (departmentId) => {
@@ -57,6 +61,9 @@ const DepartmentsTable = () => {
 
     fetchDepartments();
   }, []);
+
+
+
 
   useEffect(() => {
     setFilteredDepartments(
@@ -81,6 +88,8 @@ const DepartmentsTable = () => {
           { id: departmentId, ...newDepartment[departmentId] },
         ]);
         setShowAddDepartmentModal(false);
+        setShowSuccessModal(true);
+        
       })
       .catch((error) => {
         console.error('Error adding department:', error);
@@ -117,6 +126,7 @@ const DepartmentsTable = () => {
           )
         );
         setShowEditDepartmentModal(false);
+        setShowEditSuccessModal(true);
       })
       .catch((error) => {
         console.error('Error updating department:', error);
@@ -132,6 +142,7 @@ const DepartmentsTable = () => {
         setFilteredDepartments((prevFiltered) => prevFiltered.filter(department => department.id !== departmentToDelete.id));
         setDepartmentToDelete(null);
         setShowDeleteConfirm(false);
+        setShowDeleteSuccessModal(true);
       } catch (error) {
         console.error('Error deleting department:', error.message);
       }
@@ -367,6 +378,27 @@ const DepartmentsTable = () => {
         onAddDepartment={handleAddDepartment}
         existingDepartments={existingDepartmentNames}
       />
+     <SuccessModal
+  show={showSuccessModal}
+  onClose={() => setShowSuccessModal(false)}
+  title="Department Added!"
+  message="The department was added successfully."
+/>
+<SuccessModal
+  show={showDeleteSuccessModal}
+  onClose={() => setShowDeleteSuccessModal(false)}
+  title="Department Deleted!"
+  message="The department was deleted successfully."
+/>
+
+<SuccessModal 
+show={showEditSuccessModal}
+onClose={() => setShowEditSuccessModal(false)}
+title="Department Updated!"
+message="The department was updated successfully."
+/>
+
+
 
       <EditDepartmentModal
         showModal={showEditDepartmentModal}

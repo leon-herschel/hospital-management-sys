@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import AddRoleModal from "./AddRoleModal";
 import EditRoleModal from "./EditRoleModal";
-
+import SuccessModal from "../../../components/reusable/SuccessModal";
 const RolesTable = () => {
   const [roles, setRoles] = useState([]);
   const [filteredRoles, setFilteredRoles] = useState([]);
@@ -22,6 +22,9 @@ const RolesTable = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+const [showSuccessModal, setShowSuccessModal] = useState(false);  
+const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
+const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -57,6 +60,7 @@ const RolesTable = () => {
     const roleRef = ref(database, `roles/${roleName}`);
     try {
       await set(roleRef, roleData);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error adding role to database:", error);
     }
@@ -88,6 +92,7 @@ const RolesTable = () => {
           )
         );
         setShowEditRoleModal(false);
+        setShowEditSuccessModal(true);
       })
       .catch((error) => {
         console.error("Error updating role:", error);
@@ -107,6 +112,7 @@ const RolesTable = () => {
         );
         setRoleToDelete(null);
         setShowDeleteConfirm(false);
+        setShowDeleteSuccessModal(true);
       } catch (error) {
         console.error("Error deleting role:", error.message);
       }
@@ -379,7 +385,24 @@ const RolesTable = () => {
         onEditRole={handleEditRole}
         existingRoles={existingRoleNames}
       />
-
+      <SuccessModal
+  show={showSuccessModal}
+  onClose={() => setShowSuccessModal(false)}
+  title="Role Added!"
+  message="The role was successfully added to the system."
+/>
+<SuccessModal
+  show={showDeleteSuccessModal}
+  onClose={() => setShowDeleteSuccessModal(false)}
+  title="Role Deleted!"
+  message="The role was successfully deleted from the system."
+/>
+<SuccessModal
+  show={showEditSuccessModal}
+  onClose={() => setShowEditSuccessModal(false)}
+  title="Role Updated!"
+  message="The role was successfully updated."
+/>
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
