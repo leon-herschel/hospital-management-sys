@@ -33,6 +33,7 @@ function SpecialistAppointments() {
     currentDoctorId: null,
     submitting: false,
     loading: false,
+    showSuccessModal: false,
   });
 
   // Custom hooks for data management
@@ -44,6 +45,7 @@ function SpecialistAppointments() {
     patients,
     appointmentsWithPatients, // NEW: appointments with patient data attached
     selectedPatient,
+    selectedGeneralist,
     selectedPatientAppointment,
     searchTerm,
     setSearchTerm,
@@ -55,7 +57,7 @@ function SpecialistAppointments() {
     getPatientByAppointmentId,
     getTodaysAppointments,
     getUpcomingAppointments,
-  } = usePatientData(state.currentDoctorId);
+  } = usePatientData(state.currentDoctorId, state.currentClinicId);
 
   const { form, setForm, errors, setErrors, validate } = useAppointmentForm();
   const {
@@ -78,7 +80,8 @@ function SpecialistAppointments() {
             ...prev,
             currentDoctor: userData.doctor,
             currentClinic: userData.clinic,
-            currentDoctorId: user.uid, // Set the current doctor's ID
+            currentDoctorId: user.uid,
+            currentClinicId: userData.clinicId, // Set the current doctor's ID
           }));
 
           // Update form with doctor/clinic data
@@ -217,47 +220,58 @@ function SpecialistAppointments() {
         form,
         selectedSpecialist,
         selectedPatient,
-        selectedPatientAppointment, // Pass the patient's appointment data
+        selectedPatientAppointment: {
+          ...selectedPatientAppointment,
+          generalistDoctor: selectedGeneralist,
+        },
         currentDoctor: state.currentDoctor,
         currentClinic: state.currentClinic,
         availableTimeSlots,
       });
 
-      alert("✅ Specialist appointment and referral created successfully!");
-
-      // Reset form and clear errors
-      setForm((prev) => ({
+      setState((prev) => ({
         ...prev,
-        specialistId: "",
-        specialistName: "",
-        patientName: "",
-        email: "",
-        contactNumber: "",
-        dateOfBirth: "",
-        bloodType: "",
-        selectedDate: "",
-        selectedTimeSlot: "",
-        notes: "",
+        submitting: false,
+        loading: false,
+        showSuccessModal: true,
       }));
 
-      // Reset validation errors to initial state
-      setErrors({
-        patientName: true,
-        specialistName: true,
-        selectedDate: true,
-        selectedTimeSlot: true,
-      });
+      setTimeout(() => {
+        setState((prev) => ({ ...prev, showSuccessModal: false }));
 
-      setSelectedSpecialist(null);
-      handlePatientSelectWithValidation(null);
+        // Reset form and clear errors
+        setForm((prev) => ({
+          ...prev,
+          specialistId: "",
+          specialistName: "",
+          patientName: "",
+          email: "",
+          contactNumber: "",
+          dateOfBirth: "",
+          bloodType: "",
+          selectedDate: "",
+          selectedTimeSlot: "",
+          notes: "",
+        }));
 
-      navigate("/doctor-dashboard");
+        // Reset validation errors to initial state
+        setErrors({
+          patientName: true,
+          specialistName: true,
+          selectedDate: true,
+          selectedTimeSlot: true,
+        });
+
+        setSelectedSpecialist(null);
+        handlePatientSelectWithValidation(null);
+
+        navigate("/SpecialistAppointments");
+      }, 2000);
     } catch (error) {
       console.error("Submit error:", error);
       alert("❌ " + error.message);
+      setState((prev) => ({ ...prev, submitting: false, loading: false }));
     }
-
-    setState((prev) => ({ ...prev, submitting: false, loading: false }));
   };
 
   // NEW: Calculate stats for display
@@ -306,6 +320,7 @@ function SpecialistAppointments() {
         <DoctorInfoCard
           currentDoctor={state.currentDoctor}
           currentClinic={state.currentClinic}
+          selectedGeneralist={selectedGeneralist}
           specialists={specialists}
           selectedSpecialist={selectedSpecialist}
           onSpecialistChange={handleSpecialistChange}
@@ -327,7 +342,6 @@ function SpecialistAppointments() {
           setForm={setForm}
           setErrors={setErrors}
           errors={errors}
-          // NEW: Pass enhanced data
           appointmentsWithPatients={appointmentsWithPatients}
           loading={patientsLoading}
         />
@@ -359,6 +373,10 @@ function SpecialistAppointments() {
         onSubmit={handleSubmit}
         submitting={state.submitting}
         hasErrors={Object.keys(validate()).length > 0}
+        showSuccessModal={state.showSuccessModal}
+        setShowSuccessModal={(value) =>
+          setState((prev) => ({ ...prev, showSuccessModal: value }))
+        }
       />
     </div>
   );

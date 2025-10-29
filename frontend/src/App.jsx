@@ -45,6 +45,7 @@ import Teleconsultation from "./pages/Teleconsultation/Teleconsultation";
 import SuppliersTable from "./pages/Settings/Suppliers/SuppliersTable";
 import ImportDoctorSignature from "./pages/Settings/Doctors/ImportDoctorSignature";
 import AIAssistant from "./pages/AIAssistant/AIAssistant";
+import MedicalServicesList from "./pages/AdminAppointments/Laboratory/MedicalServicesList";
 import { element } from "prop-types";
 import path from "path";
 
@@ -108,13 +109,14 @@ function App() {
           element: <GenerateMedicalCertificate />,
         },
         { path: "Transfer", element: <Transfer /> },
-        {path: "user-profile", element: <UsersProfilePage /> },
-        {path: "employee-attendance", element: <EmployeeAttendanceSystem /> },
-        {path: "teleconsultation", element: <Teleconsultation /> },
-        {path:"user-management", element: <UsersTable /> },
-        {path: "supplier-management", element: <SuppliersTable /> },
-        {path: "import-signature", element: <ImportDoctorSignature /> },
-        {path: "ai-assistant", element: <AIAssistant /> }, 
+        { path: "user-profile", element: <UsersProfilePage /> },
+        { path: "employee-attendance", element: <EmployeeAttendanceSystem /> },
+        { path: "teleconsultation", element: <Teleconsultation /> },
+        { path: "user-management", element: <UsersTable /> },
+        { path: "supplier-management", element: <SuppliersTable /> },
+        { path: "import-signature", element: <ImportDoctorSignature /> },
+        { path: "ai-assistant", element: <AIAssistant /> },
+        { path: "medical-services", element: <MedicalServicesList /> },
       ],
     },
     {

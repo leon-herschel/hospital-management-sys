@@ -65,16 +65,17 @@ export const fetchUserData = async (user) => {
 export const getCurrentDateTime = () => {
   const now = new Date();
   return {
-    date: now.toLocaleDateString("en-CA"), // outputs "YYYY-MM-DD" in local time
+    date: now.toLocaleDateString("en-CA"),
     time: now.toLocaleTimeString([], {
-      hour: "2-digit",
+      hour: "numeric",
       minute: "2-digit",
+      hour12: true,
     }),
   };
 };
 
 export const formatDate = (date) => {
-  return date.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+  return date.toLocaleDateString("en-CA");
 };
 
 export const getDaysInMonth = (date) => {
@@ -103,9 +104,7 @@ export const minutesToTime = (minutes) => {
   const hour12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
   const meridiem = hours < 12 ? "AM" : "PM";
 
-  return `${hour12.toString().padStart(2, "0")}:${mins
-    .toString()
-    .padStart(2, "0")} ${meridiem}`;
+  return `${hour12}:${mins.toString().padStart(2, "0")} ${meridiem}`;
 };
 
 export const monthNames = [
@@ -465,14 +464,18 @@ export const handleAppointmentSubmit = async ({
     nameParts.length > 2 ? nameParts.slice(2).join(" ") : nameParts[1] || "";
   const patientMiddleName = nameParts.length > 2 ? nameParts[1] : "";
 
-  // Get referring doctor information
-  const referringDoctorName = getDoctorFullName(currentDoctor);
+  // Get referring doctor information from patient's generalist
+  const generalistDoctor =
+    selectedPatientAppointment?.generalistDoctor || currentDoctor;
+  const referringDoctorName = getDoctorFullName(generalistDoctor);
   const referringDoctorParts = referringDoctorName.split(" ");
   const referringFirstName = referringDoctorParts[0] || "";
   const referringLastName =
     referringDoctorParts.length > 1
       ? referringDoctorParts.slice(1).join(" ")
       : "";
+  const referringGeneralistId =
+    selectedPatientAppointment?.doctorId || currentDoctor.uid;
 
   // Referring clinic info
   const referringClinicName = form.clinic || "Unknown Clinic";
@@ -539,9 +542,9 @@ export const handleAppointmentSubmit = async ({
     referringClinicId: referringClinicId,
     referringClinicName: referringClinicName,
     referringGeneralistFirstName: referringFirstName,
-    referringGeneralistId: currentDoctor.uid, // <-- FIXED: pull from currentDoctor
+    referringGeneralistId: referringGeneralistId, // <-- FIXED: pull from currentDoctor
     referringGeneralistLastName: referringLastName,
-    sourceSystem: "UniHealth_Doctor_Panel",
+    sourceSystem: "OdySystem",
     specialistScheduleId:
       selectedTimeSlot?.scheduleId ||
       `sched_${form.specialistId}_${form.selectedDate}`,

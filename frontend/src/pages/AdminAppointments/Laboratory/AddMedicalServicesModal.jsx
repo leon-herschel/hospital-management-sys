@@ -109,7 +109,7 @@ function AddMedicalServices({ open, onClose }) {
                   placeholder="Enter service name"
                   className="w-full border-2 border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value.toLowerCase())}
                   required
                   disabled={isSubmitting}
                 />

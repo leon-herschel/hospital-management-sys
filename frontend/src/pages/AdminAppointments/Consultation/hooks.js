@@ -1,6 +1,6 @@
 // AdminAppointments - Consultation/hooks.js (FIXED VERSION)
 import { useState, useEffect } from "react";
-import { onValue, ref } from "firebase/database";
+import { onValue, ref, get } from "firebase/database";
 import { database } from "../../../firebase/firebase";
 import {
   getDoctorFullName,
@@ -71,16 +71,40 @@ export function useSpecialistData() {
 }
 
 // ===== ENHANCED usePatientData Hook =====
-export function usePatientData(currentDoctorId) {
+export function usePatientData(currentDoctorId, currentClinicId) {
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [appointmentsWithPatients, setAppointmentsWithPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedPatientAppointment, setSelectedPatientAppointment] =
     useState(null);
+  const [selectedGeneralist, setSelectedGeneralist] = useState(null); // ADD THIS
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ADD THIS FUNCTION
+  const fetchGeneralistInfo = async (doctorId) => {
+    try {
+      const doctorRef = ref(database, `doctors/${doctorId}`);
+      const snapshot = await get(doctorRef);
+      if (snapshot.exists()) {
+        const doctorData = snapshot.val();
+        setSelectedGeneralist({
+          ...doctorData,
+          id: doctorId,
+          fullName: getDoctorFullName(doctorData),
+        });
+        console.log("Fetched generalist:", doctorData);
+      } else {
+        console.log("No generalist found for ID:", doctorId);
+        setSelectedGeneralist(null);
+      }
+    } catch (error) {
+      console.error("Error fetching generalist:", error);
+      setSelectedGeneralist(null);
+    }
+  };
 
   // Fetch appointments data first
   useEffect(() => {
@@ -122,122 +146,118 @@ export function usePatientData(currentDoctorId) {
     return () => unsubscribe();
   }, []);
 
-  // NEW: Map appointments to patients and filter by doctor
+  // NEW: Map appointments to patients and filter by clinic
   useEffect(() => {
-    if (patients.length > 0 && appointments.length > 0 && currentDoctorId) {
-      // Filter appointments for current doctor
-      const doctorAppointments = appointments.filter(
-        (appointment) => appointment.doctorId === currentDoctorId
-      );
-
-      // Create patient lookup map for O(1) access
+    if (patients.length > 0 && appointments.length > 0 && currentClinicId) {
+      // Create patient map for O(1) lookup
       const patientMap = {};
       patients.forEach((patient) => {
         patientMap[patient.id] = patient;
       });
 
-      // Map patients to appointments
-      const appointmentsWithPatientData = doctorAppointments.map(
-        (appointment) => {
-          const patient = patientMap[appointment.patientId];
-          return {
-            ...appointment,
-            patient: patient || null,
-          };
-        }
+      // Filter appointments by clinic
+      const clinicAppointments = appointments.filter(
+        (appointment) => appointment.clinicId === currentClinicId
       );
 
-      setAppointmentsWithPatients(appointmentsWithPatientData);
-      console.log(
-        "Appointments with patient data:",
-        appointmentsWithPatientData
+      // Get unique patient IDs from clinic appointments
+      const patientIdsInClinic = new Set(
+        clinicAppointments.map((appointment) => appointment.patientId)
       );
 
-      // Filter unique patients who have appointments with this doctor
-      const patientIdsWithDoctor = new Set(
-        doctorAppointments.map((appointment) => appointment.patientId)
+      // Filter patients who have appointments in this clinic
+      const clinicPatients = patients.filter((patient) =>
+        patientIdsInClinic.has(patient.id)
       );
 
-      const patientsWithDoctor = patients.filter((patient) =>
-        patientIdsWithDoctor.has(patient.id)
-      );
-
-      console.log("Filtered patients for doctor:", {
-        currentDoctorId,
-        totalPatients: patients.length,
-        doctorAppointments: doctorAppointments.length,
-        filteredPatients: patientsWithDoctor.length,
+      // Map ALL appointments with patient data (for the enhanced features)
+      const appointmentsWithPatientData = appointments.map((appointment) => {
+        const patient = patientMap[appointment.patientId];
+        return {
+          ...appointment,
+          patient: patient || null,
+        };
       });
 
-      setFilteredPatients(patientsWithDoctor);
-    } else if (currentDoctorId) {
-      // Clear data if no patients/appointments but doctor is set
+      setAppointmentsWithPatients(appointmentsWithPatientData);
+      setFilteredPatients(clinicPatients);
+
+      console.log("Patients filtered by clinic:", {
+        currentClinicId,
+        totalPatients: patients.length,
+        clinicAppointments: clinicAppointments.length,
+        clinicPatients: clinicPatients.length,
+      });
+    } else if (currentClinicId) {
       setAppointmentsWithPatients([]);
       setFilteredPatients([]);
     }
-  }, [patients, appointments, currentDoctorId]);
+  }, [patients, appointments, currentClinicId]);
 
   // Filter patients based on search term
   useEffect(() => {
+    if (!currentClinicId) {
+      setFilteredPatients([]);
+      return;
+    }
+
+    // Get patient IDs who have appointments in this clinic
+    const patientIdsInClinic = new Set(
+      appointments
+        .filter((appointment) => appointment.clinicId === currentClinicId)
+        .map((appointment) => appointment.patientId)
+    );
+
+    // Filter patients by clinic
+    const patientsInClinic = patients.filter((patient) =>
+      patientIdsInClinic.has(patient.id)
+    );
+
     if (searchTerm.trim() === "") {
-      // Show all patients with appointments for this doctor
-      if (patients.length > 0 && appointments.length > 0 && currentDoctorId) {
-        const patientIdsWithDoctor = new Set(
-          appointments
-            .filter((appointment) => appointment.doctorId === currentDoctorId)
-            .map((appointment) => appointment.patientId)
-        );
-
-        const patientsWithDoctor = patients.filter((patient) =>
-          patientIdsWithDoctor.has(patient.id)
-        );
-
-        setFilteredPatients(patientsWithDoctor);
-      }
+      setFilteredPatients(patientsInClinic);
     } else {
-      // Filter based on search term from all patients with appointments
-      const patientIdsWithDoctor = new Set(
-        appointments
-          .filter((appointment) => appointment.doctorId === currentDoctorId)
-          .map((appointment) => appointment.patientId)
-      );
-
-      const patientsWithDoctor = patients.filter((patient) =>
-        patientIdsWithDoctor.has(patient.id)
-      );
-
-      const filtered = patientsWithDoctor.filter(
+      // Further filter by search term
+      const filtered = patientsInClinic.filter(
         (patient) =>
-          patient.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          patient.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (patient.email &&
             patient.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (patient.contactNumber && patient.contactNumber.includes(searchTerm))
       );
       setFilteredPatients(filtered);
     }
-  }, [searchTerm, patients, appointments, currentDoctorId]);
+  }, [searchTerm, patients, appointments, currentClinicId]);
 
   // FIXED: Handle null patient properly
   const handlePatientSelect = (patient) => {
     setSelectedPatient(patient);
     setSearchTerm("");
 
-    // Handle null patient case
     if (!patient || !patient.id) {
       setSelectedPatientAppointment(null);
+      setSelectedGeneralist(null); // ADD THIS
       console.log("Patient cleared or invalid");
       return;
     }
 
-    // Find the patient's appointment with the current doctor
+    // Find ANY appointment for this patient in the clinic
     const patientAppointment = appointments.find(
       (appointment) =>
         appointment.patientId === patient.id &&
-        appointment.doctorId === currentDoctorId
+        appointment.clinicId === currentClinicId
     );
 
     setSelectedPatientAppointment(patientAppointment);
     console.log("Selected patient appointment:", patientAppointment);
+
+    // Fetch generalist doctor info if appointment exists
+    if (patientAppointment?.doctorId) {
+      console.log("Fetching generalist with ID:", patientAppointment.doctorId);
+      fetchGeneralistInfo(patientAppointment.doctorId);
+    } else {
+      console.log("No appointment found or no doctorId");
+      setSelectedGeneralist(null);
+    }
   };
 
   // Helper functions for working with mapped data
@@ -279,6 +299,7 @@ export function usePatientData(currentDoctorId) {
     patients,
     selectedPatient,
     selectedPatientAppointment,
+    selectedGeneralist,
     searchTerm,
     setSearchTerm,
     filteredPatients,

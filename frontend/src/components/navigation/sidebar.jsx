@@ -31,6 +31,7 @@ import {
   VideoCameraIcon,
   TruckIcon,
   CpuChipIcon, // Added for Teleconsultation
+  HeartIcon,
 } from "@heroicons/react/24/outline";
 import { Outlet } from "react-router-dom";
 import { useAccessControl } from "../roles/accessControl";
@@ -116,6 +117,7 @@ const Sidebar = () => {
     "/supplier-management": "Suppliers",
     "/import-signature": "Create Doctor Signature",
     "/ai-assistant": "AI Assistant", // Added title for AI Assistant
+    "/medical-services": "Medical Services Management",
   };
 
   let currentTitle = "Overview";
@@ -683,6 +685,26 @@ const Sidebar = () => {
                 }`}
               />
               <span>Supplier Management</span>
+            </Link>
+          )}
+
+          {permissions?.accessSettings && (
+            <Link
+              to="/medical-services"
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                isActive("/medical-services")
+                  ? "bg-gradient-to-r from-orange-600/20 to-red-600/20 text-white border border-orange-500/30 shadow-lg shadow-orange-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent"
+              }`}
+            >
+              <HeartIcon
+                className={`w-5 h-5 mr-3 transition-colors ${
+                  isActive("/medical-services")
+                    ? "text-red-400"
+                    : "text-slate-400 group-hover:text-red-400"
+                }`}
+              />
+              <span>Medical Services Management</span>
             </Link>
           )}
 
