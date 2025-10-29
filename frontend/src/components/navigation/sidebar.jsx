@@ -112,7 +112,7 @@ const Sidebar = () => {
     "/doctor-profile": "Doctor Profile",
     "/user-profile": "User Profile",
     "/employee-attendance": "Employee Attendance & Salary",
-    "/teleconsultation": "Teleconsultation", // Added title for teleconsultation
+    "/teleconsultation": "Teleconsultation", 
     "/user-management": "Users",
     "/supplier-management": "Suppliers",
     "/import-signature": "Create Doctor Signature",

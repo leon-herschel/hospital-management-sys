@@ -67,8 +67,7 @@ const PatientBillGenerationModal = ({
       let skippedCount = 0;
       let skippedPrepaymentCount = 0;
 
-      console.log(`🔍 Fetching billing data for patient: ${patientId}`);
-      console.log(`📋 Currently have ${Object.keys(billedItemsCache).length} billed items in cache`);
+
 
       // Fetch inventory transactions for the patient
       const inventoryRef = ref(database, "inventoryTransactions");
